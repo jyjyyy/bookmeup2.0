@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+:root {
+  --primary: #f37db9;
+  --secondary: #6b7280;
+  --background: #faf7fb;
+}
+
+body {
+  @apply bg-background text-slate-900 font-sans antialiased;
+}
+
+* {
+  @apply border-gray-200;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+

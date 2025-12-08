@@ -17,6 +17,7 @@ interface TimeSlot {
 
 interface DayAvailability {
   isEnabled: boolean
+  mode: 'full' | 'pause' | 'custom'
   step: number
   slots: TimeSlot[]
 }
@@ -85,6 +86,7 @@ export default function AvailabilityPage() {
             availabilityData.days.forEach((day: any) => {
               availabilityRecord[day.dayOfWeek.toString()] = {
                 isEnabled: day.isEnabled,
+                mode: day.mode || 'custom',
                 step: day.step || 30,
                 slots: day.slots || [],
               }
@@ -111,18 +113,65 @@ export default function AvailabilityPage() {
     loadData()
   }, [router])
 
-  const handleDayToggle = (dayOfWeek: number, enabled: boolean) => {
+  const handleModeChange = (dayOfWeek: number, mode: 'full' | 'pause' | 'custom') => {
     const dayKey = dayOfWeek.toString()
+    
+    let newSlots: TimeSlot[] = []
+    
+    if (mode === 'full') {
+      newSlots = [{ start: '09:00', end: '18:00' }]
+    } else if (mode === 'pause') {
+      newSlots = [
+        { start: '09:00', end: '12:00' },
+        { start: '13:00', end: '18:00' },
+      ]
+    }
+    // custom: keep existing slots or empty array
+    
     setAvailability((prev) => ({
       ...prev,
       [dayKey]: {
-        isEnabled: enabled,
+        isEnabled: true,
+        mode,
         step: prev[dayKey]?.step || 30,
-        slots: enabled && prev[dayKey]?.slots?.length === 0
-          ? [{ start: '09:00', end: '18:00' }]
-          : prev[dayKey]?.slots || [],
+        slots: mode === 'custom' ? (prev[dayKey]?.slots || []) : newSlots,
       },
     }))
+    
+    // Clear error when changing mode
+    setErrors((prev) => {
+      const newErrors = { ...prev }
+      delete newErrors[dayKey]
+      return newErrors
+    })
+  }
+
+  const handleDayToggle = (dayOfWeek: number, enabled: boolean) => {
+    const dayKey = dayOfWeek.toString()
+    const currentData = availability[dayKey]
+    
+    if (enabled && !currentData) {
+      // First time enabling: default to full mode
+      setAvailability((prev) => ({
+        ...prev,
+        [dayKey]: {
+          isEnabled: true,
+          mode: 'full',
+          step: 30,
+          slots: [{ start: '09:00', end: '18:00' }],
+        },
+      }))
+    } else {
+      setAvailability((prev) => ({
+        ...prev,
+        [dayKey]: {
+          ...prev[dayKey],
+          isEnabled: enabled,
+          slots: enabled ? prev[dayKey]?.slots || [] : [],
+        },
+      }))
+    }
+    
     // Clear error when toggling
     setErrors((prev) => {
       const newErrors = { ...prev }
@@ -133,7 +182,7 @@ export default function AvailabilityPage() {
 
   const handleAddSlot = (dayOfWeek: number) => {
     const dayKey = dayOfWeek.toString()
-    const dayData = availability[dayKey] || { isEnabled: true, step: 30, slots: [] }
+    const dayData = availability[dayKey] || { isEnabled: true, mode: 'custom', step: 30, slots: [] }
     
     // Calculate default slot: start from last slot's end, or default to 14:00-18:00
     let defaultStart = '14:00'
@@ -157,6 +206,7 @@ export default function AvailabilityPage() {
       [dayKey]: {
         ...prev[dayKey],
         isEnabled: true,
+        mode: 'custom',
         step: prev[dayKey]?.step || 30,
         slots: [...(prev[dayKey]?.slots || []), { start: defaultStart, end: defaultEnd }],
       },
@@ -166,12 +216,13 @@ export default function AvailabilityPage() {
   const handleRemoveSlot = (dayOfWeek: number, slotIndex: number) => {
     const dayKey = dayOfWeek.toString()
     setAvailability((prev) => {
-      const dayData = prev[dayKey] || { isEnabled: true, step: 30, slots: [] }
+      const dayData = prev[dayKey] || { isEnabled: true, mode: 'custom', step: 30, slots: [] }
       const newSlots = dayData.slots.filter((_, index) => index !== slotIndex)
       return {
         ...prev,
         [dayKey]: {
           ...dayData,
+          mode: 'custom', // Switch to custom when removing slots
           slots: newSlots,
         },
       }
@@ -186,16 +237,24 @@ export default function AvailabilityPage() {
   ) => {
     const dayKey = dayOfWeek.toString()
     setAvailability((prev) => {
-      const dayData = prev[dayKey] || { isEnabled: true, step: 30, slots: [] }
+      const dayData = prev[dayKey] || { isEnabled: true, mode: 'custom', step: 30, slots: [] }
       const newSlots = [...dayData.slots]
       newSlots[slotIndex] = {
         ...newSlots[slotIndex],
         [field]: value,
       }
+      
+      // If modifying a full or pause mode, switch to custom
+      let newMode = dayData.mode
+      if (dayData.mode === 'full' || dayData.mode === 'pause') {
+        newMode = 'custom'
+      }
+      
       return {
         ...prev,
         [dayKey]: {
           ...dayData,
+          mode: newMode,
           slots: newSlots,
         },
       }
@@ -234,6 +293,7 @@ export default function AvailabilityPage() {
           proId,
           dayOfWeek,
           isEnabled: dayData.isEnabled,
+          mode: dayData.mode,
           step: dayData.step || 30,
           slots: dayData.isEnabled ? dayData.slots : [],
         }),
@@ -375,6 +435,7 @@ export default function AvailabilityPage() {
                 const dayKey = day.key.toString()
                 const dayData = availability[dayKey] || {
                   isEnabled: false,
+                  mode: 'custom',
                   step: 30,
                   slots: [],
                 }
@@ -413,101 +474,253 @@ export default function AvailabilityPage() {
                     )}
 
                     {dayData.isEnabled && (
-                      <div className="space-y-3 mt-3">
-                        {dayData.slots.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-2">
-                            Aucune plage horaire définie. Ajoutez-en une pour
-                            activer ce jour.
-                          </p>
-                        ) : (
-                          <AnimatePresence>
-                            {dayData.slots.map((slot, slotIndex) => (
-                              <motion.div
-                                key={slotIndex}
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="flex items-center gap-2 p-3 bg-gray-50 rounded-[32px]"
-                              >
-                                <div className="flex-1 grid grid-cols-2 gap-2">
-                                  <div>
-                                    <label className="block text-xs text-gray-600 mb-1">
-                                      Début
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={slot.start}
-                                      onChange={(e) =>
-                                        handleSlotChange(
-                                          day.key,
-                                          slotIndex,
-                                          'start',
-                                          e.target.value
-                                        )
-                                      }
-                                      className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs text-gray-600 mb-1">
-                                      Fin
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={slot.end}
-                                      onChange={(e) =>
-                                        handleSlotChange(
-                                          day.key,
-                                          slotIndex,
-                                          'end',
-                                          e.target.value
-                                        )
-                                      }
-                                      className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                                    />
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleRemoveSlot(day.key, slotIndex)
-                                  }
-                                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                                  type="button"
-                                >
-                                  <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                </button>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
+                      <div className="space-y-4 mt-3">
+                        {/* Mode Selector */}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleModeChange(day.key, 'full')}
+                            variant={dayData.mode === 'full' ? 'primary' : 'outline'}
+                            size="sm"
+                            className={`rounded-[32px] text-xs flex-1 ${
+                              dayData.mode === 'full'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-gray-700 hover:bg-primary/5'
+                            }`}
+                          >
+                            Journée complète
+                          </Button>
+                          <Button
+                            onClick={() => handleModeChange(day.key, 'pause')}
+                            variant={dayData.mode === 'pause' ? 'primary' : 'outline'}
+                            size="sm"
+                            className={`rounded-[32px] text-xs flex-1 ${
+                              dayData.mode === 'pause'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-gray-700 hover:bg-primary/5'
+                            }`}
+                          >
+                            Avec pause
+                          </Button>
+                          <Button
+                            onClick={() => handleModeChange(day.key, 'custom')}
+                            variant={dayData.mode === 'custom' ? 'primary' : 'outline'}
+                            size="sm"
+                            className={`rounded-[32px] text-xs flex-1 ${
+                              dayData.mode === 'custom'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-gray-700 hover:bg-primary/5'
+                            }`}
+                          >
+                            Personnalisé
+                          </Button>
+                        </div>
+
+                        {/* Mode: Full */}
+                        {dayData.mode === 'full' && dayData.slots.length === 1 && (
+                          <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-[32px]">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">
+                                Début
+                              </label>
+                              <input
+                                type="time"
+                                value={dayData.slots[0].start}
+                                onChange={(e) =>
+                                  handleSlotChange(day.key, 0, 'start', e.target.value)
+                                }
+                                className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">
+                                Fin
+                              </label>
+                              <input
+                                type="time"
+                                value={dayData.slots[0].end}
+                                onChange={(e) =>
+                                  handleSlotChange(day.key, 0, 'end', e.target.value)
+                                }
+                                className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              />
+                            </div>
+                          </div>
                         )}
 
-                        <Button
-                          onClick={() => handleAddSlot(day.key)}
-                          variant="outline"
-                          size="sm"
-                          className="w-full rounded-[32px] text-sm"
-                        >
-                          + Ajouter une plage
-                        </Button>
+                        {/* Mode: Pause */}
+                        {dayData.mode === 'pause' && dayData.slots.length === 2 && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-gray-50 rounded-[32px]">
+                              <label className="block text-xs font-semibold text-gray-700 mb-2">
+                                Matin
+                              </label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">
+                                    Début
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={dayData.slots[0].start}
+                                    onChange={(e) =>
+                                      handleSlotChange(day.key, 0, 'start', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">
+                                    Fin
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={dayData.slots[0].end}
+                                    onChange={(e) =>
+                                      handleSlotChange(day.key, 0, 'end', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-gray-50 rounded-[32px]">
+                              <label className="block text-xs font-semibold text-gray-700 mb-2">
+                                Après-midi
+                              </label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">
+                                    Début
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={dayData.slots[1].start}
+                                    onChange={(e) =>
+                                      handleSlotChange(day.key, 1, 'start', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">
+                                    Fin
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={dayData.slots[1].end}
+                                    onChange={(e) =>
+                                      handleSlotChange(day.key, 1, 'end', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mode: Custom */}
+                        {dayData.mode === 'custom' && (
+                          <div className="space-y-3">
+                            {dayData.slots.length === 0 ? (
+                              <p className="text-sm text-gray-500 text-center py-2">
+                                Aucune plage horaire définie. Ajoutez-en une pour
+                                activer ce jour.
+                              </p>
+                            ) : (
+                              <AnimatePresence>
+                                {dayData.slots.map((slot, slotIndex) => (
+                                  <motion.div
+                                    key={slotIndex}
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="flex items-center gap-2 p-3 bg-gray-50 rounded-[32px]"
+                                  >
+                                    <div className="flex-1 grid grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                          Début
+                                        </label>
+                                        <input
+                                          type="time"
+                                          value={slot.start}
+                                          onChange={(e) =>
+                                            handleSlotChange(
+                                              day.key,
+                                              slotIndex,
+                                              'start',
+                                              e.target.value
+                                            )
+                                          }
+                                          className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                          Fin
+                                        </label>
+                                        <input
+                                          type="time"
+                                          value={slot.end}
+                                          onChange={(e) =>
+                                            handleSlotChange(
+                                              day.key,
+                                              slotIndex,
+                                              'end',
+                                              e.target.value
+                                            )
+                                          }
+                                          className="w-full px-3 py-2 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                        />
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        handleRemoveSlot(day.key, slotIndex)
+                                      }
+                                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                                      type="button"
+                                    >
+                                      <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                            )}
+
+                            <Button
+                              onClick={() => handleAddSlot(day.key)}
+                              variant="outline"
+                              size="sm"
+                              className="w-full rounded-[32px] text-sm"
+                            >
+                              + Ajouter une plage
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
 
                     <div className="mt-3">
                       <Button
                         onClick={() => handleSaveDay(day.key)}
-                        disabled={saving[dayKey] || (dayData.isEnabled && dayData.slots.length === 0)}
+                        disabled={
+                          saving[dayKey] ||
+                          (dayData.isEnabled && dayData.slots.length === 0)
+                        }
                         size="sm"
                         variant="outline"
                         className="rounded-[32px] text-sm"

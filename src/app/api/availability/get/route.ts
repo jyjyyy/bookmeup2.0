@@ -13,9 +13,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Helper function to detect mode from slots
+    const detectMode = (slots: { start: string; end: string }[]): 'full' | 'pause' | 'custom' => {
+      if (slots.length === 0) return 'custom'
+      if (slots.length === 1) return 'full'
+      if (slots.length === 2) {
+        // Check if it's a lunch break pattern (first end < second start)
+        const [first, second] = slots
+        const [firstEndHour, firstEndMin] = first.end.split(':').map(Number)
+        const [secondStartHour, secondStartMin] = second.start.split(':').map(Number)
+        const firstEndMinutes = firstEndHour * 60 + firstEndMin
+        const secondStartMinutes = secondStartHour * 60 + secondStartMin
+        
+        if (firstEndMinutes < secondStartMinutes) {
+          return 'pause'
+        }
+      }
+      return 'custom'
+    }
+
     const days: Array<{
       dayOfWeek: number
       isEnabled: boolean
+      mode: 'full' | 'pause' | 'custom'
       step: number
       slots: { start: string; end: string }[]
     }> = []
@@ -43,6 +63,12 @@ export async function GET(request: NextRequest) {
           })
           
           let slots: { start: string; end: string }[] = []
+          let mode: 'full' | 'pause' | 'custom' = 'custom'
+          
+          // Check if mode is already stored
+          if (data?.mode && ['full', 'pause', 'custom'].includes(data.mode)) {
+            mode = data.mode as 'full' | 'pause' | 'custom'
+          }
           
           // NEW FORMAT: Check if slots array exists
           if (data?.slots && Array.isArray(data.slots)) {
@@ -53,6 +79,11 @@ export async function GET(request: NextRequest) {
                 start: String(slot.start),
                 end: String(slot.end),
               }))
+            
+            // Auto-detect mode if not stored
+            if (!data?.mode) {
+              mode = detectMode(slots)
+            }
           }
           // BACKWARD COMPATIBILITY: Convert old format (startTime/endTime) to slots
           else if (data?.startTime && data?.endTime) {
@@ -63,11 +94,13 @@ export async function GET(request: NextRequest) {
                 end: String(data.endTime),
               },
             ]
+            mode = 'full'
           }
 
           days.push({
             dayOfWeek,
             isEnabled: data?.isEnabled !== undefined ? Boolean(data.isEnabled) : false,
+            mode,
             step: Number(data?.step) || 30,
             slots,
           })
@@ -77,6 +110,7 @@ export async function GET(request: NextRequest) {
           days.push({
             dayOfWeek,
             isEnabled: false,
+            mode: 'custom',
             step: 30,
             slots: [],
           })
@@ -87,6 +121,7 @@ export async function GET(request: NextRequest) {
         days.push({
           dayOfWeek,
           isEnabled: false,
+          mode: 'custom',
           step: 30,
           slots: [],
         })

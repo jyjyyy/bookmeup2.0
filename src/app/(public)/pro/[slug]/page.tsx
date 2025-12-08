@@ -1,10 +1,15 @@
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
-import { Card } from '@/components/ui/card'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { motion } from 'framer-motion'
 
 interface ProPageProps {
   params: Promise<{ slug: string }>
@@ -88,21 +93,22 @@ export default async function ProPage({ params }: ProPageProps) {
     )
     const servicesSnapshot = await getDocs(servicesQuery)
 
-    const services = servicesSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
+    const services = servicesSnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        created_at: data.created_at?.toDate?.()?.toISOString() || null,
+        updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
+      }
+    })
 
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             {/* Pro Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
+            <div className="mb-8">
               <Card className="rounded-[32px] p-8">
                 <h1 className="text-4xl font-bold text-primary mb-2">
                   {pro.name}
@@ -116,7 +122,7 @@ export default async function ProPage({ params }: ProPageProps) {
                   </p>
                 )}
               </Card>
-            </motion.div>
+            </div>
 
             {/* Services */}
             <div className="mb-8">
@@ -132,52 +138,48 @@ export default async function ProPage({ params }: ProPageProps) {
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {services.map((service: any, index: number) => (
-                    <motion.div
+                  {services.map((service: any) => (
+                    <Card
                       key={service.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      className="rounded-[32px] p-6 transition-shadow hover:shadow-bookmeup-lg"
                     >
-                      <Card className="rounded-[32px] p-6 hover:shadow-lg transition-shadow">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          {service.name}
-                        </h3>
-                        {service.description && (
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                            {service.description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <span className="text-2xl font-bold text-primary">
-                              {service.price} €
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {service.duration} min
-                          </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {service.name}
+                      </h3>
+                      {service.description && (
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                          {service.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <span className="text-2xl font-bold text-primary">
+                            {service.price} €
+                          </span>
                         </div>
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/service/${service.id}`}
-                            className="flex-1"
-                          >
-                            <Button variant="outline" className="w-full rounded-[32px]">
-                              Détails
-                            </Button>
-                          </Link>
-                          <Link
-                            href={`/booking/${pro.slug}?service_id=${service.id}`}
-                            className="flex-1"
-                          >
-                            <Button className="w-full rounded-[32px]">
-                              Réserver
-                            </Button>
-                          </Link>
+                        <div className="text-sm text-gray-500">
+                          {service.duration} min
                         </div>
-                      </Card>
-                    </motion.div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/service/${service.id}`}
+                          className="flex-1"
+                        >
+                          <Button variant="outline" className="w-full rounded-[32px]">
+                            Détails
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/booking/${pro.slug}?service_id=${service.id}`}
+                          className="flex-1"
+                        >
+                          <Button className="w-full rounded-[32px]">
+                            Réserver
+                          </Button>
+                        </Link>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               )}
@@ -185,27 +187,21 @@ export default async function ProPage({ params }: ProPageProps) {
 
             {/* CTA */}
             {services.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card className="rounded-[32px] p-6 bg-pink-50 border-2 border-primary">
-                  <div className="text-center">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Prêt à réserver ?
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Choisissez un service et réservez votre créneau
-                    </p>
-                    <Link href={`/booking/${pro.slug}`}>
-                      <Button size="lg" className="rounded-[32px]">
-                        Réserver un rendez-vous
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              </motion.div>
+              <Card className="rounded-[32px] p-6 bg-pink-50 border-2 border-primary">
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Prêt à réserver ?
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Choisissez un service et réservez votre créneau
+                  </p>
+                  <Link href={`/booking/${pro.slug}`}>
+                    <Button size="lg" className="rounded-[32px]">
+                      Réserver un rendez-vous
+                    </Button>
+                  </Link>
+                </div>
+              </Card>
             )}
           </div>
         </div>

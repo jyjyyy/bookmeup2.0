@@ -98,10 +98,15 @@ export default async function BookingPage({ params }: BookingPageProps) {
     )
     const servicesSnapshot = await getDocs(servicesQuery)
 
-    const services = servicesSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as any[]
+    const services = servicesSnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        created_at: data.created_at?.toDate?.()?.toISOString() || null,
+        updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
+      }
+    }) as any[]
 
     if (services.length === 0) {
       return (

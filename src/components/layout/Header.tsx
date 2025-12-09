@@ -14,12 +14,10 @@ export function Header() {
     >
       <div className="container mx-auto px-6 py-5">
         <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-2xl font-bold text-primary hover:opacity-80 transition-opacity flex items-center gap-2"
-          >
-            <span>BookMeUp</span>
-            <span className="text-xl">✨</span>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-[#9C44AF] bg-clip-text text-transparent">
+              BookMeUp
+            </span>
           </Link>
           <nav className="flex items-center gap-6">
             <Link

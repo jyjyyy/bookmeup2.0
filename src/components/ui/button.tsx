@@ -26,8 +26,8 @@ export function Button({
   }
   
   const variants = {
-    primary: 'bg-primary text-white hover:bg-[#e56aa5] hover:shadow-[0_8px_25px_rgba(243,125,185,0.3)] active:scale-[0.98]',
-    outline: 'border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white hover:shadow-[0_8px_25px_rgba(243,125,185,0.2)] active:scale-[0.98]',
+    primary: 'bg-primary text-white hover:bg-[#9C44AF] hover:shadow-[0_8px_25px_rgba(200,109,215,0.25)] active:scale-[0.98]',
+    outline: 'border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white hover:shadow-[0_8px_25px_rgba(200,109,215,0.2)] active:scale-[0.98]',
     subtle: 'bg-white text-primary border border-primary/20 hover:bg-primary/5 hover:border-primary/40 active:scale-[0.98]',
   }
 

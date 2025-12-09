@@ -5,13 +5,25 @@ import { db } from '@/lib/firebaseClient'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const proId = searchParams.get('pro_id')
-    const serviceId = searchParams.get('service_id')
+    
+    // Lecture robuste des paramètres avec fallbacks
+    const proId =
+      searchParams.get('pro_id') ??
+      searchParams.get('proId') ??
+      searchParams.get('pro') ??
+      null
+
+    const serviceId =
+      searchParams.get('service_id') ??
+      searchParams.get('serviceId') ??
+      null
+
     const date = searchParams.get('date')
 
     if (!proId || !serviceId || !date) {
+      console.error('[Availability] Missing params', { proId, serviceId, date })
       return NextResponse.json(
-        { error: 'pro_id, service_id et date sont requis' },
+        { error: 'Missing pro_id, service_id or date' },
         { status: 400 }
       )
     }
@@ -170,9 +182,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ slots: timeSlots })
   } catch (error: any) {
-    console.error('Error fetching availability:', error)
+    console.error('[Availability] Unexpected error:', error)
     return NextResponse.json(
-      { error: error.message || 'Erreur serveur' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

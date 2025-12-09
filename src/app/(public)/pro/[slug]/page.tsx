@@ -103,107 +103,182 @@ export default async function ProPage({ params }: ProPageProps) {
       }
     })
 
+    // Get first letter of name for avatar
+    const avatarLetter = pro.name?.[0]?.toUpperCase() || 'P'
+
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Pro Header */}
-            <div className="mb-8">
-              <Card className="rounded-[32px] p-8">
-                <h1 className="text-4xl font-bold text-primary mb-2">
-                  {pro.name}
-                </h1>
-                {pro.city && (
-                  <p className="text-gray-600 text-lg mb-4">📍 {pro.city}</p>
-                )}
-                {pro.description && (
-                  <p className="text-gray-700 whitespace-pre-line">
-                    {pro.description}
-                  </p>
-                )}
+      <div className="min-h-screen bg-background py-10 md:py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* 1. HERO Premium */}
+          <div className="mb-12">
+            <Card className="rounded-[32px] p-8 md:p-10">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                {/* Colonne gauche - Avatar + Nom + Ville */}
+                <div className="flex items-start gap-4 md:gap-6">
+                  {/* Avatar circulaire */}
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-secondary flex items-center justify-center text-3xl md:text-4xl font-bold text-primary flex-shrink-0">
+                    {avatarLetter}
+                  </div>
+                  
+                  <div className="flex-1">
+                    {/* Nom du professionnel */}
+                    <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-2">
+                      {pro.name}
+                    </h1>
+
+                    {/* Ville */}
+                    {pro.city && (
+                      <p className="text-sm text-slate-500 flex items-center gap-1.5 mb-4">
+                        <span>📍</span>
+                        <span>{pro.city}</span>
+                      </p>
+                    )}
+
+                    {/* Description courte */}
+                    {pro.description && (
+                      <p className="text-slate-600 whitespace-pre-line leading-relaxed text-sm md:text-base line-clamp-3">
+                        {pro.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bouton principal CTA */}
+              <div className="mt-8">
+                <Link href={`/booking/${pro.slug}`}>
+                  <Button size="lg" className="w-full md:w-auto rounded-[32px]">
+                    Réserver un rendez-vous
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </div>
+
+          {/* 2. Bloc Infos Clés */}
+          <div className="mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Carte Ville */}
+              {pro.city && (
+                <Card className="rounded-[32px] p-6 text-center">
+                  <div className="text-2xl mb-2">📍</div>
+                  <p className="text-xs text-slate-500 mb-1">Ville</p>
+                  <p className="text-sm font-semibold text-[#2A1F2D]">{pro.city}</p>
+                </Card>
+              )}
+
+              {/* Carte Nombre de services */}
+              <Card className="rounded-[32px] p-6 text-center">
+                <div className="text-2xl mb-2">✨</div>
+                <p className="text-xs text-slate-500 mb-1">Services</p>
+                <p className="text-sm font-semibold text-[#2A1F2D]">
+                  {services.length} disponible{services.length > 1 ? 's' : ''}
+                </p>
+              </Card>
+
+              {/* Carte Disponibilités (optionnel pour futur) */}
+              <Card className="rounded-[32px] p-6 text-center">
+                <div className="text-2xl mb-2">📅</div>
+                <p className="text-xs text-slate-500 mb-1">Disponibilités</p>
+                <p className="text-sm font-semibold text-[#2A1F2D]">En ligne</p>
               </Card>
             </div>
+          </div>
 
-            {/* Services */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Services disponibles
+          {/* 3. Liste des Services */}
+          <div className="mb-8">
+            <div className="mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#2A1F2D] mb-2">
+                Services proposés
               </h2>
+              <p className="text-sm text-slate-500">
+                Choisissez une prestation pour voir les détails et réserver.
+              </p>
+            </div>
 
-              {services.length === 0 ? (
-                <Card className="rounded-[32px] p-8 text-center">
-                  <p className="text-gray-600">
-                    Aucun service disponible pour le moment.
-                  </p>
-                </Card>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {services.map((service: any) => (
-                    <Card
-                      key={service.id}
-                      className="rounded-[32px] p-6 transition-shadow hover:shadow-bookmeup-lg"
-                    >
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {services.length === 0 ? (
+              <Card className="rounded-[32px] p-8 text-center">
+                <p className="text-slate-600">
+                  Aucun service disponible pour le moment.
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {services.map((service: any) => (
+                  <Card
+                    key={service.id}
+                    className="rounded-[32px] p-6 flex flex-col justify-between h-full transition-shadow hover:shadow-bookmeup-lg"
+                  >
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#2A1F2D] mb-2">
                         {service.name}
                       </h3>
                       {service.description && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        <p className="text-sm text-slate-500 mb-4 line-clamp-3 leading-relaxed">
                           {service.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <span className="text-2xl font-bold text-primary">
-                            {service.price} €
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {service.duration} min
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/service/${service.id}`}
-                          className="flex-1"
-                        >
-                          <Button variant="outline" className="w-full rounded-[32px]">
-                            Détails
-                          </Button>
-                        </Link>
-                        <Link
-                          href={`/booking/${pro.slug}?service_id=${service.id}`}
-                          className="flex-1"
-                        >
-                          <Button className="w-full rounded-[32px]">
-                            Réserver
-                          </Button>
-                        </Link>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+                    </div>
 
-            {/* CTA */}
-            {services.length > 0 && (
-              <Card className="rounded-[32px] p-6 bg-pink-50 border-2 border-primary">
-                <div className="text-center">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Prêt à réserver ?
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Choisissez un service et réservez votre créneau
-                  </p>
-                  <Link href={`/booking/${pro.slug}`}>
-                    <Button size="lg" className="rounded-[32px]">
-                      Réserver un rendez-vous
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
+                    {/* Bandeau prix + durée */}
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <span className="text-2xl font-bold text-primary">
+                          {service.price} €
+                        </span>
+                      </div>
+                      <div className="text-xs uppercase text-slate-500 font-medium tracking-wide">
+                        {service.duration} min
+                      </div>
+                    </div>
+
+                    {/* Boutons */}
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/service/${service.id}`}
+                        className="flex-1"
+                      >
+                        <Button variant="outline" className="w-full rounded-[32px]">
+                          Détails
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`/booking/${pro.slug}?service_id=${service.id}`}
+                        className="flex-1"
+                      >
+                        <Button className="w-full rounded-[32px]">
+                          Réserver
+                        </Button>
+                      </Link>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
+
+          {/* 4. CTA Final */}
+          {services.length > 0 && (
+            <Card className="rounded-[32px] mt-8 bg-gradient-to-r from-primary to-[#9C44AF] text-white border-none p-8 md:p-10">
+              <div className="text-center">
+                <h3 className="text-xl md:text-2xl font-bold mb-2">
+                  Prête à réserver ton moment beauté ?
+                </h3>
+                <p className="text-white/90 mb-6 text-sm md:text-base">
+                  Choisis un service et réserve directement en ligne en quelques secondes.
+                </p>
+                <Link href={`/booking/${pro.slug}`}>
+                  <Button
+                    variant="subtle"
+                    size="lg"
+                    className="rounded-[32px] bg-white text-primary border-2 border-primary shadow-md hover:bg-primary hover:text-white hover:shadow-lg"
+                  >
+                    Réserver maintenant
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     )

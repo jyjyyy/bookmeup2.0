@@ -8,16 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#f37db9',
-        secondary: '#6b7280',
-        background: '#faf7fb',
+        primary: '#C86DD7',
+        primaryDark: '#9C44AF',
+        secondary: '#F5E9F8',
+        background: '#FAF7FB',
+        textDark: '#2A1F2D',
       },
       borderRadius: {
         '32': '32px',
         'custom': '32px',
       },
       boxShadow: {
-        'bookmeup': '0_15px_50px_rgba(20,0,50,0.06)',
+        'bookmeup': '0 15px 40px rgba(0,0,0,0.06)',
         'bookmeup-lg': '0_20px_60px_rgba(20,0,50,0.08)',
         'bookmeup-sm': '0_10px_30px_rgba(20,0,50,0.04)',
       },

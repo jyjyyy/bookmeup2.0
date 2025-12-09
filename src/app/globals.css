@@ -7,13 +7,15 @@
 
 
 :root {
-  --primary: #f37db9;
-  --secondary: #6b7280;
-  --background: #faf7fb;
+  --primary: #C86DD7;
+  --primary-dark: #9C44AF;
+  --secondary: #F5E9F8;
+  --background: #FAF7FB;
+  --text-dark: #2A1F2D;
 }
 
 body {
-  @apply bg-background text-slate-900 font-sans antialiased;
+  @apply bg-background text-[#2A1F2D] font-sans antialiased;
 }
 
 * {

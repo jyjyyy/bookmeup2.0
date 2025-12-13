@@ -67,31 +67,31 @@ export function DashboardShell({ children }: DashboardShellProps) {
             href="/dashboard"
             className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
           >
-            Tableau de bord
+            📊 Tableau de bord
           </Link>
           <Link
             href="/dashboard/services"
             className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
           >
-            Services
+            🛠️ Services
+          </Link>
+          <Link
+            href="/dashboard/calendar"
+            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
+          >
+            📅 Calendrier
           </Link>
           <Link
             href="/dashboard/availability"
             className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
           >
-            Planning
-          </Link>
-          <Link
-            href="/dashboard/integrations/google-calendar"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            Intégrations
+            ⏱️ Disponibilités
           </Link>
           <Link
             href="/dashboard/settings"
             className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
           >
-            Paramètres
+            🔧 Paramètres
           </Link>
         </nav>
       </aside>

@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
+import { adminDb } from '@/lib/firebaseAdmin'
 
-export async function GET(request: NextRequest) {
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
+
+function minutesToTime(min: number): string {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+export async function GET(req: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    
-    // Lecture robuste des paramètres avec fallbacks
+    const { searchParams } = new URL(req.url)
+
     const proId =
       searchParams.get('pro_id') ??
       searchParams.get('proId') ??
@@ -28,107 +37,138 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Parser la date
-    const selectedDate = new Date(date)
-    const dayOfWeek = selectedDate.getDay() // 0 = dimanche, 1 = lundi, etc.
+    // 1. Charger le service pour obtenir la durée
+    const serviceSnap = await adminDb.collection('services').doc(serviceId).get()
+    if (!serviceSnap.exists) {
+      console.error('[Availability] Service not found', { serviceId })
+      return NextResponse.json({ slots: [] })
+    }
 
-    // Check for exceptional closures first
-    const exceptionsQuery = query(
-      collection(db, 'pros', proId, 'exceptions'),
-      where('date', '==', date),
-      where('fullDay', '==', true)
-    )
-    const exceptionsSnapshot = await getDocs(exceptionsQuery)
+    const service = serviceSnap.data()
+    const serviceDuration = service?.duration ?? 30
 
-    if (!exceptionsSnapshot.empty) {
+    // 2. Calculer le jour de la semaine
+    // Convertir getDay() (0=Dimanche, 1=Lundi, ...) vers l'index Firestore (0=Lundi, 6=Dimanche)
+    const jsDay = new Date(date + 'T00:00:00').getDay()
+    // Convert Sunday=0 → 6, Monday=1 → 0, ..., Saturday=6 → 5
+    const dayOfWeek = (jsDay + 6) % 7
+    const dayKey = String(dayOfWeek)
+    
+    console.log('[Availability] date=', date, 'jsDay=', jsDay, 'mapped=', dayOfWeek)
+
+    // 3. Vérifier les exceptions de fermeture (full day)
+    const exceptionsSnap = await adminDb
+      .collection('pros')
+      .doc(proId)
+      .collection('exceptions')
+      .where('date', '==', date)
+      .where('fullDay', '==', true)
+      .get()
+
+    if (!exceptionsSnap.empty) {
       console.log('[Availability] Date is fully closed due to exception:', date)
       return NextResponse.json({ slots: [] })
     }
 
-    // Charger les disponibilités du pro pour ce jour
-    const availabilityDoc = await getDoc(
-      doc(db, 'pros', proId, 'availability', dayOfWeek.toString())
-    )
+    // 4. Charger les disponibilités du pro pour ce jour
+    const availSnap = await adminDb
+      .collection('pros')
+      .doc(proId)
+      .collection('availability')
+      .doc(dayKey)
+      .get()
 
-    let slots: { start: string; end: string }[] = []
-    let step = 30 // minutes
-
-    if (availabilityDoc.exists()) {
-      const availability = availabilityDoc.data()
-      
-      if (!availability.isEnabled) {
-        // Jour désactivé
-        return NextResponse.json({ slots: [] })
-      }
-
-      // NEW FORMAT: Use slots array if exists
-      if (availability.slots && Array.isArray(availability.slots)) {
-        slots = availability.slots
-          .filter((slot: any) => slot?.start && slot?.end)
-          .map((slot: any) => ({
-            start: String(slot.start),
-            end: String(slot.end),
-          }))
-      }
-      // BACKWARD COMPATIBILITY: Convert old format (startTime/endTime) to slots
-      else if (availability.startTime && availability.endTime) {
-        console.log('[DEBUG /api/availability] Converting old format to slots')
-        slots = [
-          {
-            start: String(availability.startTime),
-            end: String(availability.endTime),
-          },
-        ]
-      }
-
-      step = Number(availability.step) || 30
-    }
-
-    // Si aucune plage disponible, retourner vide
-    if (slots.length === 0) {
+    if (!availSnap.exists) {
+      console.log('[Availability] No availability document for day', dayKey)
       return NextResponse.json({ slots: [] })
     }
 
-    // Charger le service pour obtenir la durée
-    const serviceDoc = await getDoc(doc(db, 'services', serviceId))
-    if (!serviceDoc.exists()) {
-      return NextResponse.json({ error: 'Service non trouvé' }, { status: 404 })
+    const avail = availSnap.data()
+
+    if (avail?.isEnabled === false) {
+      console.log('[Availability] Day is disabled', dayKey)
+      return NextResponse.json({ slots: [] })
     }
 
-    const serviceDuration = serviceDoc.data().duration || 30
+    // Extraire les plages horaires (slots)
+    let slots: { start: string; end: string }[] = []
 
-    // Générer les créneaux depuis toutes les plages
+    // Format nouveau : slots array
+    if (avail?.slots && Array.isArray(avail.slots)) {
+      slots = avail.slots
+        .filter((slot: any) => slot?.start && slot?.end)
+        .map((slot: any) => ({
+          start: String(slot.start),
+          end: String(slot.end),
+        }))
+    }
+    // Format ancien : startTime/endTime → convertir en un seul slot
+    else if (avail?.startTime && avail?.endTime) {
+      console.log('[Availability] Converting old format to slots')
+      slots = [
+        {
+          start: String(avail.startTime),
+          end: String(avail.endTime),
+        },
+      ]
+    }
+
+    if (slots.length === 0) {
+      console.log('[Availability] No time slots configured for day', dayKey)
+      return NextResponse.json({ slots: [] })
+    }
+
+    // Extraire le step (intervalle entre créneaux) depuis la config de disponibilité
+    const step = avail?.step ?? 30
+
+    // 5. Charger les réservations existantes
+    const bookingsSnap = await adminDb
+      .collection('bookings')
+      .where('pro_id', '==', proId)
+      .where('date', '==', date)
+      .where('status', 'in', ['pending', 'confirmed'])
+      .get()
+
+    // Convertir les bookings en intervalles en minutes
+    const bookingIntervals = bookingsSnap.docs.map((doc) => {
+      const booking = doc.data()
+      return {
+        start: timeToMinutes(booking.start_time),
+        end: timeToMinutes(booking.end_time),
+      }
+    })
+
+    // 6. Générer les créneaux
     const timeSlots: { time: string; available: boolean }[] = []
     const now = new Date()
     const isToday = date === now.toISOString().split('T')[0]
     const currentMinutes = isToday ? now.getHours() * 60 + now.getMinutes() : -1
 
-    // Pour chaque plage horaire
     for (const slot of slots) {
-      const [startHour, startMin] = slot.start.split(':').map(Number)
-      const [endHour, endMin] = slot.end.split(':').map(Number)
+      const start = timeToMinutes(slot.start)
+      const end = timeToMinutes(slot.end)
 
-      const startMinutes = startHour * 60 + startMin
-      const endMinutes = endHour * 60 + endMin
-
-      // Générer les créneaux dans cette plage
-      for (
-        let minutes = startMinutes;
-        minutes + serviceDuration <= endMinutes;
-        minutes += step
-      ) {
-        const hour = Math.floor(minutes / 60)
-        const min = minutes % 60
-        const timeString = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
-
+      for (let t = start; t + serviceDuration <= end; t += step) {
         // Filtrer les créneaux passés (si aujourd'hui)
-        if (isToday && minutes <= currentMinutes) {
+        if (isToday && t <= currentMinutes) {
           continue
         }
 
+        const time = minutesToTime(t)
+        const slotStartMinutes = t
+        const slotEndMinutes = t + serviceDuration
+
+        // Vérifier si le créneau chevauche avec une réservation
+        const overlaps = bookingIntervals.some((booking) => {
+          // Il y a chevauchement si :
+          // - Le début du créneau est avant la fin de la réservation ET
+          // - La fin du créneau est après le début de la réservation
+          return slotStartMinutes < booking.end && slotEndMinutes > booking.start
+        })
+
         timeSlots.push({
-          time: timeString,
-          available: true, // Sera mis à false si réservé
+          time,
+          available: !overlaps,
         })
       }
     }
@@ -140,53 +180,20 @@ export async function GET(request: NextRequest) {
       return aHour * 60 + aMin - (bHour * 60 + bMin)
     })
 
-    // Charger les réservations existantes pour cette date
-    const bookingsQuery = query(
-      collection(db, 'bookings'),
-      where('pro_id', '==', proId),
-      where('date', '==', date),
-      where('status', 'in', ['pending', 'confirmed'])
+    console.log(
+      '[Availability] Generated',
+      timeSlots.length,
+      'time slots,',
+      timeSlots.filter((s) => s.available).length,
+      'available'
     )
-
-    const bookingsSnapshot = await getDocs(bookingsQuery)
-
-    // Marquer les créneaux occupés comme indisponibles
-    bookingsSnapshot.forEach((bookingDoc) => {
-      const booking = bookingDoc.data()
-      const bookingStart = booking.start_time
-      const bookingEnd = booking.end_time
-
-      timeSlots.forEach((slot) => {
-        // Vérifier si le créneau chevauche avec une réservation
-        const [slotHour, slotMin] = slot.time.split(':').map(Number)
-        const slotStartMinutes = slotHour * 60 + slotMin
-        const slotEndMinutes = slotStartMinutes + serviceDuration
-
-        const [bookingStartHour, bookingStartMin] = bookingStart.split(':').map(Number)
-        const [bookingEndHour, bookingEndMin] = bookingEnd.split(':').map(Number)
-        const bookingStartMinutes = bookingStartHour * 60 + bookingStartMin
-        const bookingEndMinutes = bookingEndHour * 60 + bookingEndMin
-
-        // Vérifier le chevauchement
-        if (
-          (slotStartMinutes >= bookingStartMinutes && slotStartMinutes < bookingEndMinutes) ||
-          (slotEndMinutes > bookingStartMinutes && slotEndMinutes <= bookingEndMinutes) ||
-          (slotStartMinutes <= bookingStartMinutes && slotEndMinutes >= bookingEndMinutes)
-        ) {
-          slot.available = false
-        }
-      })
-    })
-
-    console.log('[DEBUG /api/availability] Generated', timeSlots.length, 'time slots,', timeSlots.filter(s => s.available).length, 'available')
 
     return NextResponse.json({ slots: timeSlots })
   } catch (error: any) {
-    console.error('[Availability] Unexpected error:', error)
+    console.error('[Availability] Internal error', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
-

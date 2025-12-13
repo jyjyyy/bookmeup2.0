@@ -91,7 +91,16 @@ export function Summary({
       }
 
       const data = await response.json()
-      router.push(`/confirm?bookingId=${data.bookingId}`)
+      
+      // Construire les paramètres de requête pour la page de confirmation
+      const params = new URLSearchParams({
+        serviceName: selectedService.name,
+        proName: pro.name,
+        date: selectedDate!,
+        time: selectedTime!,
+      })
+
+      router.push(`/confirm?${params.toString()}`)
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la réservation')
       setLoading(false)

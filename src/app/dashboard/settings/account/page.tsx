@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import { db, storage } from '@/lib/firebaseClient'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,14 @@ export default function AccountPage() {
   const [description, setDescription] = useState('')
   const [slug, setSlug] = useState('')
   const [showInSearch, setShowInSearch] = useState(false)
+  
+  // Socials
+  const [instagram, setInstagram] = useState('')
+  const [tiktok, setTiktok] = useState('')
+  
+  // Gallery
+  const [galleryImages, setGalleryImages] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
 
   const [uid, setUid] = useState<string | null>(null)
 
@@ -78,6 +87,17 @@ export default function AccountPage() {
           setDescription(prosData.description || '')
           setSlug(prosData.slug || '')
           setShowInSearch(prosData.show_in_search || false)
+          
+          // Load socials
+          if (prosData.socials) {
+            setInstagram(prosData.socials.instagram || '')
+            setTiktok(prosData.socials.tiktok || '')
+          }
+          
+          // Load gallery
+          if (prosData.gallery?.images) {
+            setGalleryImages(prosData.gallery.images || [])
+          }
         } else {
           // Create minimal pros document
           const defaultBusinessName = name || currentUser.profile.name || 'Mon salon'
@@ -189,6 +209,141 @@ export default function AccountPage() {
       setError(err.message || 'Erreur lors de l\'enregistrement')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSaveSocials = async () => {
+    if (!uid) return
+
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
+
+      // Validation URLs si renseignées
+      if (instagram.trim() && !isValidUrl(instagram.trim())) {
+        throw new Error('URL Instagram invalide')
+      }
+      if (tiktok.trim() && !isValidUrl(tiktok.trim())) {
+        throw new Error('URL TikTok invalide')
+      }
+
+      const socialsData: any = {}
+      if (instagram.trim()) socialsData.instagram = instagram.trim()
+      if (tiktok.trim()) socialsData.tiktok = tiktok.trim()
+
+      await updateDoc(doc(db, 'pros', uid), {
+        socials: Object.keys(socialsData).length > 0 ? socialsData : null,
+        updated_at: serverTimestamp(),
+      })
+
+      setSuccess('Réseaux sociaux enregistrés ✓')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err: any) {
+      console.error('Error saving socials:', err)
+      setError(err.message || 'Erreur lors de l\'enregistrement')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!uid || !files || files.length === 0) return
+
+    try {
+      setUploading(true)
+      setError(null)
+
+      const newImageUrls: string[] = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        
+        // Validation du type
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Seules les images sont autorisées')
+        }
+
+        // Validation de la taille (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`L'image ${file.name} est trop volumineuse (max 5MB)`)
+        }
+
+        // Upload vers Firebase Storage
+        const imageId = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+        const storageRef = ref(storage, `pros/${uid}/gallery/${imageId}.jpg`)
+        
+        await uploadBytes(storageRef, file)
+        const downloadURL = await getDownloadURL(storageRef)
+        newImageUrls.push(downloadURL)
+      }
+
+      // Mettre à jour Firestore
+      const updatedImages = [...galleryImages, ...newImageUrls]
+      await updateDoc(doc(db, 'pros', uid), {
+        'gallery.images': updatedImages,
+        updated_at: serverTimestamp(),
+      })
+
+      setGalleryImages(updatedImages)
+      setSuccess(`${newImageUrls.length} photo${newImageUrls.length > 1 ? 's' : ''} ajoutée${newImageUrls.length > 1 ? 's' : ''} ✓`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err: any) {
+      console.error('Error uploading images:', err)
+      setError(err.message || 'Erreur lors de l\'upload')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteImage = async (imageUrl: string) => {
+    if (!uid) return
+
+    try {
+      setUploading(true)
+      setError(null)
+
+      // Supprimer de Storage (extraire le path depuis l'URL Firebase Storage)
+      try {
+        // Les URLs Firebase Storage ont le format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encodedPath}?alt=media&token=...
+        // On extrait le path encodé et on le décode
+        const urlObj = new URL(imageUrl)
+        const pathMatch = urlObj.pathname.match(/\/o\/(.+)\?/)
+        if (pathMatch) {
+          const encodedPath = pathMatch[1]
+          const decodedPath = decodeURIComponent(encodedPath)
+          const imageRef = ref(storage, decodedPath)
+          await deleteObject(imageRef)
+        }
+      } catch (storageErr) {
+        console.warn('Could not delete from storage:', storageErr)
+        // Continue même si la suppression Storage échoue (l'image peut avoir été supprimée manuellement)
+      }
+
+      // Mettre à jour Firestore
+      const updatedImages = galleryImages.filter(url => url !== imageUrl)
+      await updateDoc(doc(db, 'pros', uid), {
+        'gallery.images': updatedImages,
+        updated_at: serverTimestamp(),
+      })
+
+      setGalleryImages(updatedImages)
+      setSuccess('Photo supprimée ✓')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err: any) {
+      console.error('Error deleting image:', err)
+      setError(err.message || 'Erreur lors de la suppression')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -399,6 +554,116 @@ export default function AccountPage() {
           >
             {saving ? 'Enregistrement...' : 'Enregistrer ma fiche'}
           </Button>
+        </div>
+      </Card>
+
+      {/* Card 3: Réseaux sociaux */}
+      <Card className="rounded-[32px] shadow-bookmeup p-8">
+        <CardHeader>
+          <CardTitle>Réseaux sociaux</CardTitle>
+          <CardDescription>
+            Ajoutez vos liens pour renforcer votre visibilité
+          </CardDescription>
+        </CardHeader>
+
+        <div className="space-y-4 mt-6">
+          <Input
+            label="Instagram"
+            type="url"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="https://instagram.com/..."
+          />
+
+          <Input
+            label="TikTok"
+            type="url"
+            value={tiktok}
+            onChange={(e) => setTiktok(e.target.value)}
+            placeholder="https://tiktok.com/@..."
+          />
+        </div>
+
+        <div className="mt-6">
+          <Button
+            onClick={handleSaveSocials}
+            disabled={saving}
+            className="rounded-[32px]"
+          >
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Card 4: Galerie photos */}
+      <Card className="rounded-[32px] shadow-bookmeup p-8">
+        <CardHeader>
+          <CardTitle>Galerie photos</CardTitle>
+          <CardDescription>
+            Les photos améliorent votre visibilité et vos réservations
+          </CardDescription>
+        </CardHeader>
+
+        <div className="mt-6">
+          {/* Upload zone */}
+          <div className="mb-6">
+            <label className="block">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFileUpload(e.target.files)}
+                disabled={uploading}
+                className="hidden"
+                id="gallery-upload"
+              />
+              <div className="border-2 border-dashed border-gray-300 rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
+                <div className="text-4xl mb-2">📸</div>
+                <p className="text-sm text-gray-600 mb-1">
+                  Cliquez ou glissez-déposez vos photos ici
+                </p>
+                <p className="text-xs text-gray-500">
+                  Formats acceptés : JPG, PNG (max 5MB par image)
+                </p>
+              </div>
+            </label>
+            <label htmlFor="gallery-upload">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                className="mt-4 rounded-[32px] w-full"
+              >
+                {uploading ? 'Upload en cours...' : 'Choisir des photos'}
+              </Button>
+            </label>
+          </div>
+
+          {/* Gallery grid */}
+          {galleryImages.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {galleryImages.map((imageUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={imageUrl}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-48 object-cover rounded-[24px]"
+                  />
+                  <button
+                    onClick={() => handleDeleteImage(imageUrl)}
+                    disabled={uploading}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-8">
+              Aucune photo pour le moment
+            </p>
+          )}
         </div>
       </Card>
     </motion.div>

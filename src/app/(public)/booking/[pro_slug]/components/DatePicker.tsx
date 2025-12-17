@@ -50,43 +50,45 @@ export function DatePicker({ selectedDate, onSelectDate }: DatePickerProps) {
         Choisis ta date
       </h2>
 
-      {/* Ligne de jours */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {days.map((date) => {
-          const dateString = formatDate(date)
-          const isSelected = selectedDate === dateString
-          const isTodayDate = isToday(date)
-          const isPastDate = isPast(date)
+      {/* Slider horizontal scrollable */}
+      <div className="overflow-x-auto pb-2 -mx-2 px-2">
+        <div className="flex gap-3 min-w-max">
+          {days.map((date) => {
+            const dateString = formatDate(date)
+            const isSelected = selectedDate === dateString
+            const isTodayDate = isToday(date)
+            const isPastDate = isPast(date)
 
-          return (
-            <button
-              key={dateString}
-              onClick={() => !isPastDate && handleDateClick(date)}
-              disabled={isPastDate}
-              className={`
-                p-4 rounded-[32px] border-2 transition-all text-center
-                ${
-                  isPastDate
-                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                    : isSelected
-                    ? 'bg-primary border-primary text-white shadow-bookmeup'
-                    : 'bg-white border-gray-200 hover:border-primary hover:bg-secondary'
-                }
-                ${isTodayDate && !isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
-              `}
-            >
-              <div className="text-xs font-medium mb-1">
-                {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
-              </div>
-              <div className="text-xl font-bold">
-                {date.getDate()}
-              </div>
-              <div className="text-xs mt-1">
-                {date.toLocaleDateString('fr-FR', { month: 'short' })}
-              </div>
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={dateString}
+                onClick={() => !isPastDate && handleDateClick(date)}
+                disabled={isPastDate}
+                className={`
+                  flex-shrink-0 w-20 p-4 rounded-[24px] border-2 transition-all text-center
+                  ${
+                    isPastDate
+                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                      : isSelected
+                      ? 'bg-primary border-primary text-white shadow-bookmeup'
+                      : 'bg-white border-gray-200 hover:border-primary hover:bg-secondary'
+                  }
+                  ${isTodayDate && !isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
+                `}
+              >
+                <div className="text-xs font-medium mb-1">
+                  {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                </div>
+                <div className="text-xl font-bold">
+                  {date.getDate()}
+                </div>
+                <div className="text-xs mt-1">
+                  {date.toLocaleDateString('fr-FR', { month: 'short' })}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </Card>
   )

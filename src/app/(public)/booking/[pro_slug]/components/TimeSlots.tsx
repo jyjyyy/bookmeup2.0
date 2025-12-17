@@ -148,10 +148,10 @@ export function TimeSlots({
       <div className="space-y-6">
         {groupedSlots.map((group) => (
           <div key={group.label}>
-            <h3 className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-slate-500 mb-4 uppercase tracking-wide">
               {group.label}
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {group.slots.map((slot) => {
                 const isSelected = selectedTime === slot.time
                 return (
@@ -161,14 +161,15 @@ export function TimeSlots({
                     onClick={() => slot.available && onSelectTime(slot.time)}
                     disabled={!slot.available}
                     className={`
-                      rounded-full px-4 py-2 text-sm font-medium transition-all
+                      rounded-[24px] px-6 py-4 text-base font-semibold transition-all
+                      transform hover:scale-105 active:scale-95
                       ${
                         !slot.available
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : isSelected && slot.available
-                          ? 'bg-primary text-white shadow-bookmeup'
+                          ? 'bg-primary text-white shadow-bookmeup-lg'
                           : slot.available
-                          ? 'bg-secondary text-[#2A1F2D] hover:bg-primary hover:text-white'
+                          ? 'bg-secondary text-[#2A1F2D] hover:bg-primary hover:text-white hover:shadow-bookmeup'
                           : ''
                       }
                     `}

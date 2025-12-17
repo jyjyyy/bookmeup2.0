@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ProGallery } from './ProGallery'
+import { ProSocials } from './ProSocials'
 
 interface ProPageProps {
   params: Promise<{ slug: string }>
@@ -52,6 +54,8 @@ export default async function ProPage({ params }: ProPageProps) {
         city: proData.city || null,
         description,
         plan: proData.plan || 'starter',
+        socials: proData.socials || null,
+        gallery: proData.gallery || null,
       }
     } else {
       // Try profiles
@@ -77,6 +81,8 @@ export default async function ProPage({ params }: ProPageProps) {
           city: profileData.city || prosData.city || null,
           description: profileData.description || prosData.description || null,
           plan: prosData.plan || 'starter',
+          socials: prosData.socials || null,
+          gallery: prosData.gallery || null,
         }
       }
     }
@@ -134,6 +140,9 @@ export default async function ProPage({ params }: ProPageProps) {
                       </p>
                     )}
 
+                    {/* Réseaux sociaux */}
+                    <ProSocials socials={pro.socials} />
+
                     {/* Description courte */}
                     {pro.description && (
                       <p className="text-slate-600 whitespace-pre-line leading-relaxed text-sm md:text-base line-clamp-3">
@@ -176,16 +185,25 @@ export default async function ProPage({ params }: ProPageProps) {
                 </p>
               </Card>
 
-              {/* Carte Disponibilités (optionnel pour futur) */}
-              <Card className="rounded-[32px] p-6 text-center">
-                <div className="text-2xl mb-2">📅</div>
-                <p className="text-xs text-slate-500 mb-1">Disponibilités</p>
-                <p className="text-sm font-semibold text-[#2A1F2D]">En ligne</p>
-              </Card>
+              {/* Carte Galerie */}
+              {pro.gallery?.images && pro.gallery.images.length > 0 && (
+                <Card className="rounded-[32px] p-6 text-center">
+                  <div className="text-2xl mb-2">📸</div>
+                  <p className="text-xs text-slate-500 mb-1">Galerie</p>
+                  <p className="text-sm font-semibold text-[#2A1F2D]">
+                    {pro.gallery.images.length} photo{pro.gallery.images.length > 1 ? 's' : ''}
+                  </p>
+                </Card>
+              )}
             </div>
           </div>
 
-          {/* 3. Liste des Services */}
+          {/* 3. Galerie */}
+          {pro.gallery?.images && pro.gallery.images.length > 0 && (
+            <ProGallery images={pro.gallery.images} />
+          )}
+
+          {/* 4. Liste des Services */}
           <div className="mb-8">
             <div className="mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-[#2A1F2D] mb-2">
@@ -257,7 +275,7 @@ export default async function ProPage({ params }: ProPageProps) {
             )}
           </div>
 
-          {/* 4. CTA Final */}
+          {/* 5. CTA Final */}
           {services.length > 0 && (
             <Card className="rounded-[32px] mt-8 bg-gradient-to-r from-primary to-[#9C44AF] text-white border-none p-8 md:p-10">
               <div className="text-center">

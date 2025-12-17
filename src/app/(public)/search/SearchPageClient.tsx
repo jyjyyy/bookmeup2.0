@@ -288,35 +288,25 @@ export function SearchPageClient() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-4 border-t border-gray-100">
+                  <div className="pt-4 border-t border-gray-100">
                     {pro.slug ? (
-                      <>
-                        <Link href={`/pro/${pro.slug}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full rounded-[32px] text-sm"
-                          >
-                            Voir la fiche
-                          </Button>
-                        </Link>
-                        <Link href={`/booking/${pro.slug}`} className="flex-1">
-                          <Button size="sm" className="w-full rounded-[32px] text-sm">
-                            Réserver
-                          </Button>
-                        </Link>
-                      </>
-                    ) : (
-                      <div className="flex-1">
+                      <Link href={`/pro/${pro.slug}`} className="block">
                         <Button
-                          disabled
                           size="sm"
-                          variant="outline"
                           className="w-full rounded-[32px] text-sm"
                         >
-                          Profil indisponible
+                          Voir la fiche
                         </Button>
-                      </div>
+                      </Link>
+                    ) : (
+                      <Button
+                        disabled
+                        size="sm"
+                        variant="outline"
+                        className="w-full rounded-[32px] text-sm"
+                      >
+                        Profil indisponible
+                      </Button>
                     )}
                   </div>
                 </Card>

@@ -25,7 +25,8 @@ const PLANS: Plan[] = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 'Gratuit',
+    price: '9,99',
+    priceMonthly: ' €/mois',
     features: [
       'Jusqu\'à 15 services',
       'Gestion des réservations',
@@ -36,8 +37,8 @@ const PLANS: Plan[] = [
   {
     id: 'pro',
     name: 'Pro',
-    price: '29€',
-    priceMonthly: '/mois',
+    price: '24,99',
+    priceMonthly: ' €/mois',
     features: [
       'Services illimités',
       'Gestion des réservations',
@@ -50,8 +51,8 @@ const PLANS: Plan[] = [
   {
     id: 'premium',
     name: 'Premium',
-    price: '79€',
-    priceMonthly: '/mois',
+    price: '49,99',
+    priceMonthly: ' €/mois',
     features: [
       'Tout Pro inclus',
       'Statistiques avancées',
@@ -111,30 +112,47 @@ export default function SubscriptionPage() {
 
   const handleUpgrade = async (planType: 'pro' | 'premium') => {
     try {
+      console.log('[Subscription] handleUpgrade called with plan:', planType)
       setProcessing(planType)
       setError(null)
 
+      console.log('[Subscription] Calling /api/stripe/create-checkout with:', { type: planType })
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ type: planType }),
       })
 
+      console.log('[Subscription] API response status:', response.status)
+      
       if (!response.ok) {
-        const errorData = await response.json()
+        // Handle 404 specifically (route doesn't exist)
+        if (response.status === 404) {
+          console.error('[Subscription] Route not found: /api/stripe/create-checkout')
+          throw new Error('Route API introuvable. La route /api/stripe/create-checkout doit être implémentée.')
+        }
+        
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        console.error('[Subscription] API error:', errorData)
         throw new Error(errorData.error || 'Erreur lors de la création de la session')
       }
 
       const data = await response.json()
+      console.log('[Subscription] API response data:', data)
+      
       if (data.url) {
-        window.location.href = data.url
+        console.log(data) // Debug: verify response structure before redirect
+        console.log('[Subscription] Redirecting to Stripe:', data.url)
+        window.open(data.url, '_self')
       } else {
+        console.error('[Subscription] No URL in response:', data)
         throw new Error('URL de checkout non disponible')
       }
     } catch (err: any) {
-      console.error('Error upgrading plan:', err)
+      console.error('[Subscription] Error upgrading plan:', err)
       setError(err.message || 'Erreur lors de la mise à niveau')
       setProcessing(null)
     }
@@ -191,9 +209,14 @@ export default function SubscriptionPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-primary mb-2">Abonnement</h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-3">
           Gérez votre abonnement et choisissez le plan qui vous convient
         </p>
+        <div className="bg-primary/10 border border-primary/20 rounded-[24px] p-4">
+          <p className="text-sm text-[#2A1F2D] font-medium">
+            ⚠️ Un abonnement est obligatoire pour accéder à l'espace professionnel.
+          </p>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -228,12 +251,10 @@ export default function SubscriptionPage() {
                   >
                     {PLANS.find((p) => p.id === currentPlan)?.name || currentPlan}
                   </span>
-                  {currentPlan !== 'starter' && (
-                    <span className="text-gray-600 text-sm">
-                      {PLANS.find((p) => p.id === currentPlan)?.price}
-                      {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
-                    </span>
-                  )}
+                  <span className="text-gray-600 text-sm">
+                    {PLANS.find((p) => p.id === currentPlan)?.price}
+                    {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
+                  </span>
                 </div>
               </div>
               {(currentPlan === 'pro' || currentPlan === 'premium') && (
@@ -321,8 +342,14 @@ export default function SubscriptionPage() {
 
                 <Button
                   onClick={() => {
+                    console.log('[Subscription] Button clicked for plan:', plan.id)
+                    
+                    // Only handle pro and premium plans for Stripe checkout
                     if (plan.id === 'pro' || plan.id === 'premium') {
+                      console.log('[Subscription] Calling handleUpgrade for:', plan.id)
                       handleUpgrade(plan.id)
+                    } else if (plan.id === 'starter') {
+                      console.log('[Subscription] Starter plan clicked, but not handled (should be disabled)')
                     }
                   }}
                   disabled={
@@ -335,8 +362,6 @@ export default function SubscriptionPage() {
                   size="lg"
                 >
                   {isCurrentPlan
-                    ? 'Plan actuel'
-                    : plan.id === 'starter'
                     ? 'Plan actuel'
                     : isUpgrade
                     ? processing === plan.id

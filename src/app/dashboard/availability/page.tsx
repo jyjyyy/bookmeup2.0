@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
+import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,6 +69,14 @@ export default function AvailabilityPage() {
 
         if (currentUser.profile.role !== 'pro') {
           router.push('/')
+          return
+        }
+
+        // Check subscription status
+        const subscriptionStatus = await checkSubscriptionStatus(currentUser.user.uid)
+        
+        if (!subscriptionStatus.hasActiveSubscription) {
+          router.push('/dashboard/settings/subscription')
           return
         }
 

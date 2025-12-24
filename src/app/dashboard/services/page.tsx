@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
+import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
@@ -47,6 +48,14 @@ export default function ServicesPage() {
 
         if (currentUser.profile.role !== 'pro') {
           router.push('/search')
+          return
+        }
+
+        // Check subscription status
+        const subscriptionStatus = await checkSubscriptionStatus(currentUser.user.uid)
+        
+        if (!subscriptionStatus.hasActiveSubscription) {
+          router.push('/dashboard/settings/subscription')
           return
         }
 

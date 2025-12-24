@@ -39,10 +39,36 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      await signUp(email, password, name, role)
+      const user = await signUp(email, password, name, role)
+      
       // Redirection selon le rôle
       if (role === 'pro') {
-        router.push('/dashboard')
+        // Create session cookie for PRO users
+        try {
+          const idToken = await user.getIdToken()
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+            credentials: 'include',
+          })
+
+          const sessionData = await sessionResponse.json()
+          
+          if (!sessionResponse.ok || !sessionData.ok) {
+            throw new Error(sessionData.error || 'Échec de la création de la session')
+          }
+        } catch (sessionError: any) {
+          console.error('[Signup] Error creating session cookie:', sessionError)
+          setError('Erreur lors de la création de la session. Veuillez réessayer.')
+          setLoading(false)
+          return
+        }
+
+        // New pro users must select subscription - redirect to subscription page
+        router.push('/dashboard/settings/subscription')
       } else {
         router.push('/search')
       }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
+import { checkSubscriptionStatus } from '@/lib/subscription'
 import { CalendarClient } from './CalendarClient'
 import { Loader } from '@/components/ui/loader'
 
@@ -25,6 +26,14 @@ export default function CalendarPage() {
         // Vérifier le rôle pro
         if (!currentUser.profile || currentUser.profile.role !== 'pro') {
           router.replace('/')
+          return
+        }
+
+        // Check subscription status
+        const subscriptionStatus = await checkSubscriptionStatus(currentUser.user.uid)
+        
+        if (!subscriptionStatus.hasActiveSubscription) {
+          router.replace('/dashboard/settings/subscription')
           return
         }
 

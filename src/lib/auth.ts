@@ -137,6 +137,18 @@ export async function signUp(
 }
 
 export async function signOut(): Promise<void> {
+  // Clear session cookie first
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch (error) {
+    console.error('[signOut] Error clearing session cookie:', error)
+    // Continue with Firebase signOut even if API call fails
+  }
+  
+  // Then sign out from Firebase
   await firebaseSignOut(auth)
 }
 

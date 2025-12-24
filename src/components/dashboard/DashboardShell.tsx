@@ -1,9 +1,10 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getCurrentUser, CurrentUser } from '@/lib/auth'
+import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Loader } from '@/components/ui/loader'
 import Link from 'next/link'
 
@@ -13,8 +14,10 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [current, setCurrent] = useState<CurrentUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [plan, setPlan] = useState<string>('Starter')
 
   useEffect(() => {
     const load = async () => {
@@ -30,12 +33,30 @@ export function DashboardShell({ children }: DashboardShellProps) {
         return
       }
 
+      // Check subscription status - exclude subscription page to avoid redirect loop
+      const isSubscriptionPage = pathname?.includes('/dashboard/settings/subscription')
+      const subscriptionStatus = await checkSubscriptionStatus(data.user.uid)
+      
+      // Set plan from subscription status (capitalize first letter)
+      if (subscriptionStatus.plan) {
+        const planCapitalized = subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)
+        setPlan(planCapitalized)
+      }
+      
+      if (!isSubscriptionPage) {
+        if (!subscriptionStatus.hasActiveSubscription) {
+          // Redirect to subscription page if no active subscription
+          router.replace('/dashboard/settings/subscription')
+          return
+        }
+      }
+
       setCurrent(data)
       setLoading(false)
     }
 
     load()
-  }, [router])
+  }, [router, pathname])
 
   if (loading || !current) {
     return (
@@ -110,7 +131,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           <div className="text-xs text-gray-500">
             Plan actuel :{' '}
             <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-primary">
-              Starter
+              {plan}
             </span>
           </div>
         </header>

@@ -48,13 +48,17 @@ export async function GET(req: NextRequest) {
     const serviceDuration = service?.duration ?? 30
 
     // 2. Calculer le jour de la semaine
-    // Convertir getDay() (0=Dimanche, 1=Lundi, ...) vers l'index Firestore (0=Lundi, 6=Dimanche)
-    const jsDay = new Date(date + 'T00:00:00').getDay()
-    // Convert Sunday=0 → 6, Monday=1 → 0, ..., Saturday=6 → 5
-    const dayOfWeek = (jsDay + 6) % 7
+    // Firestore utilise la même convention que Date.getDay():
+    // 0=Dimanche, 1=Lundi, 2=Mardi, 3=Mercredi, 4=Jeudi, 5=Vendredi, 6=Samedi
+    // Interpréter la date en heure locale pour éviter les problèmes de timezone
+    const [year, month, day] = date.split('-').map(Number)
+    const dateObj = new Date(year, month - 1, day)
+    const jsDay = dateObj.getDay()
+    // Mapping direct: jsDay correspond déjà à l'index Firestore
+    const dayOfWeek = jsDay
     const dayKey = String(dayOfWeek)
     
-    console.log('[Availability] date=', date, 'jsDay=', jsDay, 'mapped=', dayOfWeek)
+    console.log('[Availability] date=', date, 'jsDay=', jsDay, 'dayOfWeek=', dayOfWeek)
 
     // 3. Vérifier les exceptions de fermeture (full day)
     const exceptionsSnap = await adminDb

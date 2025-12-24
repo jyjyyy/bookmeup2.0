@@ -50,15 +50,23 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
   // Générer les heures (08:00 à 20:00)
   const hours = Array.from({ length: 13 }, (_, i) => i + 8) // 8 à 20
 
-  // Convertir heure en minutes depuis minuit
+  // Convertir heure en minutes depuis minuit (heure locale)
   const timeToMinutes = (time: string): number => {
     const [h, m] = time.split(':').map(Number)
     return h * 60 + m
   }
 
+  // Formater une date en YYYY-MM-DD en heure locale (pas UTC)
+  const formatDateLocal = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   // Obtenir les bookings pour un jour donné
   const getBookingsForDay = (date: Date): Booking[] => {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = formatDateLocal(date)
     return bookings.filter((b) => b.date === dateStr)
   }
 
@@ -66,19 +74,36 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
   const getBookingStyle = (booking: Booking) => {
     const startMinutes = timeToMinutes(booking.start_time)
     const duration = booking.duration || 60
-    const top = ((startMinutes - 8 * 60) / 60) * 100 // Position en % depuis 8h
-    const height = (duration / 60) * 100 // Hauteur en % (1h = 100%)
+    
+    // Calendrier: 8h à 20h (13 heures affichées)
+    // Hauteur totale: 832px, donc chaque heure = 832 / 13 ≈ 64px
+    const startHour = 8
+    const endHour = 20
+    const totalHours = endHour - startHour + 1 // 13 heures
+    const containerHeight = 832 // px (h-[832px])
+    const hourHeight = containerHeight / totalHours // ≈ 64px par heure
+    
+    // Position en pixels depuis le haut du conteneur
+    const minutesFromStart = startMinutes - (startHour * 60)
+    const topPx = (minutesFromStart / 60) * hourHeight
+    
+    // Hauteur en pixels
+    const heightPx = (duration / 60) * hourHeight
+    
+    // Convertir en pourcentage de la hauteur du conteneur
+    const topPercent = (topPx / containerHeight) * 100
+    const heightPercent = (heightPx / containerHeight) * 100
 
     return {
-      top: `${top}%`,
-      height: `${height}%`,
+      top: `${topPercent}%`,
+      height: `${heightPercent}%`,
     }
   }
 
   const weekDays = getWeekDays()
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
   const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = formatDateLocal(today)
 
   return (
     <>
@@ -99,7 +124,7 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
 
           {/* Colonnes des jours */}
           {weekDays.map((day, dayIndex) => {
-            const dateStr = day.toISOString().split('T')[0]
+            const dateStr = formatDateLocal(day)
             const isToday = dateStr === todayStr
             const dayBookings = getBookingsForDay(day)
 

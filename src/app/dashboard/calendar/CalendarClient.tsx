@@ -16,7 +16,8 @@ interface Booking {
   serviceName?: string
   client_name?: string
   client_email?: string
-  status?: 'pending' | 'confirmed' | 'cancelled'
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'cancelled_by_client' | 'no_show'
+  attendance?: 'present' | 'absent'
 }
 
 interface CalendarClientProps {
@@ -120,6 +121,7 @@ export function CalendarClient({ proId }: CalendarClientProps) {
               client_name: data.client_name || 'Client',
               client_email: data.client_email,
               status: data.status || 'pending',
+              attendance: data.attendance,
             })
           }
         })

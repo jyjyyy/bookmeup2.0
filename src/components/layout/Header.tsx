@@ -1,34 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { getCurrentUser, signOut } from '@/lib/auth'
+import { useAuth } from '@/lib/authContext'
+import { signOut } from '@/lib/auth'
 
 export function Header() {
   const router = useRouter()
   const pathname = usePathname()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, refresh } = useAuth()
 
   // Hide header on dashboard pages (dashboard has its own header)
   const isDashboardPage = pathname?.startsWith('/dashboard')
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const current = await getCurrentUser()
-      setIsAuthenticated(!!current.user)
-      setLoading(false)
-    }
-    checkAuth()
-  }, [])
-
   const handleLogout = async () => {
     try {
       await signOut()
-      setIsAuthenticated(false)
+      await refresh() // Refresh auth state after logout
       router.push('/')
     } catch (error) {
       console.error('[Header] Error during logout:', error)
@@ -67,8 +57,16 @@ export function Header() {
             >
               Recherche
             </Link>
+            {!loading && user && user.role === 'client' && (
+              <Link
+                href="/account/appointments"
+                className="text-slate-700 hover:text-primary transition-colors font-medium text-sm hidden sm:block"
+              >
+                Mes rendez-vous
+              </Link>
+            )}
             {!loading && (
-              isAuthenticated ? (
+              user ? (
                 <Button
                   variant="subtle"
                   size="sm"

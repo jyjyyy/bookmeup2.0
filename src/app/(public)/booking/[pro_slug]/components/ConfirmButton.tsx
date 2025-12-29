@@ -7,6 +7,18 @@ import { Loader } from '@/components/ui/loader'
 import { getCurrentUser } from '@/lib/auth'
 import type { BookingPro, BookingService } from '../types'
 
+interface ExistingBooking {
+  id: string
+  serviceId: string
+  date: string
+  startTime: string
+  clientName: string
+  clientEmail: string
+  clientPhone?: string
+  proId?: string
+  duration?: number
+}
+
 interface ConfirmButtonProps {
   pro: BookingPro
   selectedService: BookingService | null
@@ -15,6 +27,8 @@ interface ConfirmButtonProps {
   firstName: string
   phone: string
   email: string
+  editBookingId?: string | null
+  existingBooking?: ExistingBooking | null
 }
 
 export function ConfirmButton({
@@ -25,6 +39,8 @@ export function ConfirmButton({
   firstName,
   phone,
   email,
+  editBookingId,
+  existingBooking,
 }: ConfirmButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -132,26 +148,72 @@ export function ConfirmButton({
     setLoading(true)
 
     try {
-      // Préparer les données pour l'API
-      // Note: L'API requiert client_email, donc on utilise un email par défaut si non fourni
-      const clientEmail = email.trim() || `${firstName.trim().toLowerCase().replace(/\s+/g, '.')}@bookmeup.local`
-      
-      const bookingData = {
-        pro_id: pro.id,
-        service_id: selectedService.id,
-        date: selectedDate,
-        start_time: selectedTime,
-        duration: selectedService.duration,
-        client_name: firstName.trim(),
-        client_email: clientEmail,
-        client_phone: phone.trim() || null,
+      let bookingData: any
+
+      if (editBookingId) {
+        // MODE ÉDITION: Construire un payload COMPLET avec toutes les données originales
+        // Utiliser les valeurs originales pour les champs qui ne changent pas
+        // Utiliser les nouvelles valeurs pour date et start_time
+        
+        // CRITICAL: bookingId MUST be included - use editBookingId as primary source
+        const bookingId = editBookingId || existingBooking?.id
+        
+        if (!bookingId) {
+          throw new Error('bookingId est requis pour la modification')
+        }
+        
+        const clientEmail = email.trim() || existingBooking?.clientEmail || `${firstName.trim().toLowerCase().replace(/\s+/g, '.')}@bookmeup.local`
+        
+        // Build complete payload with ALL required fields
+        bookingData = {
+          bookingId: bookingId, // MUST be included explicitly
+          pro_id: existingBooking?.proId || pro.id,
+          service_id: existingBooking?.serviceId || selectedService.id,
+          date: selectedDate, // NOUVELLE valeur
+          start_time: selectedTime, // NOUVELLE valeur
+          duration: existingBooking?.duration || selectedService.duration,
+          client_email: clientEmail,
+          // Optionnel mais inclus pour cohérence
+          client_name: firstName.trim() || existingBooking?.clientName || '',
+          client_phone: phone.trim() || existingBooking?.clientPhone || null,
+        }
+
+        // TEMPORARY debug log BEFORE sending
+        console.log('FINAL UPDATE PAYLOAD', bookingData)
+        console.log('FINAL UPDATE PAYLOAD - bookingId check:', {
+          bookingId: bookingData.bookingId,
+          editBookingId,
+          existingBookingId: existingBooking?.id,
+          hasBookingId: !!bookingData.bookingId,
+          payloadKeys: Object.keys(bookingData),
+        })
+      } else {
+        // MODE CRÉATION: Payload normal
+        const clientEmail = email.trim() || `${firstName.trim().toLowerCase().replace(/\s+/g, '.')}@bookmeup.local`
+        
+        bookingData = {
+          pro_id: pro.id,
+          service_id: selectedService.id,
+          date: selectedDate,
+          start_time: selectedTime,
+          duration: selectedService.duration,
+          client_name: firstName.trim(),
+          client_email: clientEmail,
+          client_phone: phone.trim() || null,
+        }
+
+        // Log complet du payload AVANT l'envoi
+        console.log('[BOOKING PAYLOAD]', JSON.stringify(bookingData, null, 2))
       }
 
-      // Log complet du payload AVANT l'envoi
-      console.log('[BOOKING PAYLOAD]', JSON.stringify(bookingData, null, 2))
-
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
+      // Use PATCH for update, POST for create
+      const url = editBookingId 
+        ? `/api/bookings/${editBookingId}`
+        : '/api/bookings'
+      const method = editBookingId ? 'PATCH' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -187,18 +249,21 @@ export function ConfirmButton({
         throw new Error('Données manquantes pour la redirection')
       }
 
-      // Construire les paramètres de requête pour la page de confirmation
-      const params = new URLSearchParams({
-        serviceName: selectedService.name,
-        proName: pro.name,
-        date: selectedDate,
-        time: selectedTime,
-      })
-
-      console.log('[BOOKING REDIRECT]', `/confirm?${params.toString()}`)
-
-      // Redirection OBLIGATOIRE après succès
-      router.push(`/confirm?${params.toString()}`)
+      // Redirection après succès
+      if (editBookingId) {
+        // For edit: redirect back to appointments page
+        router.push('/account/appointments')
+      } else {
+        // For create: redirect to confirmation page
+        const params = new URLSearchParams({
+          serviceName: selectedService.name,
+          proName: pro.name,
+          date: selectedDate,
+          time: selectedTime,
+        })
+        console.log('[BOOKING REDIRECT]', `/confirm?${params.toString()}`)
+        router.push(`/confirm?${params.toString()}`)
+      }
     } catch (err: any) {
       console.error('[BOOKING ERROR]', err)
       setError(err.message || 'Erreur lors de la réservation')
@@ -230,6 +295,8 @@ export function ConfirmButton({
                 <Loader />
                 Confirmation en cours…
               </span>
+            ) : editBookingId ? (
+              'Modifier mon rendez-vous'
             ) : (
               'Confirmer mon rendez-vous'
             )}

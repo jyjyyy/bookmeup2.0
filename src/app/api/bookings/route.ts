@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vérifier si le client est bloqué
+    // Vérifier si le client est bloqué pour ce professionnel
     const clientEmail = client_email.trim().toLowerCase()
     const profilesSnapshot = await adminDb
       .collection('profiles')
@@ -36,16 +36,17 @@ export async function POST(request: NextRequest) {
       .where('role', '==', 'client')
       .get()
 
-    // Si un profil client existe avec cet email, vérifier isBlocked
+    // Si un profil client existe avec cet email, vérifier si bloqué pour ce professionnel
     if (!profilesSnapshot.empty) {
       for (const profileDoc of profilesSnapshot.docs) {
         const profileData = profileDoc.data()
-        // Traiter les utilisateurs existants sans isBlocked comme non bloqués (default false)
-        const isBlocked = profileData.isBlocked === true
+        // Vérifier si le client est bloqué pour ce professionnel spécifique
+        const blockedPros = profileData.blockedPros || {}
+        const isBlockedForThisPro = blockedPros[pro_id] === true
         
-        if (isBlocked) {
+        if (isBlockedForThisPro) {
           return NextResponse.json(
-            { error: 'Votre compte est temporairement bloqué suite à plusieurs annulations ou absences.' },
+            { error: 'Vous ne pouvez plus réserver avec ce professionnel suite à plusieurs annulations ou absences.' },
             { status: 403 }
           )
         }

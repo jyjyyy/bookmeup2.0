@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       null
 
     const date = searchParams.get('date')
+    const excludeBookingId = searchParams.get('excludeBookingId') // For edit mode
 
     if (!proId || !serviceId || !date) {
       console.error('[Availability] Missing params', { proId, serviceId, date })
@@ -133,14 +134,16 @@ export async function GET(req: NextRequest) {
       .where('status', 'in', ['pending', 'confirmed'])
       .get()
 
-    // Convertir les bookings en intervalles en minutes
-    const bookingIntervals = bookingsSnap.docs.map((doc) => {
-      const booking = doc.data()
-      return {
-        start: timeToMinutes(booking.start_time),
-        end: timeToMinutes(booking.end_time),
-      }
-    })
+    // Convertir les bookings en intervalles en minutes (exclure le booking en modification)
+    const bookingIntervals = bookingsSnap.docs
+      .filter((doc) => !excludeBookingId || doc.id !== excludeBookingId)
+      .map((doc) => {
+        const booking = doc.data()
+        return {
+          start: timeToMinutes(booking.start_time),
+          end: timeToMinutes(booking.end_time),
+        }
+      })
 
     // 6. Générer les créneaux
     const timeSlots: { time: string; available: boolean }[] = []

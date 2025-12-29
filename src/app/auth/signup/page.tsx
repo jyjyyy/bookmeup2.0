@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signUp, UserRole } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ import Link from 'next/link'
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -40,6 +41,27 @@ export default function SignupPage() {
 
     try {
       const user = await signUp(email, password, name, role)
+      
+      // Vérifier s'il y a une redirection vers une page de réservation
+      const redirectUrl = searchParams.get('redirect')
+      const serviceId = searchParams.get('service_id')
+      const date = searchParams.get('date')
+      const time = searchParams.get('time')
+
+      if (redirectUrl && redirectUrl.startsWith('/booking/') && role === 'client') {
+        // Construire l'URL de réservation avec les paramètres restaurés
+        const bookingParams = new URLSearchParams()
+        if (serviceId) bookingParams.set('service_id', serviceId)
+        if (date) bookingParams.set('date', date)
+        if (time) bookingParams.set('time', time)
+        
+        const bookingUrl = bookingParams.toString()
+          ? `${redirectUrl}?${bookingParams.toString()}`
+          : redirectUrl
+        
+        router.push(bookingUrl)
+        return
+      }
       
       // Redirection selon le rôle
       if (role === 'pro') {
@@ -187,7 +209,7 @@ export default function SignupPage() {
             <p className="text-sm text-gray-600">
               Déjà un compte ?{' '}
               <Link
-                href="/auth/login"
+                href={`/auth/login?${searchParams.toString()}`}
                 className="text-primary hover:underline font-medium"
               >
                 Se connecter

@@ -1,10 +1,45 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
+import { getCurrentUser, signOut } from '@/lib/auth'
 
 export function Header() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Hide header on dashboard pages (dashboard has its own header)
+  const isDashboardPage = pathname?.startsWith('/dashboard')
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const current = await getCurrentUser()
+      setIsAuthenticated(!!current.user)
+      setLoading(false)
+    }
+    checkAuth()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      setIsAuthenticated(false)
+      router.push('/')
+    } catch (error) {
+      console.error('[Header] Error during logout:', error)
+    }
+  }
+
+  // Don't render header on dashboard pages
+  if (isDashboardPage) {
+    return null
+  }
+
   return (
     <motion.header
       initial={{ y: -100, opacity: 0 }}
@@ -32,11 +67,24 @@ export function Header() {
             >
               Recherche
             </Link>
-            <Link href="/auth/login">
-              <Button variant="primary" size="sm">
-                Connexion
-              </Button>
-            </Link>
+            {!loading && (
+              isAuthenticated ? (
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  Se déconnecter
+                </Button>
+              ) : (
+                <Link href="/auth/login">
+                  <Button variant="primary" size="sm">
+                    Se connecter
+                  </Button>
+                </Link>
+              )
+            )}
           </nav>
         </div>
       </div>

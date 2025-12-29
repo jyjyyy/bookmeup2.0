@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { BookingHeader } from './components/BookingHeader'
 import { ServiceSelector } from './components/ServiceSelector'
 import { SelectedServiceCard } from './components/SelectedServiceCard'
@@ -21,6 +22,7 @@ export function BookingPageClient({
   services,
   initialServiceId,
 }: BookingPageClientProps) {
+  const searchParams = useSearchParams()
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
     initialServiceId ?? null
   )
@@ -40,6 +42,20 @@ export function BookingPageClient({
       setShowServiceSelector(true)
     }
   }, [initialServiceId, services])
+
+  // Restaurer date et time depuis les query params (après login/signup)
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    const timeParam = searchParams.get('time')
+    
+    if (dateParam && !selectedDate) {
+      setSelectedDate(dateParam)
+    }
+    
+    if (timeParam && !selectedTime && selectedDate === dateParam) {
+      setSelectedTime(timeParam)
+    }
+  }, [searchParams, selectedDate, selectedTime])
 
   const selectedService = services.find((s) => s.id === selectedServiceId)
 

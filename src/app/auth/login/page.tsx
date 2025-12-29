@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, FormEvent, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from '@/lib/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
@@ -11,6 +11,7 @@ import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -36,6 +37,27 @@ export default function LoginPage() {
 
       const profileData = profileSnap.data()
       const role = profileData.role || 'client'
+
+      // Vérifier s'il y a une redirection vers une page de réservation
+      const redirectUrl = searchParams.get('redirect')
+      const serviceId = searchParams.get('service_id')
+      const date = searchParams.get('date')
+      const time = searchParams.get('time')
+
+      if (redirectUrl && redirectUrl.startsWith('/booking/')) {
+        // Construire l'URL de réservation avec les paramètres restaurés
+        const bookingParams = new URLSearchParams()
+        if (serviceId) bookingParams.set('service_id', serviceId)
+        if (date) bookingParams.set('date', date)
+        if (time) bookingParams.set('time', time)
+        
+        const bookingUrl = bookingParams.toString()
+          ? `${redirectUrl}?${bookingParams.toString()}`
+          : redirectUrl
+        
+        router.push(bookingUrl)
+        return
+      }
 
       // Redirection selon le rôle
       if (role === 'pro') {
@@ -134,7 +156,7 @@ export default function LoginPage() {
             <p className="text-sm text-gray-600">
               Pas encore de compte ?{' '}
               <Link
-                href="/auth/signup"
+                href={`/auth/signup?${searchParams.toString()}`}
                 className="text-primary hover:underline font-medium"
               >
                 S'inscrire

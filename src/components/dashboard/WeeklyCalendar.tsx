@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 
@@ -24,6 +24,11 @@ interface WeeklyCalendarProps {
 
 export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [clientId, setClientId] = useState<string | null>(null)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [loadingClientStatus, setLoadingClientStatus] = useState(false)
+  const [unblocking, setUnblocking] = useState(false)
+  const [unblockSuccess, setUnblockSuccess] = useState(false)
 
   // Fonction pour obtenir le lundi d'une semaine
   const getMonday = (date: Date): Date => {
@@ -97,6 +102,71 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
     return {
       top: `${topPercent}%`,
       height: `${heightPercent}%`,
+    }
+  }
+
+  // Charger le statut du client quand une réservation est sélectionnée
+  useEffect(() => {
+    if (selectedBooking?.client_email) {
+      setLoadingClientStatus(true)
+      setClientId(null)
+      setIsBlocked(false)
+      setUnblockSuccess(false)
+      
+      fetch(`/api/clients/status?email=${encodeURIComponent(selectedBooking.client_email)}`, {
+        credentials: 'include',
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.clientId) {
+            setClientId(data.clientId)
+            setIsBlocked(data.isBlocked === true)
+          }
+        })
+        .catch((error) => {
+          console.error('[WeeklyCalendar] Error loading client status:', error)
+        })
+        .finally(() => {
+          setLoadingClientStatus(false)
+        })
+    } else {
+      setClientId(null)
+      setIsBlocked(false)
+    }
+  }, [selectedBooking])
+
+  const handleUnblock = async () => {
+    if (!clientId) return
+
+    setUnblocking(true)
+    setUnblockSuccess(false)
+
+    try {
+      const response = await fetch('/api/clients/unblock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ clientId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsBlocked(false)
+        setUnblockSuccess(true)
+        // Réinitialiser le message de succès après 3 secondes
+        setTimeout(() => setUnblockSuccess(false), 3000)
+      } else {
+        console.error('[WeeklyCalendar] Unblock error:', data.error)
+        alert(data.error || 'Erreur lors du déblocage')
+      }
+    } catch (error) {
+      console.error('[WeeklyCalendar] Unblock error:', error)
+      alert('Erreur lors du déblocage')
+    } finally {
+      setUnblocking(false)
     }
   }
 
@@ -257,10 +327,39 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
                     </span>
                   </div>
                 )}
+                {loadingClientStatus && (
+                  <div className="text-xs text-slate-500 mt-2">
+                    Chargement du statut...
+                  </div>
+                )}
+                {!loadingClientStatus && isBlocked && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-[24px]">
+                    <div className="text-sm font-semibold text-red-700 mb-2">
+                      ⚠️ Client bloqué
+                    </div>
+                    <button
+                      onClick={handleUnblock}
+                      disabled={unblocking}
+                      className="w-full px-4 py-2 rounded-[24px] bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    >
+                      {unblocking ? 'Déblocage...' : 'Débloquer ce client'}
+                    </button>
+                    {unblockSuccess && (
+                      <div className="mt-2 text-xs text-green-600 font-medium">
+                        ✓ Client débloqué avec succès
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="mt-6 flex justify-end">
                 <button
-                  onClick={() => setSelectedBooking(null)}
+                  onClick={() => {
+                    setSelectedBooking(null)
+                    setClientId(null)
+                    setIsBlocked(false)
+                    setUnblockSuccess(false)
+                  }}
                   className="px-4 py-2 rounded-[32px] bg-primary text-white hover:bg-primaryDark transition-colors"
                 >
                   Fermer

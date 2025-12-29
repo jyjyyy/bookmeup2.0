@@ -3,9 +3,10 @@
 import { ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, CurrentUser } from '@/lib/auth'
+import { getCurrentUser, CurrentUser, signOut } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Loader } from '@/components/ui/loader'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 interface DashboardShellProps {
@@ -109,6 +110,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
             ⏱️ Disponibilités
           </Link>
           <Link
+            href="/dashboard/clients"
+            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
+          >
+            🚫 Clients bloqués
+          </Link>
+          <Link
             href="/dashboard/settings"
             className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
           >
@@ -128,11 +135,28 @@ export function DashboardShell({ children }: DashboardShellProps) {
               Bonjour, {displayName}
             </h1>
           </div>
-          <div className="text-xs text-gray-500">
-            Plan actuel :{' '}
-            <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-primary">
-              {plan}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-gray-500">
+              Plan actuel :{' '}
+              <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-primary">
+                {plan}
+              </span>
+            </div>
+            <Button
+              variant="subtle"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await signOut()
+                  router.push('/')
+                } catch (error) {
+                  console.error('[DashboardShell] Error during logout:', error)
+                }
+              }}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              Se déconnecter
+            </Button>
           </div>
         </header>
         <main className="flex-1 bg-gray-50 px-4 py-6 md:px-8">

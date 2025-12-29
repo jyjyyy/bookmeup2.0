@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 
@@ -24,6 +24,12 @@ interface MonthlyCalendarProps {
 
 export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [clientId, setClientId] = useState<string | null>(null)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [loadingClientStatus, setLoadingClientStatus] = useState(false)
+  const [unblocking, setUnblocking] = useState(false)
+  const [unblockSuccess, setUnblockSuccess] = useState(false)
 
   // Obtenir le premier jour du mois et le nombre de jours
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1)
@@ -59,6 +65,70 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
       month.getMonth() === today.getMonth() &&
       month.getFullYear() === today.getFullYear()
     )
+  }
+
+  // Charger le statut du client quand une réservation est sélectionnée
+  useEffect(() => {
+    if (selectedBooking?.client_email) {
+      setLoadingClientStatus(true)
+      setClientId(null)
+      setIsBlocked(false)
+      setUnblockSuccess(false)
+      
+      fetch(`/api/clients/status?email=${encodeURIComponent(selectedBooking.client_email)}`, {
+        credentials: 'include',
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.clientId) {
+            setClientId(data.clientId)
+            setIsBlocked(data.isBlocked === true)
+          }
+        })
+        .catch((error) => {
+          console.error('[MonthlyCalendar] Error loading client status:', error)
+        })
+        .finally(() => {
+          setLoadingClientStatus(false)
+        })
+    } else {
+      setClientId(null)
+      setIsBlocked(false)
+    }
+  }, [selectedBooking])
+
+  const handleUnblock = async () => {
+    if (!clientId) return
+
+    setUnblocking(true)
+    setUnblockSuccess(false)
+
+    try {
+      const response = await fetch('/api/clients/unblock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ clientId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsBlocked(false)
+        setUnblockSuccess(true)
+        setTimeout(() => setUnblockSuccess(false), 3000)
+      } else {
+        console.error('[MonthlyCalendar] Unblock error:', data.error)
+        alert(data.error || 'Erreur lors du déblocage')
+      }
+    } catch (error) {
+      console.error('[MonthlyCalendar] Unblock error:', error)
+      alert('Erreur lors du déblocage')
+    } finally {
+      setUnblocking(false)
+    }
   }
 
   const monthName = month.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -168,7 +238,8 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
               {selectedBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="bg-secondary/30 rounded-[24px] p-4 border border-primary/10"
+                  className="bg-secondary/30 rounded-[24px] p-4 border border-primary/10 cursor-pointer hover:shadow-bookmeup-sm transition-shadow"
+                  onClick={() => setSelectedBooking(booking)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -209,6 +280,136 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
             </div>
           </Card>
         </motion.div>
+      )}
+
+      {/* Modal de détails du booking */}
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setSelectedBooking(null)
+            setClientId(null)
+            setIsBlocked(false)
+            setUnblockSuccess(false)
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Card className="rounded-[32px] p-6 max-w-md">
+              <h3 className="text-xl font-bold text-[#2A1F2D] mb-4">
+                Détails du rendez-vous
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Service</span>
+                  <span className="font-semibold text-[#2A1F2D]">
+                    {selectedBooking.serviceName}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Client</span>
+                  <span className="font-semibold text-[#2A1F2D]">
+                    {selectedBooking.client_name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Date</span>
+                  <span className="font-semibold text-[#2A1F2D]">
+                    {new Date(selectedBooking.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Heure</span>
+                  <span className="font-semibold text-[#2A1F2D]">
+                    {selectedBooking.start_time}
+                    {selectedBooking.end_time && ` - ${selectedBooking.end_time}`}
+                  </span>
+                </div>
+                {selectedBooking.duration && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Durée</span>
+                    <span className="font-semibold text-[#2A1F2D]">
+                      {selectedBooking.duration} minutes
+                    </span>
+                  </div>
+                )}
+                {selectedBooking.status && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Statut</span>
+                    <span
+                      className={`font-semibold ${
+                        selectedBooking.status === 'confirmed'
+                          ? 'text-green-600'
+                          : selectedBooking.status === 'cancelled'
+                          ? 'text-red-600'
+                          : 'text-primary'
+                      }`}
+                    >
+                      {selectedBooking.status === 'confirmed'
+                        ? 'Confirmé'
+                        : selectedBooking.status === 'cancelled'
+                        ? 'Annulé'
+                        : 'En attente'}
+                    </span>
+                  </div>
+                )}
+                {selectedBooking.client_email && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Email</span>
+                    <span className="font-semibold text-[#2A1F2D] text-sm">
+                      {selectedBooking.client_email}
+                    </span>
+                  </div>
+                )}
+                {loadingClientStatus && (
+                  <div className="text-xs text-slate-500 mt-2">
+                    Chargement du statut...
+                  </div>
+                )}
+                {!loadingClientStatus && isBlocked && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-[24px]">
+                    <div className="text-sm font-semibold text-red-700 mb-2">
+                      ⚠️ Client bloqué
+                    </div>
+                    <button
+                      onClick={handleUnblock}
+                      disabled={unblocking}
+                      className="w-full px-4 py-2 rounded-[24px] bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    >
+                      {unblocking ? 'Déblocage...' : 'Débloquer ce client'}
+                    </button>
+                    {unblockSuccess && (
+                      <div className="mt-2 text-xs text-green-600 font-medium">
+                        ✓ Client débloqué avec succès
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setSelectedBooking(null)
+                    setClientId(null)
+                    setIsBlocked(false)
+                    setUnblockSuccess(false)
+                  }}
+                  className="px-4 py-2 rounded-[32px] bg-primary text-white hover:bg-primaryDark transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
+            </Card>
+          </motion.div>
+        </div>
       )}
     </div>
   )

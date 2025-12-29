@@ -7,12 +7,12 @@ import type { BookingPro, BookingService } from './types'
 
 interface BookingPageProps {
   params: Promise<{ pro_slug: string }>
-  searchParams: Promise<{ service_id?: string }>
+  searchParams: Promise<{ service_id?: string; date?: string; time?: string }>
 }
 
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { pro_slug } = await params
-  const { service_id } = await searchParams
+  const { service_id, date, time } = await searchParams
 
   try {
     // Chercher le pro par slug dans pros (priorité)

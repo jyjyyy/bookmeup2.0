@@ -86,13 +86,20 @@ export async function signUp(
   const user = userCredential.user
 
   // Create profile document in Firestore
-  const profileData = {
+  const profileData: any = {
     uid: user.uid,
     email: user.email,
     name: name.trim(),
     role,
     created_at: serverTimestamp(),
     updated_at: serverTimestamp(),
+  }
+  
+  // Add abuse prevention fields for client users
+  if (role === 'client') {
+    profileData.cancelCount = 0
+    profileData.noShowCount = 0
+    profileData.isBlocked = false
   }
   
   await setDoc(doc(db, 'profiles', user.uid), profileData)

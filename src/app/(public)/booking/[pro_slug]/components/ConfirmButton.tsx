@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
+import { getCurrentUser } from '@/lib/auth'
 import type { BookingPro, BookingService } from '../types'
 
 interface ConfirmButtonProps {
@@ -28,12 +29,39 @@ export function ConfirmButton({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  // Vérifier l'authentification au montage du composant
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const current = await getCurrentUser()
+        setIsAuthenticated(current.user !== null)
+      } catch {
+        setIsAuthenticated(false)
+      }
+    }
+    checkAuth()
+  }, [])
 
   const isComplete = selectedService && selectedDate && selectedTime
   const isFormValid = firstName.trim() && phone.trim()
   const canConfirm = isComplete && isFormValid
 
   const handleConfirm = async () => {
+    // Vérification d'authentification AVANT toute autre action
+    if (!isAuthenticated) {
+      // Construire l'URL de redirection avec le contexte de réservation
+      const redirectParams = new URLSearchParams({
+        redirect: `/booking/${pro.slug}`,
+        service_id: selectedService?.id || '',
+        date: selectedDate || '',
+        time: selectedTime || '',
+      })
+      
+      router.push(`/auth/login?${redirectParams.toString()}`)
+      return
+    }
     // Validation stricte AVANT toute action
     const validationErrors: string[] = []
 
@@ -82,6 +110,20 @@ export function ConfirmButton({
       const errorMsg = `Données incomplètes : ${validationErrors.join(', ')}`
       console.error('[ConfirmButton] Validation échouée:', validationErrors)
       setError(errorMsg)
+      return
+    }
+
+    // Vérification de sécurité supplémentaire (au cas où l'état aurait changé)
+    const current = await getCurrentUser()
+    if (!current.user) {
+      setError('Veuillez créer un compte ou vous connecter pour réserver.')
+      const redirectParams = new URLSearchParams({
+        redirect: `/booking/${pro.slug}`,
+        service_id: selectedService?.id || '',
+        date: selectedDate || '',
+        time: selectedTime || '',
+      })
+      router.push(`/auth/login?${redirectParams.toString()}`)
       return
     }
 

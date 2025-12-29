@@ -18,6 +18,48 @@ export interface ConfirmationEmailData {
 }
 
 /**
+ * Send an email
+ * 
+ * @param to - Recipient email address
+ * @param subject - Email subject
+ * @param html - Email HTML content
+ * @returns Promise<boolean> - true if email would be sent successfully (mocked)
+ */
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  try {
+    // MOCK: Logger au lieu d'envoyer un vrai email
+    console.log('[EMAIL MOCK] sendEmail called:', {
+      to,
+      subject,
+      htmlLength: html.length,
+      timestamp: new Date().toISOString(),
+    })
+
+    // TODO: Replace with actual email service when ready
+    // Example with Resend:
+    // const resend = new Resend(process.env.RESEND_API_KEY)
+    // await resend.emails.send({
+    //   from: 'BookMe Up <noreply@bookmeup.com>',
+    //   to,
+    //   subject,
+    //   html,
+    // })
+
+    // MOCK: Simuler un délai d'envoi
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    return true
+  } catch (error) {
+    console.error('[EMAIL] Error sending email:', error)
+    return false
+  }
+}
+
+/**
  * Send a booking confirmation email
  * 
  * @param data - Email data including recipient, booking details, etc.

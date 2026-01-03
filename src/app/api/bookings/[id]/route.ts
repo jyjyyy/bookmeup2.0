@@ -118,45 +118,66 @@ export async function PATCH(
     const endMin = endMinutes % 60
     const end_time = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`
 
-    // Vérifier la disponibilité du nouveau créneau (exclure le booking actuel)
-    const existingBookingsSnap = await adminDb
-      .collection('bookings')
-      .where('pro_id', '==', pro_id)
-      .where('date', '==', date)
-      .where('status', 'in', ['pending', 'confirmed'])
-      .get()
-
     // Helper function to check time overlap
     const timeToMinutes = (time: string): number => {
       const [h, m] = time.split(':').map(Number)
       return h * 60 + m
     }
 
+    // STEP 1: Validate new slot availability BEFORE confirming modification
+    // This ensures the new slot follows the same availability rules as creation
     const newStartMinutes = timeToMinutes(start_time)
     const newEndMinutes = newStartMinutes + bookingDuration
 
-    // Check if new slot overlaps with existing bookings (excluding current booking)
-    const hasOverlap = existingBookingsSnap.docs.some((doc) => {
-      if (doc.id === finalBookingId) {
-        return false // Exclude current booking
-      }
-      const existingBooking = doc.data()
-      const existingStart = timeToMinutes(existingBooking.start_time)
-      const existingEnd = timeToMinutes(existingBooking.end_time)
-      
-      // Check for overlap
-      return newStartMinutes < existingEnd && newEndMinutes > existingStart
-    })
+    // Check if date/time is actually changing (if not, no need to validate availability)
+    const originalDate = bookingData?.date
+    const originalStartTime = bookingData?.start_time
+    const isDateChanging = originalDate !== date
+    const isTimeChanging = originalStartTime !== start_time
+    const isSlotChanging = isDateChanging || isTimeChanging
 
-    if (hasOverlap) {
-      return NextResponse.json(
-        { error: 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.' },
-        { status: 400 }
-      )
+    // Only validate availability if slot is changing
+    if (isSlotChanging) {
+      // Load existing bookings for the new date to check availability
+      const existingBookingsSnap = await adminDb
+        .collection('bookings')
+        .where('pro_id', '==', pro_id)
+        .where('date', '==', date)
+        .where('status', 'in', ['pending', 'confirmed'])
+        .get()
+
+      // Check if new slot overlaps with existing bookings (excluding current booking)
+      const hasOverlap = existingBookingsSnap.docs.some((doc) => {
+        if (doc.id === finalBookingId) {
+          return false // Exclude current booking being modified
+        }
+        const existingBooking = doc.data()
+        const existingStart = timeToMinutes(existingBooking.start_time)
+        const existingEnd = timeToMinutes(existingBooking.end_time)
+        
+        // Check for overlap: new slot overlaps if:
+        // - New start is before existing end AND
+        // - New end is after existing start
+        return newStartMinutes < existingEnd && newEndMinutes > existingStart
+      })
+
+      // If slot is not available, abort modification
+      if (hasOverlap) {
+        return NextResponse.json(
+          { error: 'Ce créneau n\'est plus disponible.' },
+          { status: 400 }
+        )
+      }
     }
 
-    // Use transaction for atomic update to prevent race conditions
+    // ATOMIC TRANSACTION: Wrap all critical steps in a single transaction
+    // This ensures:
+    // 1. Release old slot (automatic when booking date/time changes)
+    // 2. Reserve new slot (automatic when booking date/time is updated)
+    // 3. Update booking document (atomic update)
+    // If ANY step fails, everything is rolled back and booking remains unchanged
     await adminDb.runTransaction(async (transaction) => {
+      // STEP 1: Read current booking state (within transaction for consistency)
       const bookingRef = adminDb.collection('bookings').doc(finalBookingId)
       const bookingSnapshot = await transaction.get(bookingRef)
       
@@ -166,40 +187,63 @@ export async function PATCH(
       
       const currentBookingData = bookingSnapshot.data()
       
-      // Re-verify status hasn't changed
+      // Store original booking values (needed for logging and validation)
+      const originalDateInTransaction = currentBookingData?.date
+      const originalStartTimeInTransaction = currentBookingData?.start_time
+      const originalEndTimeInTransaction = currentBookingData?.end_time
+      const originalDurationInTransaction = currentBookingData?.duration || bookingDuration
+      
+      // Validate booking state (if this fails, transaction rolls back)
       if (currentBookingData?.status === 'cancelled' || currentBookingData?.status === 'cancelled_by_client') {
         throw new Error('Cette réservation est déjà annulée')
       }
       
-      // Re-verify email matches
+      // Validate authorization (if this fails, transaction rolls back)
       const currentEmail = currentBookingData?.client_email?.trim().toLowerCase()
       if (currentEmail !== requestEmail) {
         throw new Error('Non autorisé')
       }
 
-      // Re-check availability in transaction (double-check)
-      const bookingsInTransaction = await transaction.get(
-        adminDb.collection('bookings')
-          .where('pro_id', '==', pro_id)
-          .where('date', '==', date)
-          .where('status', 'in', ['pending', 'confirmed'])
-      )
+      // STEP 2: Check if slot is changing
+      const isDateChangingInTransaction = originalDateInTransaction !== date
+      const isTimeChangingInTransaction = originalStartTimeInTransaction !== start_time
+      const isSlotChangingInTransaction = isDateChangingInTransaction || isTimeChangingInTransaction
 
-      const hasOverlapInTransaction = bookingsInTransaction.docs.some((doc) => {
-        if (doc.id === finalBookingId) {
-          return false
+      // STEP 3: Validate new slot availability (within transaction to prevent race conditions)
+      // This ensures no double booking can occur even with concurrent requests
+      // If this fails, transaction rolls back and booking remains unchanged
+      if (isSlotChangingInTransaction) {
+        // Read all bookings for the new date (within transaction for consistency)
+        const bookingsInTransaction = await transaction.get(
+          adminDb.collection('bookings')
+            .where('pro_id', '==', pro_id)
+            .where('date', '==', date)
+            .where('status', 'in', ['pending', 'confirmed'])
+        )
+
+        // Check for overlaps (excluding current booking being updated)
+        const hasOverlapInTransaction = bookingsInTransaction.docs.some((doc) => {
+          if (doc.id === finalBookingId) {
+            return false // Exclude current booking being updated
+          }
+          const existingBooking = doc.data()
+          const existingStart = timeToMinutes(existingBooking.start_time)
+          const existingEnd = timeToMinutes(existingBooking.end_time)
+          return newStartMinutes < existingEnd && newEndMinutes > existingStart
+        })
+
+        // If slot is NOT available, throw error (transaction rolls back)
+        if (hasOverlapInTransaction) {
+          throw new Error('Ce créneau n\'est plus disponible.')
         }
-        const existingBooking = doc.data()
-        const existingStart = timeToMinutes(existingBooking.start_time)
-        const existingEnd = timeToMinutes(existingBooking.end_time)
-        return newStartMinutes < existingEnd && newEndMinutes > existingStart
-      })
-
-      if (hasOverlapInTransaction) {
-        throw new Error('Ce créneau est déjà réservé. Veuillez choisir un autre horaire.')
       }
       
-      // Update booking atomically
+      // STEP 4: Update booking document atomically
+      // This single atomic update accomplishes:
+      // - Release old slot: Booking no longer exists at old date/time (automatic)
+      // - Reserve new slot: Booking now exists at new date/time (automatic)
+      // - Update booking document: All changes are applied atomically
+      // If this fails, transaction rolls back and booking remains unchanged
       const updateData: any = {
         date,
         start_time,
@@ -207,12 +251,10 @@ export async function PATCH(
         updated_at: FieldValue.serverTimestamp(),
       }
 
-      // Update service_id if provided and different
+      // Update additional fields if provided
       if (service_id && service_id !== currentBookingData?.service_id) {
         updateData.service_id = service_id
       }
-
-      // Update client info if provided
       if (client_name) {
         updateData.client_name = client_name.trim()
       }
@@ -220,7 +262,28 @@ export async function PATCH(
         updateData.client_phone = client_phone?.trim() || null
       }
       
+      // Apply update atomically (all-or-nothing)
+      // If this succeeds, old slot is released and new slot is reserved
+      // If this fails, transaction rolls back and nothing changes
       transaction.update(bookingRef, updateData)
+
+      // Log successful slot change (only if transaction succeeds)
+      if (isSlotChangingInTransaction) {
+        console.log('[Booking Update] Atomic slot change', {
+          bookingId: finalBookingId,
+          oldSlot: {
+            date: originalDateInTransaction,
+            start_time: originalStartTimeInTransaction,
+            end_time: originalEndTimeInTransaction,
+          },
+          newSlot: {
+            date,
+            start_time,
+            end_time,
+          },
+          message: 'Old slot released, new slot reserved atomically',
+        })
+      }
     })
 
     return NextResponse.json({

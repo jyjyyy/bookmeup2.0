@@ -45,6 +45,7 @@ export function ConfirmButton({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   // Vérifier l'authentification au montage du composant
@@ -145,6 +146,7 @@ export function ConfirmButton({
 
     // Toutes les validations passées, on peut procéder
     setError('')
+    setSuccess(false)
     setLoading(true)
 
     try {
@@ -229,7 +231,9 @@ export function ConfirmButton({
 
       if (!response.ok) {
         // Essayer de lire l'erreur depuis la réponse
-        let errorMessage = 'Erreur lors de la réservation'
+        let errorMessage = editBookingId 
+          ? 'Erreur lors de la modification du rendez-vous'
+          : 'Erreur lors de la réservation'
         try {
           const errorData = await response.json()
           errorMessage = errorData?.error || errorMessage
@@ -249,10 +253,17 @@ export function ConfirmButton({
         throw new Error('Données manquantes pour la redirection')
       }
 
-      // Redirection après succès
+      // Show success message before redirecting
+      setLoading(false)
+      setSuccess(true)
+      setError('')
+
+      // Redirection après succès (avec délai pour afficher le message de succès)
       if (editBookingId) {
-        // For edit: redirect back to appointments page
-        router.push('/account/appointments')
+        // For edit: show success message then redirect back to appointments page
+        setTimeout(() => {
+          router.push('/account/appointments')
+        }, 1500)
       } else {
         // For create: redirect to confirmation page
         const params = new URLSearchParams({
@@ -266,8 +277,13 @@ export function ConfirmButton({
       }
     } catch (err: any) {
       console.error('[BOOKING ERROR]', err)
-      setError(err.message || 'Erreur lors de la réservation')
+      // Show clear error message
+      const errorMessage = err.message || (editBookingId 
+        ? 'Erreur lors de la modification du rendez-vous. Veuillez réessayer.'
+        : 'Erreur lors de la réservation. Veuillez réessayer.')
+      setError(errorMessage)
       setLoading(false)
+      setSuccess(false)
     }
   }
 
@@ -284,16 +300,23 @@ export function ConfirmButton({
               {error}
             </div>
           )}
+          {success && (
+            <div className="mb-3 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-[24px] text-sm text-center font-medium">
+              {editBookingId 
+                ? '✓ Rendez-vous modifié avec succès !'
+                : '✓ Rendez-vous confirmé avec succès !'}
+            </div>
+          )}
           <Button
             onClick={handleConfirm}
-            disabled={!canConfirm || loading}
+            disabled={!canConfirm || loading || success}
             className="w-full rounded-[32px] py-6 text-lg font-semibold"
             size="lg"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader />
-                Confirmation en cours…
+                {editBookingId ? 'Modification en cours…' : 'Confirmation en cours…'}
               </span>
             ) : editBookingId ? (
               'Modifier mon rendez-vous'

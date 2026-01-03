@@ -7,6 +7,10 @@ import {
   signOut as firebaseSignOut,
   User,
   onAuthStateChanged,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser as firebaseDeleteUser,
 } from 'firebase/auth'
 import { auth, db } from './firebaseClient'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
@@ -161,5 +165,121 @@ export async function signOut(): Promise<void> {
 
 export async function sendResetEmail(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email)
+}
+
+/**
+ * Error types for account management operations
+ */
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public userMessage: string
+  ) {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
+/**
+ * Change user password with re-authentication
+ * @param user - Firebase Auth user
+ * @param currentPassword - Current password for re-authentication
+ * @param newPassword - New password to set
+ * @throws {AuthError} If authentication or password update fails
+ */
+export async function changePassword(
+  user: User,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  if (!user.email) {
+    throw new AuthError(
+      'User email not available',
+      'auth/no-email',
+      'Email non disponible'
+    )
+  }
+
+  // Validate new password
+  if (newPassword.length < 6) {
+    throw new AuthError(
+      'Password too short',
+      'auth/weak-password',
+      'Le nouveau mot de passe doit contenir au moins 6 caractères'
+    )
+  }
+
+  try {
+    // Re-authenticate user with current password
+    const credential = EmailAuthProvider.credential(user.email, currentPassword)
+    await reauthenticateWithCredential(user, credential)
+
+    // Update password
+    await updatePassword(user, newPassword)
+  } catch (error: any) {
+    console.error('[changePassword] Error:', error)
+
+    // Map Firebase errors to user-friendly messages
+    if (error.code === 'auth/wrong-password') {
+      throw new AuthError(
+        'Wrong password',
+        error.code,
+        'Mot de passe actuel incorrect'
+      )
+    } else if (error.code === 'auth/weak-password') {
+      throw new AuthError(
+        'Weak password',
+        error.code,
+        'Le nouveau mot de passe est trop faible'
+      )
+    } else if (error.code === 'auth/requires-recent-login') {
+      throw new AuthError(
+        'Recent login required',
+        error.code,
+        'Veuillez vous reconnecter avant de changer votre mot de passe'
+      )
+    } else if (error.code === 'auth/invalid-credential') {
+      throw new AuthError(
+        'Invalid credential',
+        error.code,
+        'Mot de passe actuel incorrect'
+      )
+    } else {
+      throw new AuthError(
+        error.message || 'Password change failed',
+        error.code || 'auth/unknown-error',
+        error.message || 'Erreur lors du changement de mot de passe'
+      )
+    }
+  }
+}
+
+/**
+ * Delete Firebase Auth user account
+ * @param user - Firebase Auth user to delete
+ * @throws {AuthError} If account deletion fails
+ */
+export async function deleteAccount(user: User): Promise<void> {
+  try {
+    await firebaseDeleteUser(user)
+  } catch (error: any) {
+    console.error('[deleteAccount] Error:', error)
+
+    // Map Firebase errors to user-friendly messages
+    if (error.code === 'auth/requires-recent-login') {
+      throw new AuthError(
+        'Recent login required',
+        error.code,
+        'Veuillez vous reconnecter avant de supprimer votre compte'
+      )
+    } else {
+      throw new AuthError(
+        error.message || 'Account deletion failed',
+        error.code || 'auth/unknown-error',
+        error.message || 'Erreur lors de la suppression du compte'
+      )
+    }
+  }
 }
 

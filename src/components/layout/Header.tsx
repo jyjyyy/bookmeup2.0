@@ -58,12 +58,21 @@ export function Header() {
               Recherche
             </Link>
             {!loading && user && user.role === 'client' && (
-              <Link
-                href="/account/appointments"
-                className="text-slate-700 hover:text-primary transition-colors font-medium text-sm hidden sm:block"
-              >
-                Mes rendez-vous
-              </Link>
+              <>
+                <Link
+                  href="/account/appointments"
+                  className="text-slate-700 hover:text-primary transition-colors font-medium text-sm hidden sm:block"
+                >
+                  Mes rendez-vous
+                </Link>
+                <Link
+                  href="/account/settings"
+                  className="text-slate-700 hover:text-primary transition-colors text-xl"
+                  title="Paramètres"
+                >
+                  ⚙️
+                </Link>
+              </>
             )}
             {!loading && (
               user ? (

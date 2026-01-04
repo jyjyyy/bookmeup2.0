@@ -36,30 +36,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Récupérer tous les clients et filtrer ceux bloqués pour ce professionnel
-    const clientsSnapshot = await adminDb
+    // Récupérer tous les clients bloqués
+    const blockedClientsSnapshot = await adminDb
       .collection('profiles')
       .where('role', '==', 'client')
+      .where('isBlocked', '==', true)
       .get()
 
-    const blockedClients = clientsSnapshot.docs
-      .filter((doc) => {
-        const data = doc.data()
-        const blockedPros = data.blockedPros || {}
-        return blockedPros[user.uid] === true
-      })
-      .map((doc) => {
-        const data = doc.data()
-        const proCounters = data.proCounters || {}
-        const proCounter = proCounters[user.uid] || { cancelCount: 0, noShowCount: 0 }
-        return {
-          id: doc.id,
-          name: data.name || null,
-          email: data.email || null,
-          cancelCount: proCounter.cancelCount || 0,
-          noShowCount: proCounter.noShowCount || 0,
-        }
-      })
+    const blockedClients = blockedClientsSnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        name: data.name || null,
+        email: data.email || null,
+        cancelCount: data.cancelCount ?? 0,
+        noShowCount: data.noShowCount ?? 0,
+      }
+    })
 
     return NextResponse.json({
       clients: blockedClients,

@@ -10,7 +10,6 @@ interface TimeSlotsProps {
   date: string | null
   selectedTime: string | null
   onSelectTime: (time: string) => void
-  excludeBookingId?: string | null
 }
 
 interface TimeSlot {
@@ -24,7 +23,6 @@ export function TimeSlots({
   date,
   selectedTime,
   onSelectTime,
-  excludeBookingId,
 }: TimeSlotsProps) {
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [loading, setLoading] = useState(false)
@@ -50,11 +48,6 @@ export function TimeSlots({
           service_id: serviceId,
           date,
         })
-
-        // Add excludeBookingId if provided (for edit mode)
-        if (excludeBookingId) {
-          params.append('excludeBookingId', excludeBookingId)
-        }
 
         const response = await fetch(`/api/availability?${params.toString()}`)
 
@@ -82,7 +75,7 @@ export function TimeSlots({
     }
 
     fetchSlots()
-  }, [proId, serviceId, date, excludeBookingId])
+  }, [proId, serviceId, date])
 
   // Grouper les créneaux par moment de la journée
   const groupSlotsByTime = (slots: TimeSlot[]) => {

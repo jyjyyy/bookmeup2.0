@@ -11,11 +11,13 @@ import { Loader } from '@/components/ui/loader'
 import { AddServiceModal } from '@/components/services/AddServiceModal'
 import { EditServiceModal } from '@/components/services/EditServiceModal'
 import { DeleteServiceModal } from '@/components/services/DeleteServiceModal'
+import { groupServicesByCategory, getCategoryLabel } from '@/lib/serviceUtils'
 
 interface Service {
   id: string
   name: string
-  description: string
+  category?: string | null
+  description?: string | null
   price: number
   duration: number
   isActive: boolean
@@ -193,80 +195,106 @@ export default function ServicesPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence>
-            {services.map((service, index) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="rounded-[32px] p-6 h-full flex flex-col shadow-bookmeup hover:shadow-bookmeup-lg transition-all duration-300 border border-white/70 bg-white/90">
-                  {/* En-tête avec nom et statut */}
-                  <div className="mb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-xl font-bold text-[#2A1F2D] flex-1 pr-2">
-                        {service.name}
-                      </h3>
-                      <span
-                        className={`text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap ${
-                          service.isActive
-                            ? 'bg-green-100 text-green-700 border border-green-200'
-                            : 'bg-gray-100 text-gray-600 border border-gray-200'
-                        }`}
-                      >
-                        {service.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </div>
+        <div className="space-y-8">
+          {groupServicesByCategory(services).map((categoryGroup, categoryIndex) => (
+            <div key={categoryGroup.category} className="space-y-4">
+              {/* Category Title */}
+              <h3 className="text-xl font-bold text-[#2A1F2D] flex items-center gap-2">
+                <span className="text-2xl">
+                  {categoryGroup.category === 'ongles' && '💅'}
+                  {categoryGroup.category === 'coiffure_femme' && '💇‍♀️'}
+                  {categoryGroup.category === 'coiffure_homme' && '💇‍♂️'}
+                  {categoryGroup.category === 'coiffure_enfant' && '👶'}
+                  {categoryGroup.category === 'regard' && '👁️'}
+                  {categoryGroup.category === 'soins_visage' && '✨'}
+                  {categoryGroup.category === 'soins_corps' && '🧴'}
+                  {categoryGroup.category === 'massages' && '💆'}
+                  {categoryGroup.category === 'épilation' && '🪒'}
+                  {categoryGroup.category === 'maquillage' && '💄'}
+                  {categoryGroup.category === 'services_spécifiques' && '🎯'}
+                  {!['ongles', 'coiffure_femme', 'coiffure_homme', 'coiffure_enfant', 'regard', 'soins_visage', 'soins_corps', 'massages', 'épilation', 'maquillage', 'services_spécifiques'].includes(categoryGroup.category) && '📋'}
+                </span>
+                {categoryGroup.label}
+              </h3>
+              
+              {/* Services Grid */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <AnimatePresence>
+                  {categoryGroup.services.map((service, index) => (
+                    <motion.div
+                      key={service.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: (categoryIndex * 10 + index) * 0.05 }}
+                    >
+                      <Card className="rounded-[32px] p-6 h-full flex flex-col shadow-bookmeup hover:shadow-bookmeup-lg transition-all duration-300 border border-white/70 bg-white/90">
+                        {/* En-tête avec nom et statut */}
+                        <div className="mb-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <h4 className="text-xl font-bold text-[#2A1F2D] flex-1 pr-2">
+                              {service.name}
+                            </h4>
+                            <span
+                              className={`text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap ${
+                                service.isActive
+                                  ? 'bg-green-100 text-green-700 border border-green-200'
+                                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+                              }`}
+                            >
+                              {service.isActive ? 'Actif' : 'Inactif'}
+                            </span>
+                          </div>
 
-                    {service.description && (
-                      <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                        {service.description}
-                      </p>
-                    )}
-                  </div>
+                          {service.description && (
+                            <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                              {service.description}
+                            </p>
+                          )}
+                        </div>
 
-                  {/* Prix et durée */}
-                  <div className="mt-auto pt-4 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Prix</p>
-                        <span className="text-3xl font-bold text-primary">
-                          {service.price} €
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-slate-500 mb-1">Durée</p>
-                        <p className="text-lg font-semibold text-[#2A1F2D]">
-                          {service.duration} min
-                        </p>
-                      </div>
-                    </div>
+                        {/* Prix et durée */}
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Prix</p>
+                              <span className="text-3xl font-bold text-primary">
+                                {service.price} €
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-slate-500 mb-1">Durée</p>
+                              <p className="text-lg font-semibold text-[#2A1F2D]">
+                                {service.duration} min
+                              </p>
+                            </div>
+                          </div>
 
-                    {/* Boutons d'action */}
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleEdit(service)}
-                        className="flex-1 rounded-[32px] text-sm font-medium hover:bg-secondary transition-colors"
-                      >
-                        Modifier
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDelete(service)}
-                        className="flex-1 rounded-[32px] text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
-                      >
-                        Supprimer
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                          {/* Boutons d'action */}
+                          <div className="flex gap-3">
+                            <Button
+                              variant="outline"
+                              onClick={() => handleEdit(service)}
+                              className="flex-1 rounded-[32px] text-sm font-medium hover:bg-secondary transition-colors"
+                            >
+                              Modifier
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleDelete(service)}
+                              className="flex-1 rounded-[32px] text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
+                            >
+                              Supprimer
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

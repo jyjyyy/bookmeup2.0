@@ -1,5 +1,6 @@
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
+import { adminDb } from '@/lib/firebaseAdmin'
 import { BookingPageClient } from './BookingPageClient'
 import { notFound } from 'next/navigation'
 import { serializeTimestamps } from '@/lib/firestore'
@@ -7,12 +8,12 @@ import type { BookingPro, BookingService } from './types'
 
 interface BookingPageProps {
   params: Promise<{ pro_slug: string }>
-  searchParams: Promise<{ service_id?: string; date?: string; time?: string; editBookingId?: string }>
+  searchParams: Promise<{ service_id?: string; date?: string; time?: string }>
 }
 
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { pro_slug } = await params
-  const { service_id, date, time, editBookingId } = await searchParams
+  const { service_id, date, time } = await searchParams
 
   try {
     // Chercher le pro par slug dans pros (priorité)
@@ -87,12 +88,36 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     )
     const servicesSnapshot = await getDocs(servicesQuery)
 
-    // Sérialiser les services avec timestamps
+    // Resolve service names and categories from services_catalog
+    const catalogRef = adminDb.collection('services_catalog')
+    const catalogDocs = await catalogRef.get()
+    const catalogMap = new Map<string, any>()
+    catalogDocs.docs.forEach((doc) => {
+      catalogMap.set(doc.id, doc.data())
+    })
+
+    // Sérialiser les services avec timestamps et résoudre les catégories
     const services = servicesSnapshot.docs.map((doc) => {
       const data = doc.data()
+      
+      // Support both old format (name) and new format (serviceId)
+      const serviceId = data.serviceId || null
+      let name = data.name || 'Service'
+      let category = null
+
+      // If serviceId exists, resolve from catalog
+      if (serviceId) {
+        const catalogData = catalogMap.get(serviceId)
+        if (catalogData) {
+          name = catalogData.name
+          category = catalogData.category
+        }
+      }
+      
       return serializeTimestamps({
         id: doc.id,
-        name: data.name,
+        name,
+        category,
         description: data.description || null,
         duration: data.duration,
         price: data.price,
@@ -122,42 +147,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     // Sérialiser le pro
     const serializedPro = serializeTimestamps(pro) as BookingPro
 
-    // Load existing booking data if editBookingId is provided
-    let existingBooking = null
-    if (editBookingId) {
-      try {
-        const bookingDoc = await getDoc(doc(db, 'bookings', editBookingId))
-        if (bookingDoc.exists()) {
-          const bookingData = bookingDoc.data()
-          // Verify the booking belongs to this pro
-          if (bookingData.pro_id === proId) {
-            existingBooking = {
-              id: bookingDoc.id,
-              serviceId: bookingData.service_id,
-              date: bookingData.date,
-              startTime: bookingData.start_time,
-              clientName: bookingData.client_name,
-              clientEmail: bookingData.client_email,
-              clientPhone: bookingData.client_phone,
-              proId: bookingData.pro_id,
-              duration: bookingData.duration,
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[BookingPage] Error loading existing booking:', error)
-      }
-    }
-
     return (
       <div className="min-h-screen bg-background py-10">
         <div className="container mx-auto px-4 max-w-5xl">
           <BookingPageClient
             pro={serializedPro}
             services={services}
-            initialServiceId={service_id ?? existingBooking?.serviceId ?? null}
-            editBookingId={editBookingId ?? null}
-            existingBooking={existingBooking}
+            initialServiceId={service_id ?? null}
           />
         </div>
       </div>

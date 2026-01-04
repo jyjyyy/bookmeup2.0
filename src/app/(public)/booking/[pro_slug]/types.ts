@@ -1,6 +1,7 @@
 export interface BookingService {
   id: string
   name: string
+  category?: string | null
   description?: string | null
   duration: number
   price: number

@@ -1,33 +1,41 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { useAuth } from '@/lib/authContext'
+import { onAuthStateChanged, User } from 'firebase/auth'
+import { auth } from '@/lib/firebaseClient'
 import { signOut } from '@/lib/auth'
 
 export function Header() {
   const router = useRouter()
-  const pathname = usePathname()
-  const { user, loading, refresh } = useAuth()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Hide header on dashboard pages (dashboard has its own header)
-  const isDashboardPage = pathname?.startsWith('/dashboard')
+  useEffect(() => {
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
+      setLoading(false)
+      // Debug log as requested
+      console.log('Auth user in navbar:', firebaseUser?.email ?? null)
+    })
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
+  }, [])
 
   const handleLogout = async () => {
     try {
       await signOut()
-      await refresh() // Refresh auth state after logout
+      // Redirect to home page after logout
       router.push('/')
+      router.refresh()
     } catch (error) {
-      console.error('[Header] Error during logout:', error)
+      console.error('Error signing out:', error)
     }
-  }
-
-  // Don't render header on dashboard pages
-  if (isDashboardPage) {
-    return null
   }
 
   return (
@@ -57,37 +65,19 @@ export function Header() {
             >
               Recherche
             </Link>
-            {!loading && user && user.role === 'client' && (
-              <>
-                <Link
-                  href="/account/appointments"
-                  className="text-slate-700 hover:text-primary transition-colors font-medium text-sm hidden sm:block"
-                >
-                  Mes rendez-vous
-                </Link>
-                <Link
-                  href="/account/settings"
-                  className="text-slate-700 hover:text-primary transition-colors text-xl"
-                  title="Paramètres"
-                >
-                  ⚙️
-                </Link>
-              </>
-            )}
             {!loading && (
               user ? (
                 <Button
-                  variant="subtle"
+                  variant="primary"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-gray-600 hover:text-gray-800"
                 >
                   Se déconnecter
                 </Button>
               ) : (
                 <Link href="/auth/login">
                   <Button variant="primary" size="sm">
-                    Se connecter
+                    Connexion
                   </Button>
                 </Link>
               )

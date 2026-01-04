@@ -13,14 +13,29 @@ export type SearchPro = {
   slug: string | null
   business_name: string
   city: string | null
+  cityName?: string | null
+  cityId?: string | null
+  location?: {
+    lat: number
+    lng: number
+  } | null
   plan: 'starter' | 'pro' | 'premium' | null
   show_in_search: boolean
   services: SearchService[]
+  distance?: number // Distance in km (added client-side)
 }
 
 export async function GET(request: NextRequest) {
   try {
     console.log('[API /pros/search] Starting search...')
+
+    // Load services catalog once for name resolution
+    const catalogRef = adminDb.collection('services_catalog')
+    const catalogDocs = await catalogRef.get()
+    const catalogMap = new Map<string, any>()
+    catalogDocs.docs.forEach((doc) => {
+      catalogMap.set(doc.id, doc.data())
+    })
 
     // Get all pros with show_in_search: true
     const prosSnapshot = await adminDb
@@ -74,9 +89,21 @@ export async function GET(request: NextRequest) {
             price = Number(serviceData.price_cents) / 100
           }
 
+          // Resolve service name from catalog
+          // Support both old format (name) and new format (serviceId)
+          const serviceId = serviceData.serviceId || null
+          let serviceName = serviceData.name || 'Service'
+          
+          if (serviceId) {
+            const catalogData = catalogMap.get(serviceId)
+            if (catalogData) {
+              serviceName = catalogData.name
+            }
+          }
+
           services.push({
             id: serviceDoc.id,
-            name: serviceData.name || 'Service',
+            name: serviceName,
             price,
             duration: serviceData.duration !== undefined ? Number(serviceData.duration) : null,
           })
@@ -87,7 +114,10 @@ export async function GET(request: NextRequest) {
         id: proId,
         slug: proData.slug || null,
         business_name,
-        city: proData.city || null,
+        city: proData.city || proData.cityName || null,
+        cityName: proData.cityName || proData.city || null,
+        cityId: proData.cityId || null,
+        location: proData.location || null,
         plan: (proData.plan as 'starter' | 'pro' | 'premium') || 'starter',
         show_in_search: Boolean(proData.show_in_search),
         services,

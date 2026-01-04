@@ -5,7 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { serviceId, name, description, price, duration, isActive } = body
+    const { serviceId, catalogServiceId, description, price, duration, isActive } = body
 
     if (!serviceId) {
       return NextResponse.json(
@@ -25,12 +25,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // If catalogServiceId is provided, verify it exists in catalog
+    if (catalogServiceId !== undefined) {
+      const catalogDoc = await adminDb.collection('services_catalog').doc(catalogServiceId).get()
+      if (!catalogDoc.exists) {
+        return NextResponse.json(
+          { error: `Service "${catalogServiceId}" not found in catalog` },
+          { status: 404 }
+        )
+      }
+    }
+
     // Update service
+    // Note: name is no longer stored - it's resolved from catalog via serviceId
     const updateData: any = {
       updated_at: FieldValue.serverTimestamp(),
     }
 
-    if (name !== undefined) updateData.name = name.trim()
+    if (catalogServiceId !== undefined) updateData.serviceId = catalogServiceId.trim()
     if (description !== undefined) updateData.description = description.trim()
     if (price !== undefined) updateData.price = Number(price)
     if (duration !== undefined) updateData.duration = Number(duration)

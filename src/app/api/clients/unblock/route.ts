@@ -66,36 +66,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vérifier que le client est bloqué pour ce professionnel
-    const blockedPros = clientData?.blockedPros || {}
-    const isBlockedForThisPro = blockedPros[user.uid] === true
-    
-    if (!isBlockedForThisPro) {
+    // Vérifier que le client est bloqué (optionnel, mais logique)
+    if (clientData?.isBlocked !== true) {
       return NextResponse.json(
-        { error: 'Ce client n\'est pas bloqué pour vous' },
+        { error: 'Ce client n\'est pas bloqué' },
         { status: 400 }
       )
     }
 
-    // Débloquer pour ce professionnel et réinitialiser les compteurs pour ce professionnel
-    const updatedBlockedPros = { ...blockedPros }
-    delete updatedBlockedPros[user.uid]
-
-    const proCounters = clientData?.proCounters || {}
-    const updatedProCounters = {
-      ...proCounters,
-      [user.uid]: {
-        cancelCount: 0,
-        noShowCount: 0,
-      },
-    }
-
+    // Débloquer et réinitialiser les compteurs
     await adminDb.collection('profiles').doc(clientId).update({
-      blockedPros: updatedBlockedPros,
-      proCounters: updatedProCounters,
+      isBlocked: false,
+      cancelCount: 0,
+      noShowCount: 0,
     })
 
-    console.log('[Unblock Client] Client unblocked for pro:', {
+    console.log('[Unblock Client] Client unblocked:', {
       clientId,
       proId: user.uid,
     })

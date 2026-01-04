@@ -9,7 +9,10 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { adminAuth, adminDb } from '@/lib/firebaseAdmin'
+import { groupServicesByCategory, getCategoryLabel } from '@/lib/serviceUtils'
 import { ProGallery } from './ProGallery'
 import { ProSocials } from './ProSocials'
 
@@ -99,15 +102,46 @@ export default async function ProPage({ params }: ProPageProps) {
     )
     const servicesSnapshot = await getDocs(servicesQuery)
 
+    // Resolve service names and categories from services_catalog
+    const catalogRef = adminDb.collection('services_catalog')
+    const catalogDocs = await catalogRef.get()
+    const catalogMap = new Map<string, any>()
+    catalogDocs.docs.forEach((doc) => {
+      catalogMap.set(doc.id, doc.data())
+    })
+
     const services = servicesSnapshot.docs.map((doc) => {
       const data = doc.data()
+      
+      // Support both old format (name) and new format (serviceId)
+      const serviceId = data.serviceId || null
+      let name = data.name || 'Service'
+      let category = null
+
+      // If serviceId exists, resolve from catalog
+      if (serviceId) {
+        const catalogData = catalogMap.get(serviceId)
+        if (catalogData) {
+          name = catalogData.name
+          category = catalogData.category
+        }
+      }
+      
       return {
         id: doc.id,
+        name,
+        category,
+        description: data.description || null,
+        price: data.price,
+        duration: data.duration,
         ...data,
         created_at: data.created_at?.toDate?.()?.toISOString() || null,
         updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
       }
     })
+
+    // Group services by category
+    const groupedServices = groupServicesByCategory(services)
 
     // Get first letter of name for avatar
     const avatarLetter = pro.name?.[0]?.toUpperCase() || 'P'
@@ -221,55 +255,81 @@ export default async function ProPage({ params }: ProPageProps) {
                 </p>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {services.map((service: any) => (
-                  <Card
-                    key={service.id}
-                    className="rounded-[32px] p-6 flex flex-col justify-between h-full transition-shadow hover:shadow-bookmeup-lg"
-                  >
-                    <div>
-                      <h3 className="text-lg font-semibold text-[#2A1F2D] mb-2">
-                        {service.name}
-                      </h3>
-                      {service.description && (
-                        <p className="text-sm text-slate-500 mb-4 line-clamp-3 leading-relaxed">
-                          {service.description}
-                        </p>
-                      )}
-                    </div>
+              <div className="space-y-8">
+                {groupedServices.map((categoryGroup) => (
+                  <div key={categoryGroup.category}>
+                    {/* Category Title */}
+                    <h3 className="text-xl font-bold text-[#2A1F2D] mb-4 flex items-center gap-2">
+                      <span className="text-2xl">
+                        {categoryGroup.category === 'ongles' && '💅'}
+                        {categoryGroup.category === 'coiffure_femme' && '💇‍♀️'}
+                        {categoryGroup.category === 'coiffure_homme' && '💇‍♂️'}
+                        {categoryGroup.category === 'coiffure_enfant' && '👶'}
+                        {categoryGroup.category === 'regard' && '👁️'}
+                        {categoryGroup.category === 'soins_visage' && '✨'}
+                        {categoryGroup.category === 'soins_corps' && '🧴'}
+                        {categoryGroup.category === 'massages' && '💆'}
+                        {categoryGroup.category === 'épilation' && '🪒'}
+                        {categoryGroup.category === 'maquillage' && '💄'}
+                        {categoryGroup.category === 'services_spécifiques' && '🎯'}
+                        {!['ongles', 'coiffure_femme', 'coiffure_homme', 'coiffure_enfant', 'regard', 'soins_visage', 'soins_corps', 'massages', 'épilation', 'maquillage', 'services_spécifiques'].includes(categoryGroup.category) && '📋'}
+                      </span>
+                      {categoryGroup.label}
+                    </h3>
+                    
+                    {/* Services Grid */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {categoryGroup.services.map((service: any) => (
+                        <Card
+                          key={service.id}
+                          className="rounded-[32px] p-6 flex flex-col justify-between h-full transition-shadow hover:shadow-bookmeup-lg"
+                        >
+                          <div>
+                            <h4 className="text-lg font-semibold text-[#2A1F2D] mb-2">
+                              {service.name}
+                            </h4>
+                            {service.description && (
+                              <p className="text-sm text-slate-500 mb-4 line-clamp-3 leading-relaxed">
+                                {service.description}
+                              </p>
+                            )}
+                          </div>
 
-                    {/* Bandeau prix + durée */}
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
-                      <div>
-                        <span className="text-2xl font-bold text-primary">
-                          {service.price} €
-                        </span>
-                      </div>
-                      <div className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-                        {service.duration} min
-                      </div>
-                    </div>
+                          {/* Bandeau prix + durée */}
+                          <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
+                            <div>
+                              <span className="text-2xl font-bold text-primary">
+                                {service.price} €
+                              </span>
+                            </div>
+                            <div className="text-xs uppercase text-slate-500 font-medium tracking-wide">
+                              {service.duration} min
+                            </div>
+                          </div>
 
-                    {/* Boutons */}
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/service/${service.id}`}
-                        className="flex-1"
-                      >
-                        <Button variant="outline" className="w-full rounded-[32px]">
-                          Détails
-                        </Button>
-                      </Link>
-                      <Link
-                        href={`/booking/${pro.slug}?service_id=${service.id}`}
-                        className="flex-1"
-                      >
-                        <Button className="w-full rounded-[32px]">
-                          Réserver
-                        </Button>
-                      </Link>
+                          {/* Boutons */}
+                          <div className="flex gap-2">
+                            <Link
+                              href={`/service/${service.id}`}
+                              className="flex-1"
+                            >
+                              <Button variant="outline" className="w-full rounded-[32px]">
+                                Détails
+                              </Button>
+                            </Link>
+                            <Link
+                              href={`/booking/${pro.slug}?service_id=${service.id}`}
+                              className="flex-1"
+                            >
+                              <Button className="w-full rounded-[32px]">
+                                Réserver
+                              </Button>
+                            </Link>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from '@/lib/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
-import { useAuth } from '@/lib/authContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
@@ -13,7 +12,6 @@ import Link from 'next/link'
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { refresh } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -46,34 +44,6 @@ export default function LoginPage() {
       const date = searchParams.get('date')
       const time = searchParams.get('time')
 
-      // Create session cookie for ALL users (client and pro)
-      try {
-        const idToken = await user.getIdToken()
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-          credentials: 'include',
-        })
-
-        const sessionData = await sessionResponse.json()
-        
-        if (!sessionResponse.ok || !sessionData.ok) {
-          throw new Error(sessionData.error || 'Échec de la création de la session')
-        }
-
-        // Refresh auth context after session cookie is created
-        await refresh()
-      } catch (sessionError: any) {
-        console.error('[Login] Error creating session cookie:', sessionError)
-        setError('Erreur lors de la création de la session. Veuillez réessayer.')
-        setLoading(false)
-        return
-      }
-
-      // Vérifier s'il y a une redirection vers une page de réservation
       if (redirectUrl && redirectUrl.startsWith('/booking/')) {
         // Construire l'URL de réservation avec les paramètres restaurés
         const bookingParams = new URLSearchParams()
@@ -91,6 +61,30 @@ export default function LoginPage() {
 
       // Redirection selon le rôle
       if (role === 'pro') {
+        // Create session cookie for PRO users
+        try {
+          const idToken = await user.getIdToken()
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+            credentials: 'include',
+          })
+
+          const sessionData = await sessionResponse.json()
+          
+          if (!sessionResponse.ok || !sessionData.ok) {
+            throw new Error(sessionData.error || 'Échec de la création de la session')
+          }
+        } catch (sessionError: any) {
+          console.error('[Login] Error creating session cookie:', sessionError)
+          setError('Erreur lors de la création de la session. Veuillez réessayer.')
+          setLoading(false)
+          return
+        }
+
         // Check subscription status first
         const { checkSubscriptionStatus } = await import('@/lib/subscription')
         const subscriptionStatus = await checkSubscriptionStatus(user.uid)

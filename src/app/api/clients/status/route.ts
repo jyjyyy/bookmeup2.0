@@ -63,13 +63,9 @@ export async function GET(request: NextRequest) {
     const clientDoc = profilesSnapshot.docs[0]
     const clientData = clientDoc.data()
 
-    // Vérifier si le client est bloqué pour ce professionnel spécifique
-    const blockedPros = clientData?.blockedPros || {}
-    const isBlockedForThisPro = blockedPros[user.uid] === true
-
     return NextResponse.json({
       clientId: clientDoc.id,
-      isBlocked: isBlockedForThisPro,
+      isBlocked: clientData?.isBlocked === true,
     })
   } catch (error: any) {
     console.error('[Client Status] Error:', error)

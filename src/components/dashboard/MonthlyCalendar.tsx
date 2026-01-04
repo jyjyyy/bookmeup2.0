@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Modal } from '@/components/ui/modal'
 import { motion } from 'framer-motion'
-import { isLessThan24Hours } from '@/lib/bookingUtils'
 
 interface Booking {
   id: string
@@ -16,8 +13,7 @@ interface Booking {
   serviceName?: string
   client_name?: string
   client_email?: string
-  status?: 'pending' | 'confirmed' | 'cancelled' | 'cancelled_by_client' | 'no_show'
-  attendance?: 'present' | 'absent'
+  status?: 'pending' | 'confirmed' | 'cancelled'
 }
 
 interface MonthlyCalendarProps {
@@ -34,10 +30,6 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
   const [loadingClientStatus, setLoadingClientStatus] = useState(false)
   const [unblocking, setUnblocking] = useState(false)
   const [unblockSuccess, setUnblockSuccess] = useState(false)
-  const [markingAttendance, setMarkingAttendance] = useState(false)
-  const [attendanceError, setAttendanceError] = useState('')
-  const [attendanceSuccess, setAttendanceSuccess] = useState('')
-  const [absentConfirmModalOpen, setAbsentConfirmModalOpen] = useState(false)
 
   // Obtenir le premier jour du mois et le nombre de jours
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1)
@@ -104,117 +96,6 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
       setIsBlocked(false)
     }
   }, [selectedBooking])
-
-  // Helper function to check if booking start time has passed
-  const isBookingInPast = (booking: Booking): boolean => {
-    try {
-      const bookingStartDate = new Date(`${booking.date}T${booking.start_time}`)
-      if (isNaN(bookingStartDate.getTime())) {
-        return false
-      }
-      return bookingStartDate <= new Date()
-    } catch {
-      return false
-    }
-  }
-
-  // Helper function to check if attendance can be marked
-  const canMarkAttendance = (booking: Booking): boolean => {
-    // Must be in the past
-    if (!isBookingInPast(booking)) {
-      return false
-    }
-    // Must not be cancelled
-    if (booking.status === 'cancelled' || booking.status === 'cancelled_by_client') {
-      return false
-    }
-    // Must not already have attendance marked
-    if (booking.attendance === 'present' || booking.attendance === 'absent') {
-      return false
-    }
-    return true
-  }
-
-  const handleMarkAttendanceClick = (attendance: 'present' | 'absent') => {
-    if (attendance === 'absent') {
-      // Show confirmation modal for absence
-      setAbsentConfirmModalOpen(true)
-    } else {
-      // Directly mark as present (no penalty)
-      handleMarkAttendance('present')
-    }
-  }
-
-  const handleMarkAttendance = async (attendance: 'present' | 'absent') => {
-    if (!selectedBooking || markingAttendance) {
-      return
-    }
-
-    // Validate required fields
-    if (!selectedBooking.id) {
-      setAttendanceError('ID de réservation manquant')
-      return
-    }
-
-    if (!proId) {
-      setAttendanceError('ID professionnel manquant')
-      return
-    }
-
-    // Close confirmation modal if open
-    setAbsentConfirmModalOpen(false)
-
-    setMarkingAttendance(true)
-    setAttendanceError('')
-    setAttendanceSuccess('')
-
-    // Prepare payload
-    const payload = {
-      bookingId: selectedBooking.id,
-      pro_id: proId,
-      attendance: attendance,
-    }
-
-    // Temporary console.log for debugging
-    console.log('ATTENDANCE PAYLOAD', payload)
-
-    try {
-      const response = await fetch(`/api/bookings/${selectedBooking.id}/attendance`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la confirmation de présence')
-      }
-
-      setAttendanceSuccess(
-        attendance === 'present' 
-          ? 'Présence confirmée avec succès' 
-          : 'Absence enregistrée avec succès'
-      )
-
-      // Update booking in local state
-      setSelectedBooking({
-        ...selectedBooking,
-        attendance,
-        status: attendance === 'absent' ? 'no_show' : selectedBooking.status,
-      })
-
-      // Reload page after 1.5 seconds to refresh bookings list
-      setTimeout(() => {
-        window.location.reload()
-      }, 1500)
-    } catch (err: any) {
-      setAttendanceError(err.message || 'Erreur lors de la confirmation de présence')
-      setMarkingAttendance(false)
-    }
-  }
 
   const handleUnblock = async () => {
     if (!clientId) return
@@ -362,10 +243,8 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <div className="font-semibold text-[#2A1F2D] mb-1 flex items-center gap-2">
-                        {booking.attendance === 'present' && <span className="text-green-600">✔</span>}
-                        {booking.attendance === 'absent' && <span className="text-red-600">❌</span>}
-                        <span>{booking.serviceName}</span>
+                      <div className="font-semibold text-[#2A1F2D] mb-1">
+                        {booking.serviceName}
                       </div>
                       <div className="text-sm text-slate-600">
                         {booking.start_time}
@@ -514,75 +393,6 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
                     )}
                   </div>
                 )}
-
-                {/* Attendance status display */}
-                {selectedBooking && (selectedBooking.attendance === 'present' || selectedBooking.attendance === 'absent') && (
-                  <div className={`mt-4 p-4 rounded-[24px] border ${
-                    selectedBooking.attendance === 'present' 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-red-50 border-red-200'
-                  }`}>
-                    <div className={`text-sm font-semibold flex items-center gap-2 ${
-                      selectedBooking.attendance === 'present' 
-                        ? 'text-green-700' 
-                        : 'text-red-700'
-                    }`}>
-                      {selectedBooking.attendance === 'present' ? (
-                        <>
-                          <span className="text-lg">✔</span>
-                          <span>Client présent</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg">❌</span>
-                          <span>Client absent</span>
-                        </>
-                      )}
-                    </div>
-                    <div className={`text-xs mt-1 ${
-                      selectedBooking.attendance === 'present' 
-                        ? 'text-green-600' 
-                        : 'text-red-600'
-                    }`}>
-                      Présence confirmée
-                    </div>
-                  </div>
-                )}
-
-                {/* Attendance confirmation section */}
-                {selectedBooking && canMarkAttendance(selectedBooking) && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-[24px]">
-                    <div className="text-sm font-semibold text-blue-900 mb-3">
-                      Confirmer la présence
-                    </div>
-                    {attendanceError && (
-                      <div className="mb-3 text-xs text-red-600 font-medium">
-                        {attendanceError}
-                      </div>
-                    )}
-                    {attendanceSuccess && (
-                      <div className="mb-3 text-xs text-green-600 font-medium">
-                        {attendanceSuccess}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleMarkAttendanceClick('present')}
-                        disabled={markingAttendance || selectedBooking.attendance !== undefined}
-                        className="flex-1 rounded-[24px] bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                      >
-                        {markingAttendance ? '...' : '✓ Client présent'}
-                      </Button>
-                      <Button
-                        onClick={() => handleMarkAttendanceClick('absent')}
-                        disabled={markingAttendance || selectedBooking.attendance !== undefined || selectedBooking.attendance === 'absent'}
-                        className="flex-1 rounded-[24px] bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                      >
-                        {markingAttendance ? '...' : '✗ Client absent'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="mt-6 flex justify-end">
                 <button
@@ -591,9 +401,6 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
                     setClientId(null)
                     setIsBlocked(false)
                     setUnblockSuccess(false)
-                    setAttendanceError('')
-                    setAttendanceSuccess('')
-                    setAbsentConfirmModalOpen(false)
                   }}
                   className="px-4 py-2 rounded-[32px] bg-primary text-white hover:bg-primaryDark transition-colors"
                 >
@@ -604,59 +411,6 @@ export function MonthlyCalendar({ month, bookings, proId }: MonthlyCalendarProps
           </motion.div>
         </div>
       )}
-
-      {/* Absence Confirmation Modal */}
-      <Modal
-        isOpen={absentConfirmModalOpen}
-        onClose={() => {
-          if (!markingAttendance) {
-            setAbsentConfirmModalOpen(false)
-          }
-        }}
-        title="Confirmer l'absence"
-      >
-        <div className="space-y-4">
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-[24px] text-sm">
-            <p className="font-semibold mb-1">Attention :</p>
-            <p>Confirmer l'absence du client ?</p>
-            <p className="mt-1">Cette action ajoutera une pénalité.</p>
-          </div>
-
-          {selectedBooking && (
-            <div className="text-sm text-gray-700 space-y-1">
-              <p><span className="font-medium">Client :</span> {selectedBooking.client_name}</p>
-              <p><span className="font-medium">Service :</span> {selectedBooking.serviceName}</p>
-              <p><span className="font-medium">Date :</span> {new Date(selectedBooking.date + 'T00:00:00').toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}</p>
-              <p><span className="font-medium">Heure :</span> {selectedBooking.start_time}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAbsentConfirmModalOpen(false)}
-              disabled={markingAttendance}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              onClick={() => handleMarkAttendance('absent')}
-              disabled={markingAttendance}
-              className="flex-1 bg-red-600 text-white hover:bg-red-700"
-            >
-              {markingAttendance ? 'Enregistrement...' : 'Confirmer l\'absence'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }

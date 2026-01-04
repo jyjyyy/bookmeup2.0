@@ -11,47 +11,27 @@ import { Summary } from './components/Summary'
 import { ConfirmButton } from './components/ConfirmButton'
 import type { BookingPro, BookingService } from './types'
 
-interface ExistingBooking {
-  id: string
-  serviceId: string
-  date: string
-  startTime: string
-  clientName: string
-  clientEmail: string
-  clientPhone?: string
-  proId?: string
-  duration?: number
-}
-
 interface BookingPageClientProps {
   pro: BookingPro
   services: BookingService[]
   initialServiceId?: string | null
-  editBookingId?: string | null
-  existingBooking?: ExistingBooking | null
 }
 
 export function BookingPageClient({
   pro,
   services,
   initialServiceId,
-  editBookingId,
-  existingBooking,
 }: BookingPageClientProps) {
   const searchParams = useSearchParams()
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
-    initialServiceId ?? existingBooking?.serviceId ?? null
+    initialServiceId ?? null
   )
-  const [selectedDate, setSelectedDate] = useState<string | null>(
-    existingBooking?.date ?? null
-  )
-  const [selectedTime, setSelectedTime] = useState<string | null>(
-    existingBooking?.startTime ?? null
-  )
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [showServiceSelector, setShowServiceSelector] = useState(false)
-  const [firstName, setFirstName] = useState(existingBooking?.clientName ?? '')
-  const [phone, setPhone] = useState(existingBooking?.clientPhone ?? '')
-  const [email, setEmail] = useState(existingBooking?.clientEmail ?? '')
+  const [firstName, setFirstName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
 
   // Pré-sélectionner le service si initialServiceId est fourni
   useEffect(() => {
@@ -99,12 +79,6 @@ export function BookingPageClient({
 
   return (
     <div className="space-y-6 pb-32">
-      {editBookingId && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-[32px] text-sm">
-          <p className="font-semibold mb-1">Modification de votre rendez-vous</p>
-          <p>Choisissez un nouveau créneau disponible pour votre rendez-vous.</p>
-        </div>
-      )}
       <BookingHeader pro={pro} servicesCount={services.length} />
 
       {/* Service sélectionné (sticky) ou sélecteur */}
@@ -136,7 +110,6 @@ export function BookingPageClient({
               date={selectedDate}
               selectedTime={selectedTime}
               onSelectTime={setSelectedTime}
-              excludeBookingId={editBookingId}
             />
           )}
         </div>
@@ -169,8 +142,6 @@ export function BookingPageClient({
           firstName={firstName}
           phone={phone}
           email={email}
-          editBookingId={editBookingId}
-          existingBooking={existingBooking}
         />
       )}
     </div>

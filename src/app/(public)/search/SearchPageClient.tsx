@@ -1,176 +1,80 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { SearchPro, SearchService } from '@/app/api/pros/search/route'
-import { calculateDistance, getCurrentPosition } from '@/lib/geolocation'
+import { getCurrentUser } from '@/lib/auth'
 
-interface CitySuggestion {
+interface CatalogService {
   id: string
   name: string
-  department: string
-  region: string
-  location: {
-    lat: number
-    lng: number
-  }
-}
-
-interface SelectedCity {
-  id: string
-  name: string
-  department: string
-  location: {
-    lat: number
-    lng: number
-  }
+  category: string | null
 }
 
 export function SearchPageClient() {
+  const router = useRouter()
   const [pros, setPros] = useState<SearchPro[]>([])
   const [filteredPros, setFilteredPros] = useState<SearchPro[]>([])
+  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null)
-  const [cityQuery, setCityQuery] = useState('')
-  const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>([])
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false)
-  const [loadingCitySuggestions, setLoadingCitySuggestions] = useState(false)
-  const cityAutocompleteRef = useRef<HTMLDivElement>(null)
-  const [selectedService, setSelectedService] = useState<string | 'all'>('all')
+  const [selectedCity, setSelectedCity] = useState<string | 'all'>('all')
+  const [selectedServiceId, setSelectedServiceId] = useState<string | 'all'>('all')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // Geolocation state
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [locationLoading, setLocationLoading] = useState(false)
-  const [locationError, setLocationError] = useState<string | null>(null)
-  const [radius, setRadius] = useState<5 | 10 | 20>(10) // Default 10km
-  const [useLocation, setUseLocation] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
 
-  // Load pros on mount
+  // Load pros and services catalog on mount
   useEffect(() => {
-    const loadPros = async () => {
+    const loadData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        const response = await fetch('/api/pros/search')
+        // Load pros and services catalog in parallel
+        const [prosResponse, catalogResponse] = await Promise.all([
+          fetch('/api/pros/search'),
+          fetch('/api/services/catalog'),
+        ])
         
-        if (!response.ok) {
+        if (!prosResponse.ok) {
           throw new Error('Erreur lors du chargement des professionnels')
         }
 
-        const data = await response.json()
-        setPros(data.pros || [])
-        setFilteredPros(data.pros || [])
+        if (!catalogResponse.ok) {
+          console.warn('Failed to load services catalog, continuing without it')
+        }
+
+        const prosData = await prosResponse.json()
+        setPros(prosData.pros || [])
+        setFilteredPros(prosData.pros || [])
+
+        if (catalogResponse.ok) {
+          const catalogData = await catalogResponse.json()
+          setCatalogServices(catalogData.services || [])
+        }
       } catch (err: any) {
-        console.error('Error loading pros:', err)
+        console.error('Error loading data:', err)
         setError(err.message || 'Erreur lors du chargement')
       } finally {
         setLoading(false)
       }
     }
 
-    loadPros()
+    loadData()
   }, [])
 
-  // Fetch city autocomplete suggestions
-  useEffect(() => {
-    if (cityQuery.length < 2) {
-      setCitySuggestions([])
-      setShowCitySuggestions(false)
-      return
-    }
-
-    const fetchSuggestions = async () => {
-      setLoadingCitySuggestions(true)
-      try {
-        const response = await fetch(
-          `/api/cities/autocomplete?q=${encodeURIComponent(cityQuery)}`
-        )
-        if (response.ok) {
-          const data = await response.json()
-          // Limit to 15 results (between 10-20)
-          setCitySuggestions(data.slice(0, 15))
-          setShowCitySuggestions(data.length > 0)
-        }
-      } catch (err) {
-        console.error('Error fetching city suggestions:', err)
-      } finally {
-        setLoadingCitySuggestions(false)
-      }
-    }
-
-    const debounceTimer = setTimeout(fetchSuggestions, 300)
-    return () => clearTimeout(debounceTimer)
-  }, [cityQuery])
-
-  // Close city suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (cityAutocompleteRef.current && !cityAutocompleteRef.current.contains(event.target as Node)) {
-        setShowCitySuggestions(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleSelectCity = (city: CitySuggestion) => {
-    setSelectedCity({
-      id: city.id,
-      name: city.name,
-      department: city.department,
-      location: city.location,
-    })
-    setCityQuery(city.name)
-    setShowCitySuggestions(false)
-  }
-
-  const handleClearCity = () => {
-    setSelectedCity(null)
-    setCityQuery('')
-    setCitySuggestions([])
-    setShowCitySuggestions(false)
-  }
-
-  // Request geolocation
-  const handleEnableLocation = async () => {
-    try {
-      setLocationLoading(true)
-      setLocationError(null)
-      const position = await getCurrentPosition()
-      setUserLocation({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      })
-      setUseLocation(true)
-      // Clear city selection when using location
-      handleClearCity()
-    } catch (err: any) {
-      setLocationError(err.message || 'Erreur de géolocalisation')
-      setUseLocation(false)
-    } finally {
-      setLocationLoading(false)
-    }
-  }
-
-  const handleDisableLocation = () => {
-    setUseLocation(false)
-    setUserLocation(null)
-    setLocationError(null)
-  }
-
-  // Filter pros based on search term, city, service, and distance
+  // Filter pros based on search term, city, and service
   useEffect(() => {
     let filtered = [...pros]
 
-    // Filter by search term
+    // Filter by search term (pro name OR service name OR city)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim()
       filtered = filtered.filter((pro) => {
@@ -178,7 +82,7 @@ export function SearchPageClient() {
         if (pro.business_name?.toLowerCase().includes(term)) {
           return true
         }
-        // Search in city
+        // Search in city (case-insensitive)
         if (pro.city?.toLowerCase().includes(term)) {
           return true
         }
@@ -190,62 +94,94 @@ export function SearchPageClient() {
       })
     }
 
-    // Filter by city (using cityName if available, fallback to city)
-    // Skip if using location-based search
-    if (selectedCity && !useLocation) {
+    // Filter by city (case-insensitive, normalized)
+    if (selectedCity !== 'all') {
+      const normalizedCity = selectedCity.trim().toLowerCase()
       filtered = filtered.filter((pro) => {
-        // Match by cityName (new field) or city (legacy field)
-        return pro.cityName === selectedCity.name || pro.city === selectedCity.name
+        if (!pro.city) return false
+        return pro.city.trim().toLowerCase() === normalizedCity
       })
     }
 
-    // Filter by service
-    if (selectedService !== 'all') {
+    // Filter by service (using serviceId from services_catalog)
+    if (selectedServiceId !== 'all') {
       filtered = filtered.filter((pro) =>
-        pro.services.some((service) => service.name === selectedService)
+        pro.services.some((service) => service.serviceId === selectedServiceId)
       )
     }
 
-    // Filter by distance if using location
-    if (useLocation && userLocation) {
-      filtered = filtered
-        .filter((pro) => {
-          if (!pro.location?.lat || !pro.location?.lng) {
-            return false // Skip pros without location data
-          }
-          
-          const distance = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            pro.location.lat,
-            pro.location.lng
-          )
-          
-          // Store distance for sorting
-          pro.distance = distance
-          
-          return distance <= radius
-        })
-        .sort((a, b) => {
-          // Sort by distance (closest first)
-          const distanceA = a.distance || Infinity
-          const distanceB = b.distance || Infinity
-          return distanceA - distanceB
-        })
-    } else {
-      // Clear distance when not using location
-      filtered.forEach((pro) => {
-        delete pro.distance
-      })
+    setFilteredPros(filtered)
+  }, [pros, searchTerm, selectedCity, selectedServiceId])
+
+  // Extract unique cities (normalized, case-insensitive)
+  const cities = Array.from(
+    new Set(
+      pros
+        .map((p) => p.city?.trim())
+        .filter(Boolean) as string[]
+    )
+  ).sort()
+
+  // Extract services that are actively offered by visible PROs
+  const availableServices = Array.from(
+    new Map(
+      pros
+        .flatMap((pro) => pro.services)
+        .filter((service): service is SearchService & { serviceId: string } => 
+          Boolean(service.serviceId && service.name)
+        )
+        .map((service) => [service.serviceId, { id: service.serviceId, name: service.name }])
+    ).values()
+  ).sort((a, b) => a.name.localeCompare(b.name))
+
+  // Get suggestions based on search term
+  const getSuggestions = () => {
+    if (!searchTerm.trim() || searchTerm.length < 2) {
+      return { cities: [], services: [] }
     }
 
-    setFilteredPros(filtered)
-  }, [pros, searchTerm, selectedCity, selectedService, useLocation, userLocation, radius])
+    const term = searchTerm.toLowerCase().trim()
+    const normalize = (str: string) =>
+      str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
 
-  // Extract unique service names
-  const services = Array.from(
-    new Set(pros.flatMap((p) => p.services.map((s) => s.name).filter(Boolean)))
-  ).sort()
+    const normalizedTerm = normalize(term)
+
+    // Filter cities
+    const matchingCities = cities
+      .filter((city) => normalize(city).includes(normalizedTerm))
+      .slice(0, 5)
+
+    // Filter services (only those offered by visible PROs)
+    const matchingServices = availableServices
+      .filter((service) => normalize(service.name).includes(normalizedTerm))
+      .slice(0, 5)
+
+    return { cities: matchingCities, services: matchingServices }
+  }
+
+  const suggestions = getSuggestions()
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -267,16 +203,45 @@ export function SearchPageClient() {
     )
   }
 
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city)
+    setSearchTerm('')
+    setShowSuggestions(false)
+  }
+
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedServiceId(serviceId)
+    setSearchTerm('')
+    setShowSuggestions(false)
+  }
+
+  const handleRemoveCityFilter = () => {
+    setSelectedCity('all')
+  }
+
+  const handleRemoveServiceFilter = () => {
+    setSelectedServiceId('all')
+  }
+
   return (
     <div className="space-y-8">
       {/* Search Bar */}
       <div className="space-y-4">
         <div className="relative">
           <input
+            ref={searchInputRef}
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Rechercher une pro, une ville ou un service…"
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setShowSuggestions(e.target.value.length >= 2)
+            }}
+            onFocus={() => {
+              if (searchTerm.length >= 2) {
+                setShowSuggestions(true)
+              }
+            }}
+            placeholder="Rechercher un service ou une ville"
             className="w-full px-6 py-4 rounded-[32px] bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-bookmeup-sm text-gray-900 placeholder:text-gray-400"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -294,197 +259,116 @@ export function SearchPageClient() {
               />
             </svg>
           </div>
-        </div>
 
-        {/* Filters */}
-        <div className="space-y-3">
-          {/* Location-based search toggle */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {!useLocation ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleEnableLocation}
-                disabled={locationLoading}
-                className="rounded-[32px]"
-              >
-                {locationLoading ? (
-                  <>
-                    <div className="w-4 h-4 mr-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Géolocalisation...
-                  </>
-                ) : (
-                  <>
-                    📍 Autour de moi
-                  </>
-                )}
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-[32px]">
-                <span className="text-primary">📍 Autour de moi activé</span>
-                <button
-                  type="button"
-                  onClick={handleDisableLocation}
-                  className="text-primary hover:text-primary/70 transition-colors"
-                  title="Désactiver la géolocalisation"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
-            
-            {useLocation && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700 whitespace-nowrap">
-                  Rayon:
-                </label>
-                <select
-                  value={radius}
-                  onChange={(e) => setRadius(Number(e.target.value) as 5 | 10 | 20)}
-                  className="px-3 py-2 rounded-[24px] bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                >
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={20}>20 km</option>
-                </select>
-              </div>
-            )}
-            
-            {locationError && (
-              <div className="text-sm text-red-600 px-3 py-2 bg-red-50 border border-red-200 rounded-[24px]">
-                {locationError}
-              </div>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap gap-3">
-            {/* City Filter - Autocomplete (disabled when using location) */}
-            <div ref={cityAutocompleteRef} className="flex-1 min-w-[200px] relative">
-              <div className="relative">
-              <input
-                type="text"
-                value={cityQuery}
-                onChange={(e) => {
-                  setCityQuery(e.target.value)
-                  setSelectedCity(null)
-                  setShowCitySuggestions(true)
-                }}
-                onFocus={() => {
-                  if (citySuggestions.length > 0 && !useLocation) {
-                    setShowCitySuggestions(true)
-                  }
-                }}
-                placeholder={useLocation ? "📍 Recherche par géolocalisation active" : "📍 Rechercher une ville..."}
-                disabled={useLocation}
-                className="w-full px-4 py-3 pr-10 rounded-[32px] bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-gray-900 text-sm placeholder:text-gray-400 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-              />
-              {selectedCity && (
-                <button
-                  type="button"
-                  onClick={handleClearCity}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Effacer la ville"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+          {/* Suggestions Dropdown */}
+          {showSuggestions && (suggestions.cities.length > 0 || suggestions.services.length > 0) && (
+            <div
+              ref={suggestionsRef}
+              className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-80 overflow-y-auto"
+            >
+              {suggestions.cities.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                    Villes
+                  </div>
+                  {suggestions.cities.map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => handleCitySelect(city)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-900"
+                    >
+                      <span className="text-gray-400">📍</span>
+                      <span>{city}</span>
+                    </button>
+                  ))}
+                </div>
               )}
-              {loadingCitySuggestions && (
-                <div className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                  ...
+
+              {suggestions.services.length > 0 && (
+                <div>
+                  {suggestions.cities.length > 0 && (
+                    <div className="border-t border-gray-100" />
+                  )}
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                    Services
+                  </div>
+                  {suggestions.services.map((service) => (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => handleServiceSelect(service.id)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-900"
+                    >
+                      <span className="text-gray-400">💅</span>
+                      <span>{service.name}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-            
-            {showCitySuggestions && citySuggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[24px] shadow-lg max-h-60 overflow-y-auto">
-                {citySuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.id}
-                    type="button"
-                    onClick={() => handleSelectCity(suggestion)}
-                    className="w-full text-left px-4 py-3 hover:bg-primary/10 transition-colors first:rounded-t-[24px] last:rounded-b-[24px]"
-                  >
-                    <div className="font-medium text-[#2A1F2D]">{suggestion.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {suggestion.department} - {suggestion.region}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-              </div>
-            </div>
-
-            {/* Service Filter */}
-          <div className="flex-1 min-w-[200px]">
-            <select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value as string | 'all')}
-              className="w-full px-4 py-3 rounded-[32px] bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-gray-900 text-sm"
-            >
-              <option value="all">✨ Tous les services</option>
-              {services.map((service) => (
-                <option key={service} value={service}>
-                  {service}
-                </option>
-              ))}
-            </select>
-          </div>
+          )}
         </div>
+
+        {/* Filter Chips */}
+        {(selectedCity !== 'all' || selectedServiceId !== 'all') && (
+          <div className="flex flex-wrap gap-2">
+            {selectedCity !== 'all' && (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm">
+                <span>📍</span>
+                <span>{selectedCity}</span>
+                <button
+                  type="button"
+                  onClick={handleRemoveCityFilter}
+                  className="ml-1 hover:text-primary/80 transition-colors"
+                  aria-label="Retirer le filtre ville"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {selectedServiceId !== 'all' && (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm">
+                <span>💅</span>
+                <span>
+                  {availableServices.find((s) => s.id === selectedServiceId)?.name ||
+                    catalogServices.find((s) => s.id === selectedServiceId)?.name ||
+                    'Service'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemoveServiceFilter}
+                  className="ml-1 hover:text-primary/80 transition-colors"
+                  aria-label="Retirer le filtre service"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results Count */}
       {filteredPros.length > 0 && (
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-gray-600">
-            {filteredPros.length} professionnelle{filteredPros.length > 1 ? 's' : ''} trouvée{filteredPros.length > 1 ? 's' : ''}
-          </p>
-          {useLocation && userLocation && (
-            <span className="text-xs text-gray-500">
-              dans un rayon de {radius} km
-            </span>
-          )}
-        </div>
+        <p className="text-sm text-gray-600">
+          {filteredPros.length} professionnelle{filteredPros.length > 1 ? 's' : ''} trouvée{filteredPros.length > 1 ? 's' : ''}
+        </p>
       )}
 
       {/* Results */}
       {filteredPros.length === 0 ? (
         <Card className="p-12 text-center">
           <p className="text-gray-600 text-lg">
-            Aucune pro ne correspond à ta recherche pour le moment.
+            Aucun professionnel trouvé
           </p>
-          {(searchTerm || selectedCity || selectedService !== 'all' || useLocation) && (
+          {(searchTerm || selectedCity !== 'all' || selectedServiceId !== 'all') && (
             <Button
               variant="outline"
               onClick={() => {
                 setSearchTerm('')
-                handleClearCity()
-                setSelectedService('all')
-                handleDisableLocation()
+                setSelectedCity('all')
+                setSelectedServiceId('all')
               }}
               className="mt-4 rounded-[32px]"
             >
@@ -513,36 +397,12 @@ export function SearchPageClient() {
                       <h3 className="text-xl font-bold text-slate-900 flex-1 pr-2">
                         {pro.business_name}
                       </h3>
-                      {pro.plan && (
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                            pro.plan === 'premium'
-                              ? 'bg-gradient-to-r from-yellow-100 to-pink-100 text-pink-700 border border-pink-200'
-                              : pro.plan === 'pro'
-                              ? 'bg-primary/10 text-primary border border-primary/20'
-                              : 'bg-gray-100 text-gray-600 border border-gray-200'
-                          }`}
-                        >
-                          {pro.plan === 'premium'
-                            ? '⭐ Premium'
-                            : pro.plan === 'pro'
-                            ? '✨ Pro'
-                            : 'Starter'}
-                        </span>
-                      )}
                     </div>
 
                     {pro.city && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <p className="text-sm text-gray-600">
-                          📍 {pro.city}
-                        </p>
-                        {pro.distance !== undefined && (
-                          <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded-full">
-                            {pro.distance} km
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        📍 {pro.city}
+                      </p>
                     )}
                   </div>
 
@@ -584,14 +444,29 @@ export function SearchPageClient() {
                   {/* Actions */}
                   <div className="pt-4 border-t border-gray-100">
                     {pro.slug ? (
-                      <Link href={`/pro/${pro.slug}`} className="block">
-                        <Button
-                          size="sm"
-                          className="w-full rounded-[32px] text-sm"
-                        >
-                          Voir la fiche
-                        </Button>
-                      </Link>
+                      <Button
+                        size="sm"
+                        className="w-full rounded-[32px] text-sm"
+                        onClick={async () => {
+                          try {
+                            const current = await getCurrentUser()
+                            if (!current.user) {
+                              router.push(
+                                `/auth/login?redirect=/pro/${pro.slug}`
+                              )
+                              return
+                            }
+                            router.push(`/pro/${pro.slug}`)
+                          } catch {
+                            // En cas d'erreur, fallback vers la page de connexion
+                            router.push(
+                              `/auth/login?redirect=/pro/${pro.slug}`
+                            )
+                          }
+                        }}
+                      >
+                        Voir la fiche
+                      </Button>
                     ) : (
                       <Button
                         disabled

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
@@ -29,23 +29,6 @@ export default function AccountPage() {
   // Pro data
   const [businessName, setBusinessName] = useState('')
   const [city, setCity] = useState('')
-  const [selectedCity, setSelectedCity] = useState<{
-    id: string
-    name: string
-    department: string
-    location: { lat: number; lng: number }
-  } | null>(null)
-  const [cityQuery, setCityQuery] = useState('')
-  const [citySuggestions, setCitySuggestions] = useState<Array<{
-    id: string
-    name: string
-    department: string
-    region: string
-    location: { lat: number; lng: number }
-  }>>([])
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false)
-  const [loadingCitySuggestions, setLoadingCitySuggestions] = useState(false)
-  const cityAutocompleteRef = useRef<HTMLDivElement>(null)
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [description, setDescription] = useState('')
@@ -98,26 +81,12 @@ export default function AccountPage() {
         if (prosDoc.exists()) {
           const prosData = prosDoc.data()
           setBusinessName(prosData.business_name || '')
-          setCity(prosData.cityName || prosData.city || '')
+          setCity(prosData.city || '')
           setPhone(prosData.phone || '')
           setAddress(prosData.address || '')
           setDescription(prosData.description || '')
           setSlug(prosData.slug || '')
           setShowInSearch(prosData.show_in_search || false)
-          
-          // Load selected city if cityId exists
-          if (prosData.cityId && prosData.cityName && prosData.location) {
-            setSelectedCity({
-              id: prosData.cityId,
-              name: prosData.cityName,
-              department: prosData.cityDepartment || '',
-              location: {
-                lat: prosData.location.lat,
-                lng: prosData.location.lng,
-              },
-            })
-            setCityQuery(prosData.cityName)
-          }
           
           // Load socials
           if (prosData.socials) {
@@ -158,71 +127,10 @@ export default function AccountPage() {
     loadData()
   }, [router])
 
-  // Fetch city autocomplete suggestions
-  useEffect(() => {
-    if (cityQuery.length < 2) {
-      setCitySuggestions([])
-      setShowCitySuggestions(false)
-      return
-    }
-
-    const fetchSuggestions = async () => {
-      setLoadingCitySuggestions(true)
-      try {
-        const response = await fetch(
-          `/api/cities/autocomplete?q=${encodeURIComponent(cityQuery)}`
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setCitySuggestions(data)
-          setShowCitySuggestions(data.length > 0)
-        }
-      } catch (err) {
-        console.error('Error fetching city suggestions:', err)
-      } finally {
-        setLoadingCitySuggestions(false)
-      }
-    }
-
-    const debounceTimer = setTimeout(fetchSuggestions, 300)
-    return () => clearTimeout(debounceTimer)
-  }, [cityQuery])
-
-  // Close city suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (cityAutocompleteRef.current && !cityAutocompleteRef.current.contains(event.target as Node)) {
-        setShowCitySuggestions(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleSelectCity = (city: {
-    id: string
-    name: string
-    department: string
-    region: string
-    location: { lat: number; lng: number }
-  }) => {
-    setSelectedCity({
-      id: city.id,
-      name: city.name,
-      department: city.department,
-      location: city.location,
-    })
-    setCityQuery(city.name)
-    setCity(city.name)
-    setShowCitySuggestions(false)
-  }
-
   const handleGenerateSlug = () => {
-    const cityNameForSlug = selectedCity?.name || city || ''
     const generatedSlug = generateSlugFromNameAndCity(
       businessName || name,
-      cityNameForSlug
+      city
     )
     setSlug(generatedSlug)
   }
@@ -263,11 +171,6 @@ export default function AccountPage() {
         throw new Error('Le nom du salon est obligatoire')
       }
 
-      // City is required
-      if (!selectedCity) {
-        throw new Error('Veuillez sélectionner une ville')
-      }
-
       if (showInSearch && !slug.trim()) {
         throw new Error('Vous devez définir un slug pour apparaître dans la recherche')
       }
@@ -288,26 +191,16 @@ export default function AccountPage() {
         }
       }
 
-      // Prepare update data
-      const updateData: any = {
+      await updateDoc(doc(db, 'pros', uid), {
         business_name: businessName.trim(),
-        city: selectedCity.name, // Keep for backward compatibility
-        cityId: selectedCity.id,
-        cityName: selectedCity.name,
-        cityDepartment: selectedCity.department,
-        location: {
-          lat: selectedCity.location.lat,
-          lng: selectedCity.location.lng,
-        },
+        city: city.trim() || null,
         phone: phone.trim() || null,
         address: address.trim() || null,
         description: description.trim() || null,
         slug: slug.trim() || null,
         show_in_search: showInSearch,
         updated_at: serverTimestamp(),
-      }
-
-      await updateDoc(doc(db, 'pros', uid), updateData)
+      })
 
       setSuccess('Fiche professionnelle enregistrée ✓')
       setTimeout(() => setSuccess(null), 3000)
@@ -553,21 +446,6 @@ export default function AccountPage() {
           </CardDescription>
         </CardHeader>
 
-        {/* Warning if city is not selected */}
-        {!selectedCity && (
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-[24px] text-sm">
-            <div className="flex items-start gap-2">
-              <span className="text-lg">⚠️</span>
-              <div>
-                <p className="font-semibold mb-1">Veuillez compléter votre localisation professionnelle</p>
-                <p className="text-yellow-700">
-                  Sélectionnez une ville pour améliorer votre visibilité et permettre aux clients de vous trouver plus facilement.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="space-y-4 mt-6">
           <Input
             label="Nom du salon / Business *"
@@ -578,49 +456,13 @@ export default function AccountPage() {
             required
           />
 
-          <div ref={cityAutocompleteRef} className="relative">
-            <Input
-              label="Ville *"
-              type="text"
-              value={cityQuery}
-              onChange={(e) => {
-                setCityQuery(e.target.value)
-                setSelectedCity(null)
-                setShowCitySuggestions(true)
-              }}
-              onFocus={() => {
-                if (citySuggestions.length > 0) {
-                  setShowCitySuggestions(true)
-                }
-              }}
-              placeholder="Rechercher une ville..."
-              required
-            />
-            
-            {showCitySuggestions && citySuggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[24px] shadow-lg max-h-60 overflow-y-auto">
-                {citySuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.id}
-                    type="button"
-                    onClick={() => handleSelectCity(suggestion)}
-                    className="w-full text-left px-4 py-3 hover:bg-primary/10 transition-colors first:rounded-t-[24px] last:rounded-b-[24px]"
-                  >
-                    <div className="font-medium text-[#2A1F2D]">{suggestion.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {suggestion.department} - {suggestion.region}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {loadingCitySuggestions && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                Recherche...
-              </div>
-            )}
-          </div>
+          <Input
+            label="Ville"
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Ex: Paris"
+          />
 
           <Input
             label="Téléphone"

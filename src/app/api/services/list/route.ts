@@ -68,47 +68,22 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Resolve service names and categories from services_catalog
-    const catalogRef = adminDb.collection('services_catalog')
-    const catalogDocs = await catalogRef.get()
-    const catalogMap = new Map<string, any>()
-    catalogDocs.docs.forEach((doc) => {
-      catalogMap.set(doc.id, doc.data())
+    const services = sortedDocs.map((doc) => {
+      const data = doc.data()
+      
+      return {
+        id: doc.id,
+        proId: data.proId || data.pro_id, // Support both for backward compatibility
+        serviceId: data.serviceId || null, // Reference to services_catalog
+        name: data.name,
+        description: data.description || '',
+        price: data.price,
+        duration: data.duration,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        created_at: data.created_at?.toDate?.()?.toISOString() || null,
+        updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
+      }
     })
-
-    const services = await Promise.all(
-      sortedDocs.map(async (doc) => {
-        const data = doc.data()
-        
-        // Support both old format (name) and new format (serviceId)
-        const serviceId = data.serviceId || null
-        let name = data.name || 'Service'
-        let category = null
-
-        // If serviceId exists, resolve from catalog
-        if (serviceId) {
-          const catalogData = catalogMap.get(serviceId)
-          if (catalogData) {
-            name = catalogData.name
-            category = catalogData.category
-          }
-        }
-        
-        return {
-          id: doc.id,
-          proId: data.proId || data.pro_id, // Support both for backward compatibility
-          serviceId: serviceId, // Reference to services_catalog (new format)
-          name, // Resolved from catalog or fallback to stored name
-          category, // Resolved from catalog
-          description: data.description || '',
-          price: data.price,
-          duration: data.duration,
-          isActive: data.isActive !== undefined ? data.isActive : true,
-          created_at: data.created_at?.toDate?.()?.toISOString() || null,
-          updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
-        }
-      })
-    )
 
     console.log('[API /services/list] Returning', services.length, 'services')
     return NextResponse.json({ services })

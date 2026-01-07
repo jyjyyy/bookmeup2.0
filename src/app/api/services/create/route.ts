@@ -5,23 +5,13 @@ import { FieldValue } from 'firebase-admin/firestore'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { proId, serviceId, description, price, duration } = body
+    const { proId, name, description, price, duration, serviceId } = body
 
     // Validation
-    // serviceId is the slug from services_catalog (e.g., "manucure_classique")
-    if (!proId || !serviceId || price === undefined || !duration) {
+    if (!proId || !name || price === undefined || !duration) {
       return NextResponse.json(
-        { error: 'Missing required fields: proId, serviceId, price, duration' },
+        { error: 'Missing required fields: proId, name, price, duration' },
         { status: 400 }
-      )
-    }
-
-    // Verify that the serviceId exists in the catalog
-    const catalogDoc = await adminDb.collection('services_catalog').doc(serviceId).get()
-    if (!catalogDoc.exists) {
-      return NextResponse.json(
-        { error: `Service "${serviceId}" not found in catalog` },
-        { status: 404 }
       )
     }
 
@@ -57,11 +47,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create service
-    // Store only serviceId (slug) as reference to services_catalog
-    // Name and category will be resolved from catalog when displaying
     const serviceData = {
       proId,
-      serviceId: serviceId.trim(), // Reference to services_catalog
+      name: name.trim(),
+      serviceId: serviceId || null, // Reference to services_catalog
       description: description?.trim() || '',
       price: Number(price),
       duration: Number(duration),

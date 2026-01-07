@@ -1,43 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { onAuthStateChanged, User } from 'firebase/auth'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebaseClient'
-import { signOut } from '@/lib/auth'
+import { getCurrentUser, type CurrentUser, signOut } from '@/lib/auth'
 
 export function Header() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser)
-      setLoading(false)
-      // Debug log as requested
-      console.log('Auth user in navbar:', firebaseUser?.email ?? null)
-    })
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe()
-  }, [])
-
-  const handleLogout = async () => {
-    try {
-      await signOut()
-      // Redirect to home page after logout
-      router.push('/')
-      router.refresh()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
-  }
-
   return (
     <motion.header
       initial={{ y: -100, opacity: 0 }}
@@ -65,27 +37,143 @@ export function Header() {
             >
               Recherche
             </Link>
-            {!loading && (
-              user ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleLogout}
-                >
-                  Se déconnecter
-                </Button>
-              ) : (
-                <Link href="/auth/login">
-                  <Button variant="primary" size="sm">
-                    Connexion
-                  </Button>
-                </Link>
-              )
-            )}
+            {/* Lien CLIENT vers Mes rendez-vous */}
+            <ClientAppointmentsLink />
+            {/* Lien vers les paramètres CLIENT uniquement */}
+            <ClientSettingsLink />
+            <AuthButton />
           </nav>
         </div>
       </div>
     </motion.header>
   )
 }
+
+function AuthButton() {
+  const router = useRouter()
+  const [current, setCurrent] = useState<CurrentUser | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setCurrent({ user: null, profile: null })
+      } else {
+        setCurrent((prev) =>
+          prev ? { ...prev, user } : { user, profile: null }
+        )
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // Pas d'utilisateur connecté → bouton Connexion
+  if (!current?.user) {
+    return (
+      <Link href="/auth/login">
+        <Button variant="primary" size="sm">
+          Connexion
+        </Button>
+      </Link>
+    )
+  }
+
+  // Utilisateur connecté (CLIENT ou PRO) → bouton Se déconnecter
+  return (
+    <Button
+      variant="primary"
+      size="sm"
+      onClick={async () => {
+        try {
+          await signOut()
+        } finally {
+          router.replace('/')
+        }
+      }}
+    >
+      Se déconnecter
+    </Button>
+  )
+}
+
+function ClientAppointmentsLink() {
+  const [current, setCurrent] = useState<CurrentUser | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      try {
+        const data = await getCurrentUser()
+        if (isMounted) {
+          setCurrent(data)
+        }
+      } catch {
+        if (isMounted) {
+          setCurrent({ user: null, profile: null })
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (!current?.user || current.profile?.role !== 'client') {
+    return null
+  }
+
+  return (
+    <Link
+      href="/account/appointments"
+      className="hidden sm:flex items-center gap-1 text-slate-700 hover:text-primary transition-colors text-sm font-medium"
+    >
+      <span>Mes rendez-vous</span>
+    </Link>
+  )
+}
+
+function ClientSettingsLink() {
+  const [current, setCurrent] = useState<CurrentUser | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      try {
+        const data = await getCurrentUser()
+        if (isMounted) {
+          setCurrent(data)
+        }
+      } catch {
+        if (isMounted) {
+          setCurrent({ user: null, profile: null })
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (!current?.user || current.profile?.role !== 'client') {
+    return null
+  }
+
+  return (
+    <Link
+      href="/account/settings"
+      className="hidden sm:flex items-center text-slate-700 hover:text-primary transition-colors text-sm font-medium"
+    >
+      <span className="text-lg">⚙️</span>
+    </Link>
+  )
+}
+
 

@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, FormEvent, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, FormEvent, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-interface ServiceSuggestion {
+interface CatalogService {
   id: string
   name: string
-  category: string
+  category: string | null
 }
 
 interface AddServiceModalProps {
@@ -19,111 +19,143 @@ interface AddServiceModalProps {
   proId: string
 }
 
-// Available service categories with French labels
-const SERVICE_CATEGORIES = [
-  { value: 'ongles', label: 'Ongles' },
-  { value: 'coiffure_femme', label: 'Coiffure Femme' },
-  { value: 'coiffure_homme', label: 'Coiffure Homme' },
-  { value: 'coiffure_enfant', label: 'Coiffure Enfant' },
-  { value: 'regard', label: 'Regard' },
-  { value: 'soins_visage', label: 'Soins du Visage' },
-  { value: 'soins_corps', label: 'Soins du Corps' },
-  { value: 'massages', label: 'Massages' },
-  { value: 'épilation', label: 'Épilation' },
-  { value: 'maquillage', label: 'Maquillage' },
-  { value: 'services_spécifiques', label: 'Services Spécifiques' },
-]
-
 export function AddServiceModal({
   isOpen,
   onClose,
   onSuccess,
   proId,
 }: AddServiceModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [serviceQuery, setServiceQuery] = useState('')
-  const [selectedService, setSelectedService] = useState<ServiceSuggestion | null>(null)
-  const [suggestions, setSuggestions] = useState<ServiceSuggestion[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [serviceType, setServiceType] = useState('')
+  const [serviceTypeInput, setServiceTypeInput] = useState('')
+  const [showServiceTypeSuggestions, setShowServiceTypeSuggestions] = useState(false)
+
+  const [serviceName, setServiceName] = useState('')
+  const [serviceNameInput, setServiceNameInput] = useState('')
+  const [showServiceNameSuggestions, setShowServiceNameSuggestions] = useState(false)
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
+
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [duration, setDuration] = useState('30')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
-  const autocompleteRef = useRef<HTMLDivElement>(null)
+  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([])
 
-  // Fetch autocomplete suggestions
+  const serviceTypeRef = useRef<HTMLDivElement>(null)
+  const serviceNameRef = useRef<HTMLDivElement>(null)
+
+  // Load services catalog on mount
   useEffect(() => {
-    // Require category to be selected before searching
-    if (!selectedCategory || serviceQuery.length < 1) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-
-    const fetchSuggestions = async () => {
-      setLoadingSuggestions(true)
-      try {
-        // Filter by category if selected
-        const url = `/api/services/autocomplete?q=${encodeURIComponent(serviceQuery)}&category=${encodeURIComponent(selectedCategory)}`
-        const response = await fetch(url)
-        if (response.ok) {
-          const data = await response.json()
-          // API already filters by category, but we can double-check client-side
-          const filtered = data.filter((service: ServiceSuggestion) => service.category === selectedCategory)
-          setSuggestions(filtered)
-          setShowSuggestions(filtered.length > 0)
+    if (isOpen) {
+      const loadCatalog = async () => {
+        try {
+          const response = await fetch('/api/services/catalog')
+          if (response.ok) {
+            const data = await response.json()
+            setCatalogServices(data.services || [])
+          }
+        } catch (err) {
+          console.error('Error loading services catalog:', err)
         }
-      } catch (err) {
-        console.error('Error fetching suggestions:', err)
-      } finally {
-        setLoadingSuggestions(false)
       }
+      loadCatalog()
     }
+  }, [isOpen])
 
-    const debounceTimer = setTimeout(fetchSuggestions, 300)
-    return () => clearTimeout(debounceTimer)
-  }, [serviceQuery, selectedCategory])
+  // Extract unique categories
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(catalogServices.map((s) => s.category).filter(Boolean))
+    ).sort() as string[]
+  }, [catalogServices])
+
+  // Get services for selected type
+  const servicesForSelectedType = useMemo(() => {
+    if (!serviceType) return []
+    return catalogServices.filter((s) => s.category === serviceType)
+  }, [serviceType, catalogServices])
+
+  // Filter service type suggestions (derived value)
+  const serviceTypeSuggestions = useMemo(() => {
+    const term = serviceTypeInput.toLowerCase().trim()
+    if (term) {
+      // Filter based on input
+      return categories.filter((cat) =>
+        cat.toLowerCase().includes(term)
+      )
+    } else {
+      // Show all categories when input is empty
+      return categories
+    }
+  }, [serviceTypeInput, categories])
+
+  // Filter service name suggestions (derived value)
+  const serviceNameSuggestions = useMemo(() => {
+    if (!serviceType) return []
+
+    const term = serviceNameInput.toLowerCase().trim()
+    if (term) {
+      // Filter based on input
+      return servicesForSelectedType.filter((s) =>
+        s.name.toLowerCase().includes(term)
+      )
+    } else {
+      // Show all services when input is empty
+      return servicesForSelectedType
+    }
+  }, [serviceNameInput, serviceType, servicesForSelectedType])
 
   // Close suggestions when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        serviceTypeRef.current &&
+        !serviceTypeRef.current.contains(event.target as Node)
+      ) {
+        setShowServiceTypeSuggestions(false)
+      }
+      if (
+        serviceNameRef.current &&
+        !serviceNameRef.current.contains(event.target as Node)
+      ) {
+        setShowServiceNameSuggestions(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category)
-    // Reset service selection when category changes
-    setSelectedService(null)
-    setServiceQuery('')
-    setSuggestions([])
-    setShowSuggestions(false)
+  const handleServiceTypeSelect = (category: string) => {
+    setServiceType(category)
+    setServiceTypeInput(category)
+    setShowServiceTypeSuggestions(false)
+    // Clear service name when type changes
+    setServiceName('')
+    setServiceNameInput('')
+    setSelectedServiceId(null)
   }
 
-  const handleSelectService = (service: ServiceSuggestion) => {
-    setSelectedService(service)
-    setServiceQuery(service.name)
-    setShowSuggestions(false)
+  const handleServiceNameSelect = (service: CatalogService) => {
+    setServiceName(service.name)
+    setServiceNameInput(service.name)
+    setSelectedServiceId(service.id)
+    setShowServiceNameSuggestions(false)
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!selectedCategory) {
-      setError('Veuillez sélectionner un type de service')
+    if (!serviceType.trim()) {
+      setError('Le type de service est requis')
       return
     }
 
-    if (!selectedService) {
-      setError('Veuillez sélectionner un service dans le catalogue')
+    if (!serviceName.trim() || !selectedServiceId) {
+      setError('Veuillez sélectionner un service valide dans la liste')
       return
     }
 
@@ -142,7 +174,8 @@ export function AddServiceModal({
         },
         body: JSON.stringify({
           proId,
-          serviceId: selectedService.id, // Send catalog serviceId (slug)
+          name: serviceName,
+          serviceId: selectedServiceId,
           description,
           price: Number(price),
           duration: Number(duration),
@@ -164,9 +197,11 @@ export function AddServiceModal({
       }
 
       // Reset form
-      setSelectedCategory('')
-      setServiceQuery('')
-      setSelectedService(null)
+      setServiceType('')
+      setServiceTypeInput('')
+      setServiceName('')
+      setServiceNameInput('')
+      setSelectedServiceId(null)
       setDescription('')
       setPrice('')
       setDuration('30')
@@ -181,9 +216,11 @@ export function AddServiceModal({
 
   const handleClose = () => {
     if (!loading) {
-      setSelectedCategory('')
-      setServiceQuery('')
-      setSelectedService(null)
+      setServiceType('')
+      setServiceTypeInput('')
+      setServiceName('')
+      setServiceNameInput('')
+      setSelectedServiceId(null)
       setDescription('')
       setPrice('')
       setDuration('30')
@@ -201,80 +238,94 @@ export function AddServiceModal({
           </div>
         )}
 
-        {/* Category Selector */}
-        <div>
+        {/* 1. Service type (category) */}
+        <div ref={serviceTypeRef} className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Type de service <span className="text-red-500">*</span>
+            Type de service *
           </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            required
+          <input
+            type="text"
+            name="service-type-input"
+            autoComplete="off"
+            value={serviceTypeInput}
+            onChange={(e) => {
+              setServiceTypeInput(e.target.value)
+              setServiceType('')
+              setShowServiceTypeSuggestions(true)
+            }}
+            onFocus={() => {
+              setShowServiceTypeSuggestions(true)
+            }}
             disabled={loading}
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Sélectionner un type de service</option>
-            {SERVICE_CATEGORIES.map((category) => (
-              <option key={category.value} value={category.value}>
-                {category.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Service Autocomplete - Only enabled when category is selected */}
-        <div ref={autocompleteRef} className="relative">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Service (recherche dans le catalogue)
-            </label>
-            <Input
-              type="text"
-              value={serviceQuery}
-              onChange={(e) => {
-                setServiceQuery(e.target.value)
-                setSelectedService(null)
-                setShowSuggestions(true)
-              }}
-              onFocus={() => {
-                if (suggestions.length > 0) {
-                  setShowSuggestions(true)
-                }
-              }}
-              required
-              disabled={loading || !selectedCategory}
-              placeholder={selectedCategory ? "Rechercher un service..." : "Choisissez un type de service"}
-            />
-            {!selectedCategory && (
-              <p className="mt-1 text-xs text-gray-500">
-                Choisissez un type de service ci-dessus pour activer la recherche
-              </p>
-            )}
-          </div>
-          
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[24px] shadow-lg max-h-60 overflow-y-auto">
-              {suggestions.map((service) => (
+            required
+            placeholder="Tapez pour rechercher un type..."
+            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+          {showServiceTypeSuggestions && serviceTypeSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-60 overflow-y-auto">
+              {serviceTypeSuggestions.map((category) => (
                 <button
-                  key={service.id}
+                  key={category}
                   type="button"
-                  onClick={() => handleSelectService(service)}
-                  className="w-full text-left px-4 py-3 hover:bg-primary/10 transition-colors first:rounded-t-[24px] last:rounded-b-[24px]"
+                  onClick={() => handleServiceTypeSelect(category)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900"
                 >
-                  <div className="font-medium text-[#2A1F2D]">{service.name}</div>
-                  <div className="text-xs text-gray-500 capitalize">{service.category.replace('_', ' ')}</div>
+                  {category}
                 </button>
               ))}
             </div>
           )}
-          
-          {loadingSuggestions && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-              Recherche...
+        </div>
+
+        {/* 2. Service name */}
+        <div ref={serviceNameRef} className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nom du service *
+          </label>
+          <input
+            type="text"
+            name="service-name-input"
+            autoComplete="off"
+            value={serviceNameInput}
+            onChange={(e) => {
+              setServiceNameInput(e.target.value)
+              setServiceName('')
+              setSelectedServiceId(null)
+              if (serviceType) {
+                setShowServiceNameSuggestions(true)
+              }
+            }}
+            onFocus={() => {
+              if (serviceType) {
+                setShowServiceNameSuggestions(true)
+              }
+            }}
+            disabled={loading || !serviceType}
+            required
+            placeholder={
+              serviceType
+                ? "Tapez pour rechercher un service..."
+                : "Sélectionnez d'abord un type de service"
+            }
+            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500"
+          />
+          {showServiceNameSuggestions && serviceNameSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-60 overflow-y-auto">
+              {serviceNameSuggestions.map((service) => (
+                <button
+                  key={service.id}
+                  type="button"
+                  onClick={() => handleServiceNameSelect(service)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900"
+                >
+                  {service.name}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
+        {/* 3. Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Description
@@ -284,15 +335,16 @@ export function AddServiceModal({
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading}
             rows={4}
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-gray-400"
             placeholder="Décrivez votre service..."
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* 4. Price */}
+        <div>
           <Input
             type="number"
-            label="Prix (€)"
+            label="Prix (€) *"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             required
@@ -301,25 +353,26 @@ export function AddServiceModal({
             step="0.01"
             placeholder="45"
           />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Durée (minutes)
-            </label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              disabled={loading}
-              className="w-full px-4 py-3 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="15">15 min</option>
-              <option value="30">30 min</option>
-              <option value="45">45 min</option>
-              <option value="60">60 min</option>
-              <option value="90">90 min</option>
-              <option value="120">120 min</option>
-            </select>
-          </div>
+        {/* 5. Duration */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Durée (minutes) *
+          </label>
+          <select
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            disabled={loading}
+            className="w-full px-4 py-3 pr-10 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat"
+          >
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+            <option value="90">90 min</option>
+            <option value="120">120 min</option>
+          </select>
         </div>
 
         <div className="flex gap-3 pt-4">

@@ -1,6 +1,5 @@
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
-import { adminDb } from '@/lib/firebaseAdmin'
 import { BookingPageClient } from './BookingPageClient'
 import { notFound } from 'next/navigation'
 import { serializeTimestamps } from '@/lib/firestore'
@@ -88,36 +87,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     )
     const servicesSnapshot = await getDocs(servicesQuery)
 
-    // Resolve service names and categories from services_catalog
-    const catalogRef = adminDb.collection('services_catalog')
-    const catalogDocs = await catalogRef.get()
-    const catalogMap = new Map<string, any>()
-    catalogDocs.docs.forEach((doc) => {
-      catalogMap.set(doc.id, doc.data())
-    })
-
-    // Sérialiser les services avec timestamps et résoudre les catégories
+    // Sérialiser les services avec timestamps
     const services = servicesSnapshot.docs.map((doc) => {
       const data = doc.data()
-      
-      // Support both old format (name) and new format (serviceId)
-      const serviceId = data.serviceId || null
-      let name = data.name || 'Service'
-      let category = null
-
-      // If serviceId exists, resolve from catalog
-      if (serviceId) {
-        const catalogData = catalogMap.get(serviceId)
-        if (catalogData) {
-          name = catalogData.name
-          category = catalogData.category
-        }
-      }
-      
       return serializeTimestamps({
         id: doc.id,
-        name,
-        category,
+        name: data.name,
         description: data.description || null,
         duration: data.duration,
         price: data.price,

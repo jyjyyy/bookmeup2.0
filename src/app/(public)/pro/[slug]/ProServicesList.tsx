@@ -148,9 +148,9 @@ export function ProServicesList({ services, proSlug }: ProServicesListProps) {
               onClick={() => toggleCategory(group.category)}
               className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
             >
-              <h3 className="text-xl font-semibold text-[#2A1F2D]">
+              <h2 className="text-xl font-semibold text-[#2A1F2D]">
                 {group.category} ({group.services.length})
-              </h3>
+              </h2>
               <svg
                 className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${
                   isExpanded ? 'rotate-180' : ''

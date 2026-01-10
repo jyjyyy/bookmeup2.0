@@ -15,9 +15,194 @@ import { adminAuth, adminDb } from '@/lib/firebaseAdmin'
 import { ProGallery } from './ProGallery'
 import { ProSocials } from './ProSocials'
 import { ProServicesList } from './ProServicesList'
+import type { Metadata } from 'next'
 
 interface ProPageProps {
   params: Promise<{ slug: string }>
+}
+
+// Helper function to get main service category
+async function getMainServiceCategory(services: any[]): Promise<string | null> {
+  if (services.length === 0) return null
+
+  try {
+    // Load services catalog
+    const catalogSnapshot = await adminDb.collection('services_catalog').limit(1000).get()
+    const categoryMap = new Map<string, string>()
+    
+    catalogSnapshot.docs.forEach((doc) => {
+      const data = doc.data()
+      if (data.category) {
+        categoryMap.set(doc.id, data.category)
+      }
+    })
+
+    // Count services by category
+    const categoryCount = new Map<string, number>()
+    services.forEach((service) => {
+      if (service.serviceId) {
+        const category = categoryMap.get(service.serviceId)
+        if (category) {
+          categoryCount.set(category, (categoryCount.get(category) || 0) + 1)
+        }
+      }
+    })
+
+    // Get most common category
+    if (categoryCount.size > 0) {
+      const sorted = Array.from(categoryCount.entries()).sort((a, b) => b[1] - a[1])
+      return sorted[0][0]
+    }
+
+    return null
+  } catch (error) {
+    console.warn('Error loading catalog for SEO:', error)
+    return null
+  }
+}
+
+// Generate SEO metadata
+export async function generateMetadata({ params }: ProPageProps): Promise<Metadata> {
+  const { slug } = await params
+
+  try {
+    // Load PRO data (minimal query for SEO) - use adminDb for server-side
+    const prosSnapshot = await adminDb
+      .collection('pros')
+      .where('slug', '==', slug)
+      .limit(1)
+      .get()
+
+    let businessName = 'Professionnel'
+    let city: string | null = null
+    let proId: string | null = null
+
+    if (!prosSnapshot.empty) {
+      const proDoc = prosSnapshot.docs[0]
+      const proData = proDoc.data()
+      proId = proDoc.id
+      businessName = proData.business_name || businessName
+      city = proData.city || null
+
+      // Try profile for name fallback
+      const profileDoc = await adminDb.collection('profiles').doc(proId).get()
+      if (profileDoc.exists) {
+        const profileData = profileDoc.data()
+        businessName = profileData?.name || businessName
+      }
+    } else {
+      // Try profiles
+      const profilesSnapshot = await adminDb
+        .collection('profiles')
+        .where('slug', '==', slug)
+        .limit(1)
+        .get()
+      
+      if (!profilesSnapshot.empty) {
+        const profileDoc = profilesSnapshot.docs[0]
+        const profileData = profileDoc.data()
+        proId = profileDoc.id
+        businessName = profileData?.name || profileData?.email || businessName
+
+        const prosDoc = await adminDb.collection('pros').doc(proId).get()
+        if (prosDoc.exists) {
+          const prosData = prosDoc.data()
+          city = prosData?.city || profileData?.city || null
+          businessName = prosData?.business_name || businessName
+        } else {
+          city = profileData?.city || null
+        }
+      }
+    }
+
+    // Load services to get main category
+    let mainService: string | null = null
+    if (proId) {
+      const servicesSnapshot = await adminDb
+        .collection('services')
+        .where('proId', '==', proId)
+        .where('isActive', '==', true)
+        .get()
+      const services = servicesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      mainService = await getMainServiceCategory(services)
+    }
+
+    // Generate title
+    let title = businessName
+    if (mainService && city) {
+      title = `${mainService} à ${city} – ${businessName}`
+    } else if (city) {
+      title = `${businessName} à ${city}`
+    } else {
+      title = `${businessName} – Réservation en ligne`
+    }
+
+    // Generate description with service list if available
+    let description = `Découvrez les services de ${businessName}`
+    if (city) {
+      description += ` à ${city}`
+    }
+    
+    // Add service list if services exist and space allows
+    if (proId) {
+      try {
+        const servicesSnapshot = await adminDb
+          .collection('services')
+          .where('proId', '==', proId)
+          .where('isActive', '==', true)
+          .limit(3)
+          .get()
+        const serviceNames = servicesSnapshot.docs
+          .map((doc) => doc.data().name)
+          .filter(Boolean)
+        
+        if (serviceNames.length > 0) {
+          const servicesText = serviceNames.join(', ')
+          const withServices = `${description}. ${servicesText}. Réservation en ligne.`
+          if (withServices.length <= 155) {
+            description = withServices
+          } else {
+            description += '. Réservation en ligne simple et rapide.'
+          }
+        } else {
+          description += '. Réservation en ligne simple et rapide.'
+        }
+      } catch (err) {
+        description += '. Réservation en ligne simple et rapide.'
+      }
+    } else {
+      description += '. Réservation en ligne simple et rapide.'
+    }
+
+    // Truncate to ~155 characters
+    if (description.length > 155) {
+      description = description.substring(0, 152) + '...'
+    }
+
+    // Canonical URL
+    const canonicalUrl = `https://www.bookmeup.fr/pro/${slug}`
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: canonicalUrl,
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
+    return {
+      title: 'Professionnel – BookMeUp',
+      description: 'Découvrez ce professionnel sur BookMeUp. Réservation en ligne simple et rapide.',
+    }
+  }
 }
 
 export default async function ProPage({ params }: ProPageProps) {
@@ -138,6 +323,9 @@ export default async function ProPage({ params }: ProPageProps) {
       }
     })
 
+    // Get main service category for H1 and SEO
+    const mainServiceCategory = await getMainServiceCategory(services)
+
     // Get first letter of name for avatar
     const avatarLetter = pro.name?.[0]?.toUpperCase() || 'P'
 
@@ -156,9 +344,18 @@ export default async function ProPage({ params }: ProPageProps) {
                   </div>
                   
                   <div className="flex-1">
-                    {/* Nom du professionnel */}
+                    {/* Nom du professionnel - H1 SEO optimized */}
                     <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-2">
-                      {pro.name}
+                      {(() => {
+                        // H1 format: "{Business name} – {Main service} à {City}"
+                        if (mainServiceCategory && pro.city) {
+                          return `${pro.name} – ${mainServiceCategory} à ${pro.city}`
+                        } else if (pro.city) {
+                          return `${pro.name} à ${pro.city}`
+                        } else {
+                          return pro.name
+                        }
+                      })()}
                     </h1>
 
                     {/* Ville */}

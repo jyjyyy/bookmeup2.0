@@ -141,7 +141,8 @@ export function EditServiceModal({
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading}
             rows={4}
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none placeholder:text-gray-400"
+            placeholder="Décrivez votre service..."
           />
         </div>
 
@@ -165,7 +166,7 @@ export function EditServiceModal({
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-3 rounded-[32px] border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 pr-10 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat"
             >
               <option value="15">15 min</option>
               <option value="30">30 min</option>

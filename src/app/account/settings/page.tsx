@@ -146,12 +146,14 @@ export default function ClientSettingsPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="max-w-2xl mx-auto space-y-6"
-    >
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="max-w-2xl mx-auto space-y-6"
+        >
       <div>
         <h1 className="text-2xl font-bold text-slate-900 mb-1">
           Paramètres du compte
@@ -251,7 +253,9 @@ export default function ClientSettingsPage() {
           </Button>
         </div>
       </Card>
-    </motion.div>
+        </motion.div>
+      </div>
+    </div>
   )
 }
 

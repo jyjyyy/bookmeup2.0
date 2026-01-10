@@ -17,7 +17,12 @@ function minutesToTime(minutes: number) {
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
-    const proId = url.searchParams.get("pro_id") ?? url.searchParams.get("proId")
+
+    const proId =
+      url.searchParams.get("pro_id") ??
+      url.searchParams.get("proId") ??
+      null
+
     const serviceId = url.searchParams.get("service_id")
     const date = url.searchParams.get("date")
 
@@ -28,17 +33,17 @@ export async function GET(req: Request) {
       )
     }
 
-    // Load service info (duration)
+    // ---- SERVICE ----
     const serviceDoc = await adminDb.collection("services").doc(serviceId).get()
 
     if (!serviceDoc.exists) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 })
     }
 
-    const service = serviceDoc.data()
-    const duration = service.duration ?? 30
+    const service = serviceDoc.data() || {}
+    const duration: number = service.duration ?? 30
 
-    // Determine dayOfWeek
+    // ---- AVAILABILITY ----
     const dayOfWeek = new Date(date + "T00:00:00").getDay()
 
     const availabilityDoc = await adminDb
@@ -49,16 +54,19 @@ export async function GET(req: Request) {
       .get()
 
     if (!availabilityDoc.exists) {
-      return NextResponse.json({ slots: [] }, { status: 200 })
+      return NextResponse.json({ slots: [] })
     }
 
-    const availability = availabilityDoc.data()
-    const slots = availability.slots ?? []
-    const step = availability.step ?? 30
+    const availability = availabilityDoc.data() || {}
+
+    const slots: { start: string; end: string }[] = availability.slots ?? []
+    const step: number = availability.step ?? 30
 
     let generatedSlots: { time: string; available: boolean }[] = []
 
     for (const slot of slots) {
+      if (!slot?.start || !slot?.end) continue
+
       const start = timeToMinutes(slot.start)
       const end = timeToMinutes(slot.end)
 
@@ -68,7 +76,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Load bookings for the date
+    // ---- BOOKINGS ----
     const bookingsSnap = await adminDb
       .collection("bookings")
       .where("proId", "==", proId)
@@ -77,12 +85,13 @@ export async function GET(req: Request) {
 
     const bookings = bookingsSnap.docs.map((d) => d.data())
 
-    // Check conflicts
+    // ---- CONFLICTS ----
     generatedSlots = generatedSlots.map((slot) => {
       const slotStart = timeToMinutes(slot.time)
       const slotEnd = slotStart + duration
 
       const conflict = bookings.some((b) => {
+        if (!b?.time) return false
         const bStart = timeToMinutes(b.time)
         const bEnd = bStart + (b.duration ?? duration)
         return !(slotEnd <= bStart || slotStart >= bEnd)

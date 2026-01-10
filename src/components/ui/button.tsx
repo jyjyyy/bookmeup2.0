@@ -5,7 +5,7 @@ import { HTMLMotionProps, motion } from 'framer-motion'
 
 interface ButtonProps extends HTMLMotionProps<'button'> {
   children: ReactNode
-  variant?: 'primary' | 'outline' | 'subtle'
+  variant?: 'primary' | 'outline' | 'subtle' | 'destructive'
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -29,6 +29,7 @@ export function Button({
     primary: 'bg-primary text-white hover:bg-[#9C44AF] hover:shadow-[0_8px_25px_rgba(200,109,215,0.25)] active:scale-[0.98]',
     outline: 'border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white hover:shadow-[0_8px_25px_rgba(200,109,215,0.2)] active:scale-[0.98]',
     subtle: 'bg-white text-primary border border-primary/20 hover:bg-primary/5 hover:border-primary/40 active:scale-[0.98]',
+    destructive: 'bg-red-600 text-white hover:bg-red-700 hover:shadow-[0_8px_25px_rgba(220,38,38,0.25)] active:scale-[0.98]',
   }
 
   return (

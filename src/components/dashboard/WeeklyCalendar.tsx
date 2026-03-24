@@ -14,21 +14,24 @@ interface Booking {
   client_name?: string
   client_email?: string
   status?: 'pending' | 'confirmed' | 'cancelled'
+  attendance?: 'present' | 'absent'
 }
 
 interface WeeklyCalendarProps {
   weekStart: Date
   bookings: Booking[]
   proId: string
+  onBookingUpdate?: () => void
 }
 
-export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ weekStart, bookings, proId, onBookingUpdate }: WeeklyCalendarProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [isBlocked, setIsBlocked] = useState(false)
   const [loadingClientStatus, setLoadingClientStatus] = useState(false)
   const [unblocking, setUnblocking] = useState(false)
   const [unblockSuccess, setUnblockSuccess] = useState(false)
+  const [updatingAttendance, setUpdatingAttendance] = useState(false)
 
   // Fonction pour obtenir le lundi d'une semaine
   const getMonday = (date: Date): Date => {
@@ -167,6 +170,70 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
       alert('Erreur lors du déblocage')
     } finally {
       setUnblocking(false)
+    }
+  }
+
+  // Vérifier si un booking est dans le passé
+  const isPastBooking = (booking: Booking): boolean => {
+    const dateValue = booking.date
+    const startTime = booking.start_time
+
+    if (!dateValue || !startTime) return false
+
+    try {
+      const bookingDateTime = new Date(`${dateValue}T${startTime}:00`)
+      const now = new Date()
+      return bookingDateTime.getTime() < now.getTime()
+    } catch (e) {
+      // Si le parsing échoue, vérifier juste la date
+      try {
+        const bookingDate = new Date(dateValue)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        bookingDate.setHours(0, 0, 0, 0)
+        return bookingDate.getTime() < today.getTime()
+      } catch (e2) {
+        return false
+      }
+    }
+  }
+
+  const handleAttendanceUpdate = async (attendance: 'present' | 'absent') => {
+    if (!selectedBooking || !isPastBooking(selectedBooking)) return
+
+    setUpdatingAttendance(true)
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}/attendance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attendance, proId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Mettre à jour le booking localement
+        setSelectedBooking({ ...selectedBooking, attendance })
+        // Notifier le parent pour recharger les bookings
+        if (onBookingUpdate) {
+          onBookingUpdate()
+        }
+        // Notifier le dashboard pour rafraîchir les stats
+        // localStorage triggers storage events in OTHER tabs/windows
+        localStorage.setItem('bookingAttendanceUpdated', Date.now().toString())
+        // Custom event for same-window updates
+        window.dispatchEvent(new CustomEvent('bookingAttendanceUpdated'))
+      } else {
+        console.error('[WeeklyCalendar] Attendance update error:', data.error)
+        alert(data.error || 'Erreur lors de la mise à jour')
+      }
+    } catch (error) {
+      console.error('[WeeklyCalendar] Attendance update error:', error)
+      alert('Erreur lors de la mise à jour')
+    } finally {
+      setUpdatingAttendance(false)
     }
   }
 
@@ -347,6 +414,47 @@ export function WeeklyCalendar({ weekStart, bookings, proId }: WeeklyCalendarPro
                     {unblockSuccess && (
                       <div className="mt-2 text-xs text-green-600 font-medium">
                         ✓ Client débloqué avec succès
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Contrôles d'attendance pour les rendez-vous passés */}
+                {selectedBooking && isPastBooking(selectedBooking) && selectedBooking.status !== 'cancelled' && (
+                  <div className="mt-4 p-3 bg-secondary/30 border border-primary/20 rounded-[24px]">
+                    <div className="text-sm font-semibold text-[#2A1F2D] mb-3">
+                      Présence client
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAttendanceUpdate('present')}
+                        disabled={updatingAttendance || selectedBooking.attendance === 'present'}
+                        className={`flex-1 px-4 py-2 rounded-[24px] text-sm font-medium transition-colors ${
+                          selectedBooking.attendance === 'present'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {updatingAttendance && selectedBooking.attendance !== 'present'
+                          ? 'Mise à jour...'
+                          : '✓ Client présent'}
+                      </button>
+                      <button
+                        onClick={() => handleAttendanceUpdate('absent')}
+                        disabled={updatingAttendance || selectedBooking.attendance === 'absent'}
+                        className={`flex-1 px-4 py-2 rounded-[24px] text-sm font-medium transition-colors ${
+                          selectedBooking.attendance === 'absent'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {updatingAttendance && selectedBooking.attendance !== 'absent'
+                          ? 'Mise à jour...'
+                          : '✕ Client absent'}
+                      </button>
+                    </div>
+                    {selectedBooking.attendance && (
+                      <div className="mt-2 text-xs text-slate-600">
+                        Statut: {selectedBooking.attendance === 'present' ? 'Présent' : 'Absent'}
                       </div>
                     )}
                   </div>

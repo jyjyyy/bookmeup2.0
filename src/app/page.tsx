@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { FaqSection } from '@/components/home/FaqSection'
 import { motion } from 'framer-motion'
 
 export default function HomePage() {
@@ -120,6 +121,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FaqSection />
 
       {/* CTA Section */}
       <section className="py-20">

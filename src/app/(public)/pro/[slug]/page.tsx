@@ -1,5 +1,4 @@
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
+import { unstable_cache } from 'next/cache'
 import {
   Card,
   CardHeader,
@@ -7,127 +6,165 @@ import {
   CardDescription,
   CardContent
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { adminAuth, adminDb } from '@/lib/firebaseAdmin'
 import { ProGallery } from './ProGallery'
 import { ProSocials } from './ProSocials'
 import { ProServicesList } from './ProServicesList'
+import { PHOTOS_ENABLED } from '@/lib/features'
+import {
+  getCatalogCached,
+  getMainServiceCategoryFromCatalog,
+} from '@/lib/catalogCache'
 import type { Metadata } from 'next'
 
 interface ProPageProps {
   params: Promise<{ slug: string }>
 }
 
-// Helper function to get main service category
-async function getMainServiceCategory(services: any[]): Promise<string | null> {
-  if (services.length === 0) return null
-
-  try {
-    // Load services catalog
-    const catalogSnapshot = await adminDb.collection('services_catalog').limit(1000).get()
-    const categoryMap = new Map<string, string>()
-    
-    catalogSnapshot.docs.forEach((doc) => {
-      const data = doc.data()
-      if (data.category) {
-        categoryMap.set(doc.id, data.category)
-      }
-    })
-
-    // Count services by category
-    const categoryCount = new Map<string, number>()
-    services.forEach((service) => {
-      if (service.serviceId) {
-        const category = categoryMap.get(service.serviceId)
-        if (category) {
-          categoryCount.set(category, (categoryCount.get(category) || 0) + 1)
-        }
-      }
-    })
-
-    // Get most common category
-    if (categoryCount.size > 0) {
-      const sorted = Array.from(categoryCount.entries()).sort((a, b) => b[1] - a[1])
-      return sorted[0][0]
-    }
-
-    return null
-  } catch (error) {
-    console.warn('Error loading catalog for SEO:', error)
-    return null
-  }
+type PublicPro = {
+  id: string
+  name: string
+  slug: string
+  city: string | null
+  description: string | null
+  plan?: string
+  socials: any
+  gallery: any
 }
 
-// Generate SEO metadata
-export async function generateMetadata({ params }: ProPageProps): Promise<Metadata> {
-  const { slug } = await params
+type ProLookupResult = {
+  pro: PublicPro | null
+  proId: string | null
+}
 
-  try {
-    // Load PRO data (minimal query for SEO) - use adminDb for server-side
+const PRO_TTL_SECONDS = 300
+const SERVICES_TTL_SECONDS = 300
+
+const getProBySlugCached = unstable_cache(
+  async (slug: string, isClientViewer: boolean): Promise<ProLookupResult> => {
+    // Try pros by slug
     const prosSnapshot = await adminDb
       .collection('pros')
       .where('slug', '==', slug)
       .limit(1)
       .get()
 
-    let businessName = 'Professionnel'
-    let city: string | null = null
-    let proId: string | null = null
-
     if (!prosSnapshot.empty) {
       const proDoc = prosSnapshot.docs[0]
       const proData = proDoc.data()
-      proId = proDoc.id
-      businessName = proData.business_name || businessName
-      city = proData.city || null
+      const proId = proDoc.id
 
-      // Try profile for name fallback
       const profileDoc = await adminDb.collection('profiles').doc(proId).get()
+      let name = proData.business_name || 'Professionnel'
+      let description = proData.description || null
       if (profileDoc.exists) {
         const profileData = profileDoc.data()
-        businessName = profileData?.name || businessName
+        name = profileData?.name || name
+        description = profileData?.description || description
       }
-    } else {
-      // Try profiles
-      const profilesSnapshot = await adminDb
-        .collection('profiles')
-        .where('slug', '==', slug)
-        .limit(1)
-        .get()
-      
-      if (!profilesSnapshot.empty) {
-        const profileDoc = profilesSnapshot.docs[0]
-        const profileData = profileDoc.data()
-        proId = profileDoc.id
-        businessName = profileData?.name || profileData?.email || businessName
 
-        const prosDoc = await adminDb.collection('pros').doc(proId).get()
-        if (prosDoc.exists) {
-          const prosData = prosDoc.data()
-          city = prosData?.city || profileData?.city || null
-          businessName = prosData?.business_name || businessName
-        } else {
-          city = profileData?.city || null
-        }
+      return {
+        proId,
+        pro: {
+          id: proId,
+          name,
+          slug: proData.slug || slug,
+          city: proData.city || null,
+          description,
+          ...(isClientViewer ? {} : { plan: proData.plan || 'starter' }),
+          socials: proData.socials || null,
+          gallery: proData.gallery || null,
+        },
       }
     }
 
-    // Load services to get main category
+    // Fallback: try profiles by slug
+    const profilesSnapshot = await adminDb
+      .collection('profiles')
+      .where('slug', '==', slug)
+      .limit(1)
+      .get()
+
+    if (profilesSnapshot.empty) {
+      return { pro: null, proId: null }
+    }
+
+    const profileDoc = profilesSnapshot.docs[0]
+    const profileData = profileDoc.data()
+    const proId = profileDoc.id
+
+    const prosDoc = await adminDb.collection('pros').doc(proId).get()
+    const prosData = prosDoc.exists ? prosDoc.data() : {}
+
+    return {
+      proId,
+      pro: {
+        id: proId,
+        name: profileData?.name || profileData?.email || 'Professionnel',
+        slug: profileData?.slug || slug,
+        city: profileData?.city || prosData?.city || null,
+        description: profileData?.description || prosData?.description || null,
+        ...(isClientViewer ? {} : { plan: prosData?.plan || 'starter' }),
+        socials: prosData?.socials || null,
+        gallery: prosData?.gallery || null,
+      },
+    }
+  },
+  ['proBySlug-v1'],
+  { revalidate: PRO_TTL_SECONDS }
+)
+
+type ProService = {
+  id: string
+  serviceId?: string | null
+  [key: string]: any
+}
+
+const getServicesByProIdCached = unstable_cache(
+  async (proId: string): Promise<ProService[]> => {
+    const snapshot = await adminDb
+      .collection('services')
+      .where('proId', '==', proId)
+      .where('isActive', '==', true)
+      .get()
+
+    return snapshot.docs.map((d) => {
+      const data = d.data() as any
+      return {
+        id: d.id,
+        ...data,
+        created_at: data?.created_at?.toDate?.()?.toISOString?.() || null,
+        updated_at: data?.updated_at?.toDate?.()?.toISOString?.() || null,
+      }
+    })
+  },
+  ['servicesByProId-v1'],
+  { revalidate: SERVICES_TTL_SECONDS }
+)
+
+// Generate SEO metadata
+export async function generateMetadata({ params }: ProPageProps): Promise<Metadata> {
+  const { slug } = await params
+
+  try {
+    // Public metadata is client-view: never expose plan in SEO.
+    const [{ pro, proId }, catalog] = await Promise.all([
+      getProBySlugCached(slug, true),
+      getCatalogCached(),
+    ])
+
+    let businessName = pro?.name || 'Professionnel'
+    let city: string | null = pro?.city || null
+
     let mainService: string | null = null
     if (proId) {
-      const servicesSnapshot = await adminDb
-        .collection('services')
-        .where('proId', '==', proId)
-        .where('isActive', '==', true)
-        .get()
-      const services = servicesSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      mainService = await getMainServiceCategory(services)
+      const services = await getServicesByProIdCached(proId)
+      mainService = getMainServiceCategoryFromCatalog(
+        services as { serviceId?: string | null }[],
+        catalog.categoryById
+      )
     }
 
     // Generate title
@@ -146,19 +183,15 @@ export async function generateMetadata({ params }: ProPageProps): Promise<Metada
       description += ` à ${city}`
     }
     
-    // Add service list if services exist and space allows
+    // Add service list if services exist and space allows (reuse cached services; keep logic identical)
     if (proId) {
       try {
-        const servicesSnapshot = await adminDb
-          .collection('services')
-          .where('proId', '==', proId)
-          .where('isActive', '==', true)
-          .limit(3)
-          .get()
-        const serviceNames = servicesSnapshot.docs
-          .map((doc) => doc.data().name)
-          .filter(Boolean)
-        
+        const services = await getServicesByProIdCached(proId)
+        const serviceNames = services
+          .slice(0, 3)
+          .map((s: any) => s?.name)
+          .filter(Boolean) as string[]
+
         if (serviceNames.length > 0) {
           const servicesText = serviceNames.join(', ')
           const withServices = `${description}. ${servicesText}. Réservation en ligne.`
@@ -170,7 +203,7 @@ export async function generateMetadata({ params }: ProPageProps): Promise<Metada
         } else {
           description += '. Réservation en ligne simple et rapide.'
         }
-      } catch (err) {
+      } catch {
         description += '. Réservation en ligne simple et rapide.'
       }
     } else {
@@ -233,98 +266,41 @@ export default async function ProPage({ params }: ProPageProps) {
   }
 
   try {
-    // Chercher le pro par slug dans pros
-    const prosQuery = query(
-      collection(db, 'pros'),
-      where('slug', '==', slug)
+    const t0Page = performance.now()
+
+    // Démarrer le catalog le plus tôt possible (indépendant du proId)
+    const catalogPromise = getCatalogCached()
+
+    // Pro lookup (cached, read-only)
+    const t0FetchPro = performance.now()
+    const { pro, proId } = await getProBySlugCached(slug, isClientViewer)
+    console.log(
+      `[PERF] fetch pro (cached): ${(performance.now() - t0FetchPro).toFixed(1)}ms`,
+      { slug }
     )
-    const prosSnapshot = await getDocs(prosQuery)
 
-    let pro = null
-    let proId = null
+    if (!pro || !proId) notFound()
 
-    if (!prosSnapshot.empty) {
-      const proDoc = prosSnapshot.docs[0]
-      const proData = proDoc.data()
-      proId = proDoc.id
-
-      // Get profile for name
-      const profileDoc = await getDoc(doc(db, 'profiles', proId))
-      let name = proData.business_name || 'Professionnel'
-      let description = proData.description || null
-
-      if (profileDoc.exists()) {
-        const profileData = profileDoc.data()
-        name = profileData.name || name
-        description = profileData.description || description
-      }
-
-      pro = {
-        id: proId,
-        name,
-        slug: proData.slug || slug,
-        city: proData.city || null,
-        description,
-        // Remove plan field from CLIENT view - subscription info is PRO-only
-        ...(isClientViewer ? {} : { plan: proData.plan || 'starter' }),
-        socials: proData.socials || null,
-        gallery: proData.gallery || null,
-      }
-    } else {
-      // Try profiles
-      const profilesQuery = query(
-        collection(db, 'profiles'),
-        where('slug', '==', slug)
-      )
-      const profilesSnapshot = await getDocs(profilesQuery)
-
-      if (!profilesSnapshot.empty) {
-        const profileDoc = profilesSnapshot.docs[0]
-        const profileData = profileDoc.data()
-        proId = profileDoc.id
-
-        // Check if has pros document
-        const prosDoc = await getDoc(doc(db, 'pros', proId))
-        const prosData = prosDoc.exists() ? prosDoc.data() : {}
-
-        pro = {
-          id: proId,
-          name: profileData.name || profileData.email || 'Professionnel',
-          slug: profileData.slug || slug,
-          city: profileData.city || prosData.city || null,
-          description: profileData.description || prosData.description || null,
-          // Remove plan field from CLIENT view - subscription info is PRO-only
-          ...(isClientViewer ? {} : { plan: prosData.plan || 'starter' }),
-          socials: prosData.socials || null,
-          gallery: prosData.gallery || null,
-        }
-      }
-    }
-
-    if (!pro || !proId) {
-      notFound()
-    }
-
-    // Load services
-    const servicesQuery = query(
-      collection(db, 'services'),
-      where('proId', '==', proId),
-      where('isActive', '==', true)
+    // Services + catalog en parallèle, puis mainCategory sans refetch
+    const t0FetchServices = performance.now()
+    const [services, catalog] = await Promise.all([
+      getServicesByProIdCached(proId),
+      catalogPromise,
+    ])
+    console.log(
+      `[PERF] fetch services (cached): ${(performance.now() - t0FetchServices).toFixed(1)}ms`,
+      { proId }
     )
-    const servicesSnapshot = await getDocs(servicesQuery)
 
-    const services = servicesSnapshot.docs.map((doc) => {
-      const data = doc.data()
-      return {
-        id: doc.id,
-        ...data,
-        created_at: data.created_at?.toDate?.()?.toISOString() || null,
-        updated_at: data.updated_at?.toDate?.()?.toISOString() || null,
-      }
-    })
-
-    // Get main service category for H1 and SEO
-    const mainServiceCategory = await getMainServiceCategory(services)
+    const t0MainServiceCategory = performance.now()
+    const mainServiceCategory = getMainServiceCategoryFromCatalog(
+      services as { serviceId?: string | null }[],
+      catalog.categoryById
+    )
+    console.log(
+      `[PERF] getMainServiceCategory (no refetch): ${(performance.now() - t0MainServiceCategory).toFixed(1)}ms`,
+      { proId }
+    )
 
     // Get first letter of name for avatar
     const avatarLetter = pro.name?.[0]?.toUpperCase() || 'P'
@@ -347,14 +323,9 @@ export default async function ProPage({ params }: ProPageProps) {
                     {/* Nom du professionnel - H1 SEO optimized */}
                     <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-2">
                       {(() => {
-                        // H1 format: "{Business name} – {Main service} à {City}"
-                        if (mainServiceCategory && pro.city) {
-                          return `${pro.name} – ${mainServiceCategory} à ${pro.city}`
-                        } else if (pro.city) {
-                          return `${pro.name} à ${pro.city}`
-                        } else {
-                          return pro.name
-                        }
+                        // Affichage public: "{Nom} – {Ville}" (ou "{Nom}" si ville absente)
+                        if (pro.city) return `${pro.name} – ${pro.city}`
+                        return pro.name
                       })()}
                     </h1>
 
@@ -375,18 +346,65 @@ export default async function ProPage({ params }: ProPageProps) {
                         {pro.description}
                       </p>
                     )}
+
+                    {/* Badge Portfolio */}
+                    {(() => {
+                      const hasInstagram = !!pro.socials?.instagram_url
+                      const hasFacebook = !!pro.socials?.facebook_url
+                      const hasPortfolio = hasInstagram || hasFacebook
+
+                      if (!hasPortfolio) return null
+
+                      return (
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">
+                            Portfolio
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {hasInstagram && (
+                              <a
+                                href={pro.socials.instagram_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Voir le portfolio Instagram"
+                                className="text-[#E4405F] hover:opacity-80 transition-opacity"
+                              >
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                </svg>
+                              </a>
+                            )}
+                            {hasFacebook && (
+                              <a
+                                href={pro.socials.facebook_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Voir le portfolio Facebook"
+                                className="text-[#1877F2] hover:opacity-80 transition-opacity"
+                              >
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                </svg>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>
 
-              {/* Bouton principal CTA */}
-              <div className="mt-8">
-                <Link href={`/booking/${pro.slug}`}>
-                  <Button size="lg" className="w-full md:w-auto rounded-[32px]">
-                    Réserver un rendez-vous
-                  </Button>
-                </Link>
-              </div>
             </Card>
           </div>
 
@@ -412,7 +430,7 @@ export default async function ProPage({ params }: ProPageProps) {
               </Card>
 
               {/* Carte Galerie */}
-              {pro.gallery?.images && pro.gallery.images.length > 0 && (
+              {PHOTOS_ENABLED && pro.gallery?.images && pro.gallery.images.length > 0 && (
                 <Card className="rounded-[32px] p-6 text-center">
                   <div className="text-2xl mb-2">📸</div>
                   <p className="text-xs text-slate-500 mb-1">Galerie</p>
@@ -425,8 +443,53 @@ export default async function ProPage({ params }: ProPageProps) {
           </div>
 
           {/* 3. Galerie */}
-          {pro.gallery?.images && pro.gallery.images.length > 0 && (
+          {PHOTOS_ENABLED && pro.gallery?.images && pro.gallery.images.length > 0 && (
             <ProGallery images={pro.gallery.images} />
+          )}
+
+          {/* 3bis. Section Portfolio (si photos désactivées mais réseaux sociaux présents) */}
+          {pro.socials && (pro.socials.instagram_url || pro.socials.facebook_url) && (
+            <div className="mb-12">
+              <Card className="rounded-[32px] p-8 md:p-10">
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-[#2A1F2D] mb-3">
+                    Portfolio
+                  </h2>
+                  <p className="text-slate-600 text-base md:text-lg">
+                    📸 Mes photos sont disponibles sur mes réseaux.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                  {pro.socials.instagram_url && (
+                    <a
+                      href={pro.socials.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-[24px] bg-gradient-to-r from-[#E4405F] to-[#C13584] text-white hover:shadow-lg transition-all font-medium"
+                    >
+                      <span className="text-lg">📷</span>
+                      <span>Voir Instagram</span>
+                    </a>
+                  )}
+                  {pro.socials.facebook_url && (
+                    <a
+                      href={pro.socials.facebook_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-[24px] bg-[#1877F2] text-white hover:shadow-lg transition-all font-medium"
+                    >
+                      <span className="text-lg">👥</span>
+                      <span>Voir Facebook</span>
+                    </a>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-500 italic">
+                  Astuce : vous pouvez ajouter vos liens dans votre fiche professionnelle.
+                </p>
+              </Card>
+            </div>
           )}
 
           {/* 4. Liste des Services */}
@@ -440,31 +503,13 @@ export default async function ProPage({ params }: ProPageProps) {
               </p>
             </div>
 
-            <ProServicesList services={services} proSlug={pro.slug} />
+            <ProServicesList
+              services={services}
+              proSlug={pro.slug}
+              proId={proId}
+              catalogServices={catalog.services}
+            />
           </div>
-
-          {/* 5. CTA Final */}
-          {services.length > 0 && (
-            <Card className="rounded-[32px] mt-8 bg-gradient-to-r from-primary to-[#9C44AF] text-white border-none p-8 md:p-10">
-              <div className="text-center">
-                <h3 className="text-xl md:text-2xl font-bold mb-2">
-                  Prête à réserver ton moment beauté ?
-                </h3>
-                <p className="text-white/90 mb-6 text-sm md:text-base">
-                  Choisis un service et réserve directement en ligne en quelques secondes.
-                </p>
-                <Link href={`/booking/${pro.slug}`}>
-                  <Button
-                    variant="subtle"
-                    size="lg"
-                    className="rounded-[32px] bg-white text-primary border-2 border-primary shadow-md hover:bg-primary hover:text-white hover:shadow-lg"
-                  >
-                    Réserver maintenant
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          )}
         </div>
       </div>
     )

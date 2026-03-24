@@ -119,26 +119,95 @@ export async function getProStats(
       { bookings: number; revenue: number }
     >()
 
+    const now = new Date()
+
     for (const data of bookingsById.values()) {
       // Enforce required fields per spec
       const proId = getBookingProId(data)
       if (proId !== userId) continue
 
       const status = data?.status
-      if (status !== 'confirmed') continue
+      
+      // Skip cancelled or no-show bookings
+      if (
+        status === 'cancelled' ||
+        status === 'no-show' ||
+        status === 'no_show' ||
+        status === 'cancelled_by_client' ||
+        status === 'cancelled_by_pro'
+      ) {
+        continue
+      }
 
       const date = normalizeBookingDate(data?.date)
       if (!date) continue
       if (date < start || date > end) continue
 
-      // 1) bookingsByDate
+      // Parse booking date and time to check if appointment has passed
+      const dateValue = data?.date
+      const startTime = data?.start_time || data?.startTime
+      let bookingDateTime: Date | null = null
+      
+      if (typeof dateValue === 'string' && startTime && typeof startTime === 'string') {
+        try {
+          bookingDateTime = new Date(`${dateValue}T${startTime}:00`)
+        } catch (e) {
+          // Invalid format, try date only fallback
+        }
+      } else if (dateValue instanceof Date && startTime && typeof startTime === 'string') {
+        try {
+          const [hours, minutes] = startTime.split(':').map(Number)
+          bookingDateTime = new Date(dateValue)
+          bookingDateTime.setHours(hours, minutes, 0, 0)
+        } catch (e) {
+          bookingDateTime = dateValue
+        }
+      } else if (isFirestoreTimestampLike(dateValue) && startTime && typeof startTime === 'string') {
+        try {
+          const date = dateValue.toDate()
+          const [hours, minutes] = startTime.split(':').map(Number)
+          bookingDateTime = new Date(date)
+          bookingDateTime.setHours(hours, minutes, 0, 0)
+        } catch (e) {
+          bookingDateTime = dateValue.toDate()
+        }
+      }
+
+      // Fallback: use date only if time parsing failed
+      if (!bookingDateTime && dateValue) {
+        if (typeof dateValue === 'string') {
+          try {
+            bookingDateTime = new Date(dateValue)
+          } catch (e) { /* skip */ }
+        } else if (dateValue instanceof Date) {
+          bookingDateTime = dateValue
+        } else if (isFirestoreTimestampLike(dateValue)) {
+          bookingDateTime = dateValue.toDate()
+        }
+      }
+
+      // Check if booking has passed (date + time < now)
+      const hasPassed = bookingDateTime && bookingDateTime.getTime() < now.getTime()
+
+      // 1) bookingsByDate (count all non-cancelled/non-no-show in period)
       bookingsByDateMap.set(date, (bookingsByDateMap.get(date) ?? 0) + 1)
 
-      // 2) revenueByDate (paid only)
-      const paid = data?.paid === true
-      const price = paid ? toNumberOrZero(data?.price) : 0
-      if (paid) {
-        revenueByDateMap.set(date, (revenueByDateMap.get(date) ?? 0) + price)
+      // 2) revenueByDate (only if appointment has passed AND attendance === "present" AND pricing.price exists)
+      if (hasPassed) {
+        const attendance = data?.attendance
+        // Only include if attendance is explicitly "present"
+        if (attendance === 'present') {
+          // Use pricing.price ONLY (immutable snapshot from booking creation)
+          const pricing = data?.pricing
+          if (pricing && typeof pricing === 'object' && typeof pricing.price === 'number') {
+            const price = toNumberOrZero(pricing.price)
+            if (price > 0) {
+              revenueByDateMap.set(date, (revenueByDateMap.get(date) ?? 0) + price)
+            }
+          }
+          // If pricing.price is missing, exclude booking from revenue (backward compatibility)
+        }
+        // If attendance is null/undefined or "absent", exclude from revenue
       }
 
       // 3) statsByService
@@ -146,7 +215,23 @@ export async function getProStats(
       if (serviceId) {
         const agg = serviceAgg.get(serviceId) ?? { bookings: 0, revenue: 0 }
         agg.bookings += 1
-        if (paid) agg.revenue += price
+        
+        // Only count revenue if appointment has passed AND attendance === "present" AND pricing.price exists
+        if (hasPassed) {
+          const attendance = data?.attendance
+          if (attendance === 'present') {
+            // Use pricing.price ONLY (immutable snapshot from booking creation)
+            const pricing = data?.pricing
+            if (pricing && typeof pricing === 'object' && typeof pricing.price === 'number') {
+              const price = toNumberOrZero(pricing.price)
+              if (price > 0) {
+                agg.revenue += price
+              }
+            }
+            // If pricing.price is missing, exclude booking from revenue (backward compatibility)
+          }
+        }
+        
         serviceAgg.set(serviceId, agg)
       }
     }

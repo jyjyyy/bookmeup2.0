@@ -1,21 +1,25 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { db, storage } from '@/lib/firebaseClient'
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } from 'firebase/storage'
+import { db, storage, auth } from '@/lib/firebaseClient'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Loader } from '@/components/ui/loader'
 import { generateSlugFromNameAndCity } from '@/lib/slug'
+import { PHOTOS_ENABLED } from '@/lib/features'
 
 export default function AccountPage() {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const uploadTaskRef = useRef<UploadTask | null>(null)
+  const stuckTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -42,8 +46,21 @@ export default function AccountPage() {
   // Gallery
   const [galleryImages, setGalleryImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
+  const [uploadState, setUploadState] = useState<"idle"|"uploading"|"success"|"error">("idle")
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
+  const [pendingPreviews, setPendingPreviews] = useState<Array<{ tempId: string; url: string }>>([])
 
   const [uid, setUid] = useState<string | null>(null)
+  
+  // Debug state
+  const [debug, setDebug] = useState<{ step: string; info?: any; error?: any } | null>(null)
+
+  // Debug: mounted
+  useEffect(() => {
+    console.log("[PHOTO] mounted")
+    setDebug({ step: "mounted" })
+  }, [])
 
   useEffect(() => {
     const loadData = async () => {
@@ -256,57 +273,335 @@ export default function AccountPage() {
     }
   }
 
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!uid || !files || files.length === 0) return
+  const handleFileUpload = async (files: FileList | File[] | null) => {
+    if (!files) return
+    if (!PHOTOS_ENABLED) return
+
+    const fileArray = Array.isArray(files) ? files : Array.from(files)
+    if (fileArray.length === 0) return
+
+    // Empêcher la sélection d'un nouveau fichier pendant l'upload
+    if (uploadState === "uploading") {
+      const confirmCancel = window.confirm("Un upload est en cours. Voulez-vous vraiment annuler ?")
+      if (!confirmCancel) {
+        return
+      }
+      // Annuler l'upload en cours si l'utilisateur confirme
+      if (uploadTaskRef.current) {
+        uploadTaskRef.current.cancel()
+        uploadTaskRef.current = null
+        console.log("[PHOTO] user canceled")
+      }
+      setUploading(false)
+      setUploadProgress(0)
+      setUploadState("idle")
+      setUploadStatus(null)
+      setPendingPreviews([])
+      return
+    }
+
+    // Logs systématiques - fichier sélectionné
+    fileArray.forEach((file) => {
+      console.log("[PHOTO] file selected", { name: file.name, size: file.size, type: file.type })
+    })
+    setDebug({ step: "file_selected", info: { files: fileArray.map(f => ({ name: f.name, size: f.size, type: f.type })) } })
+
+    // Logs systématiques - avant upload
+    const currentUid = auth.currentUser?.uid ?? null
+    const bucket = storage.app.options.storageBucket
+    console.log("[PHOTO] uid", currentUid)
+    console.log("[PHOTO] bucket", bucket)
+    setDebug({ step: "uid_check", info: { uid: currentUid, bucket } })
+
+    if (!currentUid) {
+      setError("Veuillez vous reconnecter puis réessayer.")
+      setUploadState("error")
+      setDebug({ step: "error", error: { code: "NO_UID", message: "Veuillez vous reconnecter puis réessayer." } })
+      return
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
 
     try {
       setUploading(true)
       setError(null)
+      setUploadProgress(0)
+      setUploadState("idle")
+      setUploadStatus(null)
 
+      const uploadItems = fileArray.map((file) => {
+        const tempId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+        const previewUrl = URL.createObjectURL(file)
+        return { tempId, file, previewUrl }
+      })
+      setPendingPreviews((prev) => [
+        ...prev,
+        ...uploadItems.map(({ tempId, previewUrl }) => ({ tempId, url: previewUrl })),
+      ])
+
+      const baseImages = galleryImages
       const newImageUrls: string[] = []
+      const failed: Array<{ name: string; message: string; code?: string; tempId: string }> = []
+      const MAX_BYTES = 2 * 1024 * 1024
+      const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png'])
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        
-        // Validation du type
-        if (!file.type.startsWith('image/')) {
-          throw new Error('Seules les images sont autorisées')
+      for (const item of uploadItems) {
+        const file = item.file
+
+        try {
+          if (!ALLOWED_TYPES.has(file.type)) {
+            throw new Error('Formats acceptés : JPG, PNG')
+          }
+          if (file.size > MAX_BYTES) {
+            throw new Error(`L'image ${file.name} est trop volumineuse (max 2MB)`)
+          }
+
+          // Path stable avec sanitizer simple
+          const filenameSafe = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+          const path = `pros/${currentUid}/photos/${filenameSafe}`
+          console.log("[PHOTO] path", path)
+          setDebug({ step: "upload_clicked", info: { uid: currentUid, bucket, path, filename: file.name } })
+
+          const storageRef = ref(storage, path)
+
+          // uploadBytesResumable + state_changed obligatoire
+          const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type })
+          
+          // Stocker le task dans la ref au démarrage
+          uploadTaskRef.current = uploadTask
+          console.log("[PHOTO] upload start")
+          setDebug({ step: "task_created", info: { uid: currentUid, bucket, path } })
+          
+          // Timer pour détecter si progress reste à 0 après 15s
+          // Clear any existing timer
+          if (stuckTimerRef.current) {
+            clearTimeout(stuckTimerRef.current)
+          }
+          stuckTimerRef.current = setTimeout(() => {
+            // Vérifier si le progress est toujours à 0
+            setUploadProgress((currentProgress) => {
+              if (currentProgress === 0) {
+                console.log("[PHOTO] stuck_0_percent - No progress events received")
+                setDebug({ step: "stuck_0_percent", error: { code: "STUCK_0_PERCENT", message: "No progress events received after 15s" } })
+              }
+              return currentProgress
+            })
+          }, 15000)
+
+          const uploadPromise = new Promise<string>((resolve, reject) => {
+            uploadTask.on(
+              "state_changed",
+              (snap) => {
+                const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+                const bytesTransferred = snap.bytesTransferred
+                const totalBytes = snap.totalBytes
+                console.log("[PHOTO] progress", pct, bytesTransferred, totalBytes)
+                setUploadProgress(pct)
+                setUploadState("uploading")
+                setDebug({ 
+                  step: "state_changed", 
+                  info: { 
+                    uid: currentUid, 
+                    bucket, 
+                    path, 
+                    progress: pct, 
+                    bytesTransferred, 
+                    totalBytes 
+                  } 
+                })
+                // Clear stuck timer if progress > 0
+                if (pct > 0 && stuckTimerRef.current) {
+                  clearTimeout(stuckTimerRef.current)
+                  stuckTimerRef.current = null
+                }
+              },
+              (error) => {
+                // Log obligatoire dans la callback error
+                console.log("[PHOTO] error", error.code, error.message)
+                setError(`${error.code}: ${error.message}`)
+                setUploading(false)
+                setUploadState("error")
+                uploadTaskRef.current = null
+                if (stuckTimerRef.current) {
+                  clearTimeout(stuckTimerRef.current)
+                  stuckTimerRef.current = null
+                }
+                setDebug({ 
+                  step: "error", 
+                  error: { 
+                    code: error.code, 
+                    message: error.message 
+                  },
+                  info: { 
+                    uid: currentUid, 
+                    bucket, 
+                    path, 
+                    progress: uploadProgress 
+                  } 
+                })
+                // NE PAS effacer la preview ici
+                reject(error)
+              },
+              async () => {
+                try {
+                  if (stuckTimerRef.current) {
+                    clearTimeout(stuckTimerRef.current)
+                    stuckTimerRef.current = null
+                  }
+                  const url = await getDownloadURL(uploadTask.snapshot.ref)
+                  console.log("[PHOTO] success", url)
+                  uploadTaskRef.current = null
+                  setUploadState("success")
+                  setDebug({ 
+                    step: "success", 
+                    info: { 
+                      uid: currentUid, 
+                      bucket, 
+                      path, 
+                      progress: 100, 
+                      url 
+                    } 
+                  })
+                  resolve(url)
+                } catch (e: any) {
+                  if (stuckTimerRef.current) {
+                    clearTimeout(stuckTimerRef.current)
+                    stuckTimerRef.current = null
+                  }
+                  uploadTaskRef.current = null
+                  setUploadState("error")
+                  setDebug({ 
+                    step: "error", 
+                    error: { 
+                      code: e?.code || "GET_URL_ERROR", 
+                      message: e?.message || "Failed to get download URL" 
+                    },
+                    info: { 
+                      uid: currentUid, 
+                      bucket, 
+                      path, 
+                      progress: uploadProgress 
+                    } 
+                  })
+                  reject(e)
+                }
+              }
+            )
+          })
+
+          const downloadURL = await uploadPromise
+          newImageUrls.push(downloadURL)
+          
+          // Retirer la preview uniquement après succès confirmé
+          setPendingPreviews((prev) => prev.filter((p) => p.tempId !== item.tempId))
+          try {
+            URL.revokeObjectURL(item.previewUrl)
+          } catch {
+            // ignore
+          }
+          
+          // Ajouter l'image à la galerie
+          setGalleryImages((prev) => [...prev, downloadURL])
+        } catch (err: any) {
+          console.log("[PHOTO] error", err?.code || "unknown", err?.message || "Unknown error")
+          failed.push({
+            name: file.name,
+            message: err?.message || "Erreur lors de l'upload",
+            code: err?.code,
+            tempId: item.tempId,
+          })
+          setUploadState("error")
+          setDebug({ 
+            step: "error", 
+            error: { 
+              code: err?.code || "unknown", 
+              message: err?.message || "Unknown error" 
+            },
+            info: { 
+              uid: currentUid, 
+              bucket, 
+              path, 
+              progress: uploadProgress 
+            } 
+          })
+          // En cas d'erreur, on garde la preview pour que l'utilisateur voie ce qui a échoué
         }
-
-        // Validation de la taille (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`L'image ${file.name} est trop volumineuse (max 5MB)`)
-        }
-
-        // Upload vers Firebase Storage
-        const imageId = `${Date.now()}-${Math.random().toString(36).substring(7)}`
-        const storageRef = ref(storage, `pros/${uid}/gallery/${imageId}.jpg`)
-        
-        await uploadBytes(storageRef, file)
-        const downloadURL = await getDownloadURL(storageRef)
-        newImageUrls.push(downloadURL)
       }
 
-      // Mettre à jour Firestore
-      const updatedImages = [...galleryImages, ...newImageUrls]
-      await updateDoc(doc(db, 'pros', uid), {
-        'gallery.images': updatedImages,
-        updated_at: serverTimestamp(),
-      })
+      if (newImageUrls.length > 0) {
+        const updatedImages = [...baseImages, ...newImageUrls]
+        try {
+          await updateDoc(doc(db, 'pros', currentUid), {
+            'gallery.images': updatedImages,
+            updated_at: serverTimestamp(),
+          })
+          setGalleryImages(updatedImages)
+          setSuccess(`${newImageUrls.length} photo${newImageUrls.length > 1 ? 's' : ''} ajoutée${newImageUrls.length > 1 ? 's' : ''} ✓`)
+          setTimeout(() => setSuccess(null), 3000)
+        } catch (firestoreErr: any) {
+          setGalleryImages(updatedImages)
+          setError('Photos envoyées mais erreur d\'enregistrement. Réessayez plus tard.')
+          console.error('[PHOTO] Firestore updateDoc failed', firestoreErr?.message)
+        }
+      }
 
-      setGalleryImages(updatedImages)
-      setSuccess(`${newImageUrls.length} photo${newImageUrls.length > 1 ? 's' : ''} ajoutée${newImageUrls.length > 1 ? 's' : ''} ✓`)
-      setTimeout(() => setSuccess(null), 3000)
+      // Retirer les previews des fichiers qui ont échoué (après un délai)
+      if (failed.length > 0) {
+        const first = failed[0]
+        const extra = failed.length > 1 ? ` (+${failed.length - 1} autre${failed.length - 1 > 1 ? 's' : ''})` : ''
+        setError(`${first.message}${extra}`)
+        
+        setTimeout(() => {
+          setPendingPreviews((prev) => prev.filter((p) => !failed.some((f) => f.tempId === p.tempId)))
+          failed.forEach((f) => {
+            const item = uploadItems.find((i) => i.tempId === f.tempId)
+            if (item) {
+              try {
+                URL.revokeObjectURL(item.previewUrl)
+              } catch {
+                // ignore
+              }
+            }
+          })
+        }, 5000)
+      }
     } catch (err: any) {
-      console.error('Error uploading images:', err)
-      setError(err.message || 'Erreur lors de l\'upload')
+      console.log("[PHOTO] error", err?.code || "unknown", err?.message || "Unknown error")
+      setError(err?.message || 'Erreur lors de l\'upload')
+      setUploadState("error")
+      // Ne pas reset le state (preview/file) tant que l'upload est en cours
+      // On garde les previews pour que l'utilisateur voie ce qui a échoué
     } finally {
+      // Ne reset que si l'upload est vraiment terminé (pas annulé par l'utilisateur)
+      if (!uploadTaskRef.current && uploadState !== "uploading") {
+        setUploading(false)
+        if (uploadState !== "error") {
+          setUploadProgress(0)
+          setUploadState("idle")
+        }
+        setUploadStatus(null)
+      }
+    }
+  }
+
+  const handleCancelUpload = () => {
+    if (uploadTaskRef.current && uploadState === "uploading") {
+      uploadTaskRef.current.cancel()
+      uploadTaskRef.current = null
+      console.log("[PHOTO] user canceled")
+      setUploadState("idle")
+      setUploadProgress(0)
       setUploading(false)
+      setUploadStatus("Upload annulé")
+      setTimeout(() => setUploadStatus(null), 3000)
     }
   }
 
   const handleDeleteImage = async (imageUrl: string) => {
     if (!uid) return
+    if (!PHOTOS_ENABLED) return
 
     try {
       setUploading(true)
@@ -567,13 +862,29 @@ export default function AccountPage() {
         </CardHeader>
 
         <div className="space-y-4 mt-6">
-          <Input
-            label="Instagram"
-            type="url"
-            value={instagram}
-            onChange={(e) => setInstagram(e.target.value)}
-            placeholder="https://instagram.com/..."
-          />
+          {/* Bloc informatif Portfolio */}
+          <div className="bg-pink-50 border border-pink-200 rounded-[24px] p-4">
+            <h3 className="text-sm font-semibold text-gray-800 mb-1.5">
+              📸 Portfolio
+            </h3>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Les photos sont temporairement disponibles via vos réseaux.
+              Ajoutez votre lien Instagram ou Facebook pour que vos clientes puissent voir vos réalisations.
+            </p>
+          </div>
+
+          <div>
+            <Input
+              label="Instagram"
+              type="url"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              placeholder="https://instagram.com/..."
+            />
+            <p className="text-xs text-gray-500 mt-1.5 ml-1">
+              Ex: https://instagram.com/moncompte
+            </p>
+          </div>
 
           <Input
             label="TikTok"
@@ -605,43 +916,137 @@ export default function AccountPage() {
         </CardHeader>
 
         <div className="mt-6">
-          {/* Upload zone */}
-          <div className="mb-6">
-            <label className="block">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleFileUpload(e.target.files)}
-                disabled={uploading}
-                className="hidden"
-                id="gallery-upload"
-              />
-              <div className="border-2 border-dashed border-gray-300 rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
-                <div className="text-4xl mb-2">📸</div>
-                <p className="text-sm text-gray-600 mb-1">
-                  Cliquez ou glissez-déposez vos photos ici
+          {PHOTOS_ENABLED ? (
+            <>
+              {/* Upload zone */}
+              <div className="mb-6">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                  disabled={uploadState === "uploading"}
+                  className="sr-only"
+                  id="gallery-upload"
+                />
+                <label
+                  htmlFor="gallery-upload"
+                  className="block"
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    handleFileUpload(e.dataTransfer.files)
+                  }}
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
+                    <div className="text-4xl mb-2">📸</div>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Cliquez ou glissez-déposez vos photos ici
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Formats acceptés : JPG, PNG (max 2MB par image)
+                    </p>
+                  </div>
+                </label>
+                <div className="mt-4 flex gap-2">
+                  <label htmlFor="gallery-upload" className="flex-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={uploadState === "uploading"}
+                      className="rounded-[32px] w-full"
+                    >
+                      {uploadState === "uploading" ? 'Upload en cours...' : 'Choisir des photos'}
+                    </Button>
+                  </label>
+                  {uploadState === "uploading" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelUpload}
+                      className="rounded-[32px]"
+                    >
+                      Annuler upload
+                    </Button>
+                  )}
+                </div>
+                {/* Barre de progression */}
+                {uploadState === "uploading" && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Progression</span>
+                      <span className="text-sm font-medium text-gray-900">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {uploadStatus && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    {uploadStatus}
+                  </div>
+                )}
+                {/* Debug panel */}
+                {debug && (
+                  <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono">
+                    <div className="font-semibold mb-2 text-gray-700">🔍 Debug Upload</div>
+                    <div className="space-y-1 text-gray-600">
+                      <div><strong>Step:</strong> {debug.step}</div>
+                      {debug.info && (
+                        <>
+                          {debug.info.uid && <div><strong>UID:</strong> {debug.info.uid}</div>}
+                          {debug.info.bucket && <div><strong>Bucket:</strong> {debug.info.bucket}</div>}
+                          {debug.info.path && <div><strong>Path:</strong> {debug.info.path}</div>}
+                          {debug.info.progress !== undefined && <div><strong>Progress:</strong> {debug.info.progress}%</div>}
+                        </>
+                      )}
+                      {debug.error && (
+                        <div className="text-red-600">
+                          <div><strong>Error Code:</strong> {debug.error.code || "N/A"}</div>
+                          <div><strong>Error Message:</strong> {debug.error.message || "N/A"}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="mb-6">
+              <div className="border-2 border-dashed border-gray-200 rounded-[32px] p-8 text-center bg-gray-50">
+                <div className="text-4xl mb-3">📸</div>
+                <p className="text-base font-medium text-gray-700 mb-2">
+                  Photos bientôt disponibles
                 </p>
-                <p className="text-xs text-gray-500">
-                  Formats acceptés : JPG, PNG (max 5MB par image)
+                <p className="text-sm text-gray-600">
+                  Nous finalisons cette fonctionnalité. Vous pourrez bientôt ajouter vos photos ici.
                 </p>
               </div>
-            </label>
-            <label htmlFor="gallery-upload">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={uploading}
-                className="mt-4 rounded-[32px] w-full"
-              >
-                {uploading ? 'Upload en cours...' : 'Choisir des photos'}
-              </Button>
-            </label>
-          </div>
+            </div>
+          )}
 
           {/* Gallery grid */}
-          {galleryImages.length > 0 ? (
+          {PHOTOS_ENABLED && (galleryImages.length > 0 || pendingPreviews.length > 0) ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {pendingPreviews.map((p) => (
+                <div key={p.tempId} className="relative overflow-hidden rounded-[24px]">
+                  <img
+                    src={p.url}
+                    alt="Aperçu"
+                    className="w-full h-48 object-cover rounded-[24px] opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <div className="text-white text-sm">Upload…</div>
+                  </div>
+                </div>
+              ))}
               {galleryImages.map((imageUrl, index) => (
                 <div key={index} className="relative group">
                   <img
@@ -651,7 +1056,7 @@ export default function AccountPage() {
                   />
                   <button
                     onClick={() => handleDeleteImage(imageUrl)}
-                    disabled={uploading}
+                    disabled={uploadState === "uploading"}
                     className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
                   >
                     ×
@@ -659,11 +1064,11 @@ export default function AccountPage() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : PHOTOS_ENABLED ? (
             <p className="text-sm text-gray-500 text-center py-8">
               Aucune photo pour le moment
             </p>
-          )}
+          ) : null}
         </div>
       </Card>
     </motion.div>

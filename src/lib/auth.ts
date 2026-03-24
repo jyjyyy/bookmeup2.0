@@ -68,8 +68,15 @@ export async function getCurrentUser(): Promise<CurrentUser> {
 }
 
 export async function signIn(email: string, password: string): Promise<User> {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password)
-  return userCredential.user
+  console.log('[AUTH] signIn called', { email, authDomain: auth.app.options.authDomain })
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+    console.log('[AUTH] signIn success', { uid: userCredential.user.uid })
+    return userCredential.user
+  } catch (error: any) {
+    console.log('[AUTH] signIn error in helper', error.code, error.message, error)
+    throw error
+  }
 }
 
 export async function signUp(

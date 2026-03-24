@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
@@ -45,94 +45,168 @@ export default function DashboardPage() {
 
   const [exportLoading, setExportLoading] = useState(false)
 
+  const loadStarterStats = useCallback(async () => {
+    try {
+      setStatsError(null)
+      setLoadingStats(true)
+
+      const current = await getCurrentUser()
+      if (!current.user) return
+
+      setUserId(current.user.uid)
+
+      // Read plan (UI-gating only, no guard changes)
+      const sub = await checkSubscriptionStatus(current.user.uid)
+      setPlan((sub.plan as any) || 'starter')
+
+      const computed = await getStarterStats(current.user.uid)
+      setStats(computed)
+    } catch (err) {
+      console.error('[Dashboard] Error loading starter stats:', err)
+      setStatsError('Impossible de charger vos statistiques pour le moment.')
+    } finally {
+      setLoadingStats(false)
+    }
+  }, [])
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        setStatsError(null)
-        setLoadingStats(true)
+    loadStarterStats()
 
-        const current = await getCurrentUser()
-        if (!current.user) return
-
-        setUserId(current.user.uid)
-
-        // Read plan (UI-gating only, no guard changes)
-        const sub = await checkSubscriptionStatus(current.user.uid)
-        setPlan((sub.plan as any) || 'starter')
-
-        const computed = await getStarterStats(current.user.uid)
-        setStats(computed)
-      } catch (err) {
-        console.error('[Dashboard] Error loading starter stats:', err)
-        setStatsError('Impossible de charger vos statistiques pour le moment.')
-      } finally {
-        setLoadingStats(false)
+    // Listen for attendance updates from calendar (works across pages/tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'bookingAttendanceUpdated') {
+        loadStarterStats()
       }
     }
 
-    load()
-  }, [])
+    // Also listen for same-page updates (when calendar and dashboard are on same page)
+    const handleCustomEvent = () => {
+      loadStarterStats()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
+
+    // Also refetch when page becomes visible (in case user switched tabs)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadStarterStats()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [loadStarterStats])
 
   const isProOrPremium = plan === 'pro' || plan === 'premium'
 
-  useEffect(() => {
-    const loadProStats = async () => {
-      if (!userId) return
-      if (!isProOrPremium) {
-        setProStats(null)
-        setProStatsError(null)
-        setProStatsLoading(false)
-        return
-      }
-
-      try {
-        setProStatsError(null)
-        setProStatsLoading(true)
-        const computed = await getProStats(userId, period)
-        setProStats(computed)
-      } catch (err) {
-        console.error('[Dashboard] Error loading pro stats:', err)
-        setProStatsError('Impossible de charger les statistiques avancées pour le moment.')
-        setProStats(null)
-      } finally {
-        setProStatsLoading(false)
-      }
+  const loadProStats = useCallback(async () => {
+    if (!userId) return
+    if (!isProOrPremium) {
+      setProStats(null)
+      setProStatsError(null)
+      setProStatsLoading(false)
+      return
     }
 
-    loadProStats()
+    try {
+      setProStatsError(null)
+      setProStatsLoading(true)
+      const computed = await getProStats(userId, period)
+      setProStats(computed)
+    } catch (err) {
+      console.error('[Dashboard] Error loading pro stats:', err)
+      setProStatsError('Impossible de charger les statistiques avancées pour le moment.')
+      setProStats(null)
+    } finally {
+      setProStatsLoading(false)
+    }
   }, [userId, period, isProOrPremium])
 
   useEffect(() => {
-    const loadPremiumStats = async () => {
-      if (!userId) return
+    loadProStats()
 
-      // Strict gating:
-      // - only Premium plan calls getPremiumStats
-      // - Pro shows locked UI
-      // - Starter sees nothing
-      if (plan !== 'premium') {
-        setPremiumStats(null)
-        setPremiumStatsError(null)
-        setPremiumStatsLoading(false)
-        return
-      }
-
-      try {
-        setPremiumStatsError(null)
-        setPremiumStatsLoading(true)
-        const computed = await getPremiumStats(userId, period)
-        setPremiumStats(computed)
-      } catch (err) {
-        console.error('[Dashboard] Error loading premium stats:', err)
-        setPremiumStatsError('Impossible de charger les statistiques Premium pour le moment.')
-        setPremiumStats(null)
-      } finally {
-        setPremiumStatsLoading(false)
+    // Listen for attendance updates from calendar (works across pages/tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'bookingAttendanceUpdated' && userId && isProOrPremium) {
+        loadProStats()
       }
     }
 
-    loadPremiumStats()
+    // Also listen for same-page updates
+    const handleCustomEvent = () => {
+      if (userId && isProOrPremium) {
+        loadProStats()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
+    }
+  }, [userId, period, isProOrPremium, loadProStats])
+
+  const loadPremiumStats = useCallback(async () => {
+    if (!userId) return
+
+    // Strict gating:
+    // - only Premium plan calls getPremiumStats
+    // - Pro shows locked UI
+    // - Starter sees nothing
+    if (plan !== 'premium') {
+      setPremiumStats(null)
+      setPremiumStatsError(null)
+      setPremiumStatsLoading(false)
+      return
+    }
+
+    try {
+      setPremiumStatsError(null)
+      setPremiumStatsLoading(true)
+      const computed = await getPremiumStats(userId, period)
+      setPremiumStats(computed)
+    } catch (err) {
+      console.error('[Dashboard] Error loading premium stats:', err)
+      setPremiumStatsError('Impossible de charger les statistiques Premium pour le moment.')
+      setPremiumStats(null)
+    } finally {
+      setPremiumStatsLoading(false)
+    }
   }, [userId, period, plan])
+
+  useEffect(() => {
+    loadPremiumStats()
+
+    // Listen for attendance updates from calendar (works across pages/tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'bookingAttendanceUpdated' && userId && plan === 'premium') {
+        loadPremiumStats()
+      }
+    }
+
+    // Also listen for same-page updates
+    const handleCustomEvent = () => {
+      if (userId && plan === 'premium') {
+        loadPremiumStats()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
+    }
+  }, [userId, period, plan, loadPremiumStats])
 
   const periodLabel = useMemo(() => {
     return period === '7d' ? '7 derniers jours' : '30 derniers jours'
@@ -216,7 +290,6 @@ export default function DashboardPage() {
         ) : null}
 
         <StatsGrid
-          totalBookings={loadingStats ? '…' : stats?.totalBookings ?? 0}
           totalRevenue={loadingStats ? '…' : revenueLabel}
           upcomingBookings={loadingStats ? '…' : stats?.upcomingBookings ?? 0}
           activeServices={loadingStats ? '…' : stats?.activeServices ?? 0}

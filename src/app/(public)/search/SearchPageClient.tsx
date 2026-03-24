@@ -10,17 +10,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { SearchPro, SearchService } from '@/app/api/pros/search/route'
 import { getCurrentUser } from '@/lib/auth'
 
-interface CatalogService {
-  id: string
-  name: string
-  category: string | null
-}
+type ProsSearchResponse = { pros?: SearchPro[] }
+
+// Dev/StrictMode can mount/unmount/remount quickly. This module-level cache
+// prevents duplicate network calls while keeping the UI logic unchanged.
+let prosSearchPromise: Promise<ProsSearchResponse> | null = null
+let prosSearchController: AbortController | null = null
+let prosSearchSubscribers = 0
+let prosSearchAbortTimeout: ReturnType<typeof setTimeout> | null = null
 
 export function SearchPageClient() {
   const router = useRouter()
   const [pros, setPros] = useState<SearchPro[]>([])
   const [filteredPros, setFilteredPros] = useState<SearchPro[]>([])
-  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCity, setSelectedCity] = useState<string | 'all'>('all')
   const [selectedServiceId, setSelectedServiceId] = useState<string | 'all'>('all')
@@ -29,45 +31,85 @@ export function SearchPageClient() {
   const [error, setError] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+  const didFetchRef = useRef(false)
+  const inFlightRef = useRef(false)
+  const isMountedRef = useRef(false)
 
-  // Load pros and services catalog on mount
+  // Load pros on mount (avoid duplicate calls in dev/StrictMode)
   useEffect(() => {
+    isMountedRef.current = true
+    prosSearchSubscribers += 1
+    if (prosSearchAbortTimeout) {
+      clearTimeout(prosSearchAbortTimeout)
+      prosSearchAbortTimeout = null
+    }
+
+    // Guard: never start a second automatic fetch in this mounted instance.
+    if (didFetchRef.current || inFlightRef.current) {
+      return () => {
+        isMountedRef.current = false
+        prosSearchSubscribers -= 1
+      }
+    }
+
+    didFetchRef.current = true
+    inFlightRef.current = true
+
     const loadData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Load pros and services catalog in parallel
-        const [prosResponse, catalogResponse] = await Promise.all([
-          fetch('/api/pros/search'),
-          fetch('/api/services/catalog'),
-        ])
-        
-        if (!prosResponse.ok) {
-          throw new Error('Erreur lors du chargement des professionnels')
+        // Deduplicate network call across dev/StrictMode remounts.
+        if (!prosSearchPromise) {
+          prosSearchController = new AbortController()
+          prosSearchPromise = fetch('/api/pros/search', {
+            signal: prosSearchController.signal,
+          }).then(async (res) => {
+            if (!res.ok) {
+              throw new Error('Erreur lors du chargement des professionnels')
+            }
+            return (await res.json()) as ProsSearchResponse
+          })
         }
 
-        if (!catalogResponse.ok) {
-          console.warn('Failed to load services catalog, continuing without it')
-        }
+        const prosData = await prosSearchPromise
 
-        const prosData = await prosResponse.json()
-        setPros(prosData.pros || [])
-        setFilteredPros(prosData.pros || [])
-
-        if (catalogResponse.ok) {
-          const catalogData = await catalogResponse.json()
-          setCatalogServices(catalogData.services || [])
-        }
+        if (!isMountedRef.current) return
+        const list = prosData.pros || []
+        setPros(list)
+        setFilteredPros(list)
       } catch (err: any) {
+        if (err?.name === 'AbortError') return
         console.error('Error loading data:', err)
-        setError(err.message || 'Erreur lors du chargement')
+        if (isMountedRef.current) {
+          setError(err.message || 'Erreur lors du chargement')
+        }
       } finally {
-        setLoading(false)
+        inFlightRef.current = false
+        if (isMountedRef.current) {
+          setLoading(false)
+        }
       }
     }
 
     loadData()
+
+    return () => {
+      isMountedRef.current = false
+      prosSearchSubscribers -= 1
+      // Abort only when leaving the page for real (no subscribers left).
+      // StrictMode dev "fake unmount" remounts immediately and cancels this.
+      if (prosSearchSubscribers <= 0) {
+        prosSearchAbortTimeout = setTimeout(() => {
+          if (prosSearchSubscribers <= 0) {
+            prosSearchController?.abort()
+            prosSearchController = null
+            prosSearchPromise = null
+          }
+        }, 250)
+      }
+    }
   }, [])
 
   // Filter pros based on search term, city, and service
@@ -331,9 +373,7 @@ export function SearchPageClient() {
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm">
                 <span>💅</span>
                 <span>
-                  {availableServices.find((s) => s.id === selectedServiceId)?.name ||
-                    catalogServices.find((s) => s.id === selectedServiceId)?.name ||
-                    'Service'}
+                  {availableServices.find((s) => s.id === selectedServiceId)?.name || 'Service'}
                 </span>
                 <button
                   type="button"

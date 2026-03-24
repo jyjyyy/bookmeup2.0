@@ -17,6 +17,7 @@ interface Booking {
   client_name?: string
   client_email?: string
   status?: 'pending' | 'confirmed' | 'cancelled'
+  attendance?: 'present' | 'absent'
 }
 
 interface CalendarClientProps {
@@ -41,6 +42,7 @@ export function CalendarClient({ proId }: CalendarClientProps) {
   })
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Fonction utilitaire pour obtenir le lundi d'une semaine
   const getMonday = (date: Date): Date => {
@@ -93,36 +95,49 @@ export function CalendarClient({ proId }: CalendarClientProps) {
         // Charger les bookings depuis Firestore
         // Note: Firestore ne supporte pas >= et <= sur le même champ dans une requête
         // On charge tous les bookings du pro et on filtre côté client
+        // Support both schemas: proId and pro_id
         const { collection, query, where, getDocs } = await import('firebase/firestore')
         const { db } = await import('@/lib/firebaseClient')
 
-        const bookingsQuery = query(
-          collection(db, 'bookings'),
-          where('pro_id', '==', proId)
+        const bookingsQueries = [
+          query(collection(db, 'bookings'), where('proId', '==', proId)),
+          query(collection(db, 'bookings'), where('pro_id', '==', proId)),
+        ]
+
+        const snapshots = await Promise.allSettled(
+          bookingsQueries.map((q) => getDocs(q))
         )
+        
+        const bookingsById = new Map<string, Booking>()
+        
+        for (const res of snapshots) {
+          if (res.status !== 'fulfilled') continue
+          res.value.forEach((doc) => {
+            const data = doc.data()
+            const bookingDate = data.date
 
-        const snapshot = await getDocs(bookingsQuery)
-        const loadedBookings: Booking[] = []
+            // Filtrer côté client pour la plage de dates
+            if (bookingDate >= range.start && bookingDate <= range.end) {
+              // Éviter les doublons si les deux requêtes retournent le même booking
+              if (!bookingsById.has(doc.id)) {
+                bookingsById.set(doc.id, {
+                  id: doc.id,
+                  date: bookingDate,
+                  start_time: data.start_time,
+                  end_time: data.end_time,
+                  duration: data.duration || 60,
+                  serviceName: data.serviceName || 'Service',
+                  client_name: data.client_name || 'Client',
+                  client_email: data.client_email,
+                  status: data.status || 'pending',
+                  attendance: data.attendance,
+                })
+              }
+            }
+          })
+        }
 
-        snapshot.forEach((doc) => {
-          const data = doc.data()
-          const bookingDate = data.date
-
-          // Filtrer côté client pour la plage de dates
-          if (bookingDate >= range.start && bookingDate <= range.end) {
-            loadedBookings.push({
-              id: doc.id,
-              date: bookingDate,
-              start_time: data.start_time,
-              end_time: data.end_time,
-              duration: data.duration || 60,
-              serviceName: data.serviceName || 'Service',
-              client_name: data.client_name || 'Client',
-              client_email: data.client_email,
-              status: data.status || 'pending',
-            })
-          }
-        })
+        const loadedBookings = Array.from(bookingsById.values())
 
         setBookings(loadedBookings)
       } catch (error) {
@@ -133,7 +148,12 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     }
 
     loadBookings()
-  }, [proId, view, currentWeekStart, currentMonth])
+  }, [proId, view, currentWeekStart, currentMonth, refreshKey])
+
+  // Callback pour rafraîchir les bookings après mise à jour d'attendance
+  const handleBookingUpdate = () => {
+    setRefreshKey((prev) => prev + 1)
+  }
 
   // Navigation
   const goToToday = () => {
@@ -254,6 +274,7 @@ export function CalendarClient({ proId }: CalendarClientProps) {
               weekStart={currentWeekStart}
               bookings={bookings}
               proId={proId}
+              onBookingUpdate={handleBookingUpdate}
             />
           </div>
         ) : (
@@ -262,6 +283,7 @@ export function CalendarClient({ proId }: CalendarClientProps) {
               month={currentMonth}
               bookings={bookings}
               proId={proId}
+              onBookingUpdate={handleBookingUpdate}
             />
           </div>
         )}

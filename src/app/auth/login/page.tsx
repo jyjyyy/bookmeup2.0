@@ -2,12 +2,22 @@
 
 import { useState, FormEvent, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn } from '@/lib/auth'
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { auth, db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
+
+// Helper pour forcer un timeout sur les promesses
+function withTimeout<T>(p: Promise<T>, ms = 15000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(Object.assign(new Error("LOGIN_TIMEOUT"), { code: "LOGIN_TIMEOUT" })), ms)
+    )
+  ]) as Promise<T>
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,21 +27,48 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Log Firebase initialization au montage
+  useEffect(() => {
+    console.log('[AUTH] firebase', {
+      apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    })
+  }, [])
+
+  // Debug: log onAuthStateChanged
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      console.log('[AUTH] onAuthStateChanged', u?.uid ?? null)
+    })
+    return () => unsub()
+  }, [])
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+    console.time('[PERF] login total')
+    console.log('[AUTH] submit', { email })
+
     try {
-      const user = await signIn(email, password)
+      console.time('[PERF] signIn')
+      const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password), 15000)
+      console.timeEnd('[PERF] signIn')
+      console.log('[AUTH] signIn resolved', { uid: cred.user.uid })
+      
+      const user = cred.user
 
       // Charger le profil Firestore
+      console.time('[PERF] fetch profile')
       const profileRef = doc(db, 'profiles', user.uid)
       const profileSnap = await getDoc(profileRef)
+      console.timeEnd('[PERF] fetch profile')
 
       if (!profileSnap.exists()) {
+        console.timeEnd('[PERF] login total')
         setError('Profil introuvable, contactez le support.')
-        setLoading(false)
         return
       }
 
@@ -55,7 +92,10 @@ export default function LoginPage() {
           ? `${redirectUrl}?${bookingParams.toString()}`
           : redirectUrl
         
+        console.time('[PERF] router.push')
         router.push(bookingUrl)
+        console.timeEnd('[PERF] router.push')
+        console.timeEnd('[PERF] login total')
         return
       }
 
@@ -63,6 +103,7 @@ export default function LoginPage() {
       if (role === 'pro') {
         // Create session cookie for PRO users
         try {
+          console.time('[PERF] session fetch')
           const idToken = await user.getIdToken()
           const sessionResponse = await fetch('/api/auth/session', {
             method: 'POST',
@@ -74,33 +115,59 @@ export default function LoginPage() {
           })
 
           const sessionData = await sessionResponse.json()
+          console.timeEnd('[PERF] session fetch')
           
           if (!sessionResponse.ok || !sessionData.ok) {
             throw new Error(sessionData.error || 'Échec de la création de la session')
           }
         } catch (sessionError: any) {
+          console.timeEnd('[PERF] login total')
           console.error('[Login] Error creating session cookie:', sessionError)
           setError('Erreur lors de la création de la session. Veuillez réessayer.')
-          setLoading(false)
           return
         }
 
         // Check subscription status first
+        console.time('[PERF] check subscription')
         const { checkSubscriptionStatus } = await import('@/lib/subscription')
         const subscriptionStatus = await checkSubscriptionStatus(user.uid)
+        console.timeEnd('[PERF] check subscription')
         
+        console.time('[PERF] router.push')
         if (!subscriptionStatus.hasActiveSubscription) {
           router.push('/dashboard/settings/subscription')
         } else {
           router.push('/dashboard')
         }
+        console.timeEnd('[PERF] router.push')
+        console.timeEnd('[PERF] login total')
       } else {
+        console.time('[PERF] router.push')
         router.push('/search')
+        console.timeEnd('[PERF] router.push')
+        console.timeEnd('[PERF] login total')
       }
     } catch (err: any) {
-      setError(
-        err.message || 'Erreur lors de la connexion. Vérifiez vos identifiants.'
-      )
+      console.timeEnd('[PERF] login total')
+      console.log('[AUTH] signIn failed/timeout', err?.code, err?.message, err)
+      
+      // Gérer les erreurs spécifiques
+      let errorMessage = err.message || 'Erreur lors de la connexion. Vérifiez vos identifiants.'
+      
+      if (err.code === 'LOGIN_TIMEOUT') {
+        errorMessage = 'Connexion bloquée (15s). Vérifiez VPN/AdBlock/DNS ou testez en 4G.'
+      } else if (err.code === 'auth/unauthorized-domain') {
+        errorMessage = 'Domaine non autorisé dans Firebase Auth. Ajoutez localhost dans Authorized domains.'
+      } else if (err.code === 'auth/invalid-api-key' || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        errorMessage = 'Erreur de configuration: clé API Firebase invalide ou manquante.'
+      } else if (err.code) {
+        // Afficher le code d'erreur + message
+        errorMessage = `[${err.code}] ${err.message || 'Erreur lors de la connexion'}`
+      }
+      
+      setError(errorMessage)
+    } finally {
+      console.log('[AUTH] finally setLoading false')
       setLoading(false)
     }
   }

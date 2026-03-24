@@ -144,6 +144,8 @@ export async function getPremiumStats(
     let totalBookingsInPeriod = 0
     const uniqueClientSet = new Set<string>()
 
+    const now = new Date()
+
     for (const data of bookingsById.values()) {
       if (getBookingProId(data) !== userId) continue
 
@@ -151,8 +153,60 @@ export async function getPremiumStats(
       if (!date) continue
 
       const status = data?.status
-      const paid = data?.paid === true
-      const price = paid ? toNumberOrZero(data?.price) : 0
+
+      // Parse booking date and time to check if appointment has passed
+      const dateValue = data?.date
+      const startTime = data?.start_time || data?.startTime
+      let bookingDateTime: Date | null = null
+      
+      if (typeof dateValue === 'string' && startTime && typeof startTime === 'string') {
+        try {
+          bookingDateTime = new Date(`${dateValue}T${startTime}:00`)
+        } catch (e) {
+          // Invalid format, try date only fallback
+        }
+      } else if (dateValue instanceof Date && startTime && typeof startTime === 'string') {
+        try {
+          const [hours, minutes] = startTime.split(':').map(Number)
+          bookingDateTime = new Date(dateValue)
+          bookingDateTime.setHours(hours, minutes, 0, 0)
+        } catch (e) {
+          bookingDateTime = dateValue
+        }
+      } else if (isFirestoreTimestampLike(dateValue) && startTime && typeof startTime === 'string') {
+        try {
+          const date = dateValue.toDate()
+          const [hours, minutes] = startTime.split(':').map(Number)
+          bookingDateTime = new Date(date)
+          bookingDateTime.setHours(hours, minutes, 0, 0)
+        } catch (e) {
+          bookingDateTime = dateValue.toDate()
+        }
+      }
+
+      // Fallback: use date only if time parsing failed
+      if (!bookingDateTime && dateValue) {
+        if (typeof dateValue === 'string') {
+          try {
+            bookingDateTime = new Date(dateValue)
+          } catch (e) { /* skip */ }
+        } else if (dateValue instanceof Date) {
+          bookingDateTime = dateValue
+        } else if (isFirestoreTimestampLike(dateValue)) {
+          bookingDateTime = dateValue.toDate()
+        }
+      }
+
+      // Check if booking has passed (date + time < now)
+      const hasPassed = bookingDateTime && bookingDateTime.getTime() < now.getTime()
+
+      // Check if booking should be excluded from revenue
+      const isCancelledOrNoShow =
+        status === 'cancelled' ||
+        status === 'no-show' ||
+        status === 'no_show' ||
+        status === 'cancelled_by_client' ||
+        status === 'cancelled_by_pro'
 
       const inCurrent = date >= currentRange.start && date <= currentRange.end
       const inPrevious = date >= previousRange.start && date <= previousRange.end
@@ -165,16 +219,52 @@ export async function getPremiumStats(
 
         if (status === 'confirmed') {
           confirmedCurrent += 1
-          if (paid) revenueCurrent += price
-        } else if (status === 'cancelled') {
+        } else if (status === 'cancelled' || status === 'cancelled_by_client' || status === 'cancelled_by_pro') {
           cancellationsCount += 1
+        } else if (status === 'no-show' || status === 'no_show') {
+          cancellationsCount += 1
+        }
+
+        // Revenue: only if appointment has passed AND not cancelled/no-show AND attendance === "present" AND pricing.price exists
+        if (hasPassed && !isCancelledOrNoShow) {
+          const attendance = data?.attendance
+          // Only include if attendance is explicitly "present"
+          if (attendance === 'present') {
+            // Use pricing.price ONLY (immutable snapshot from booking creation)
+            const pricing = data?.pricing
+            if (pricing && typeof pricing === 'object' && typeof pricing.price === 'number') {
+              const price = toNumberOrZero(pricing.price)
+              if (price > 0) {
+                revenueCurrent += price
+              }
+            }
+            // If pricing.price is missing, exclude booking from revenue (backward compatibility)
+          }
+          // If attendance is null/undefined or "absent", exclude from revenue
         }
       }
 
       if (inPrevious) {
         if (status === 'confirmed') {
           confirmedPrevious += 1
-          if (paid) revenuePrevious += price
+        }
+
+        // Revenue: only if appointment has passed AND not cancelled/no-show AND attendance === "present" AND pricing.price exists
+        if (hasPassed && !isCancelledOrNoShow) {
+          const attendance = data?.attendance
+          // Only include if attendance is explicitly "present"
+          if (attendance === 'present') {
+            // Use pricing.price ONLY (immutable snapshot from booking creation)
+            const pricing = data?.pricing
+            if (pricing && typeof pricing === 'object' && typeof pricing.price === 'number') {
+              const price = toNumberOrZero(pricing.price)
+              if (price > 0) {
+                revenuePrevious += price
+              }
+            }
+            // If pricing.price is missing, exclude booking from revenue (backward compatibility)
+          }
+          // If attendance is null/undefined or "absent", exclude from revenue
         }
       }
     }

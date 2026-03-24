@@ -283,7 +283,7 @@ export function AddServiceModal({
             Nom du service *
           </label>
           <input
-            type="text"
+          type="text"
             name="service-name-input"
             autoComplete="off"
             value={serviceNameInput}
@@ -301,7 +301,7 @@ export function AddServiceModal({
               }
             }}
             disabled={loading || !serviceType}
-            required
+          required
             placeholder={
               serviceType
                 ? "Tapez pour rechercher un service..."
@@ -356,23 +356,23 @@ export function AddServiceModal({
         </div>
 
         {/* 5. Duration */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
             Durée (minutes) *
-          </label>
-          <select
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            disabled={loading}
+            </label>
+            <select
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              disabled={loading}
             className="w-full px-4 py-3 pr-10 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat"
-          >
-            <option value="15">15 min</option>
-            <option value="30">30 min</option>
-            <option value="45">45 min</option>
-            <option value="60">60 min</option>
-            <option value="90">90 min</option>
-            <option value="120">120 min</option>
-          </select>
+            >
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="45">45 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+              <option value="120">120 min</option>
+            </select>
         </div>
 
         <div className="flex gap-3 pt-4">

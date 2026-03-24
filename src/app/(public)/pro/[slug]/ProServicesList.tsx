@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -37,33 +37,23 @@ interface ProServicesListProps {
     [key: string]: any
   }>
   proSlug: string
+  proId?: string
+  catalogServices?: CatalogService[]
 }
 
-export function ProServicesList({ services, proSlug }: ProServicesListProps) {
-  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([])
+export function ProServicesList({
+  services,
+  proSlug,
+  catalogServices,
+}: ProServicesListProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-
-  // Load services catalog to get categories
-  useEffect(() => {
-    const loadCatalog = async () => {
-      try {
-        const response = await fetch('/api/services/catalog')
-        if (response.ok) {
-          const data = await response.json()
-          setCatalogServices(data.services || [])
-        }
-      } catch (err) {
-        console.warn('Failed to load services catalog:', err)
-      }
-    }
-    loadCatalog()
-  }, [])
+  const safeCatalogServices = catalogServices ?? []
 
   // Group services by category (reusable logic - same as PRO dashboard)
   const groupedServices = useMemo(() => {
     // Create a map of serviceId -> category
     const categoryMap = new Map<string, string>()
-    catalogServices.forEach((catalogService) => {
+    safeCatalogServices.forEach((catalogService) => {
       if (catalogService.category) {
         categoryMap.set(catalogService.id, catalogService.category)
       }
@@ -110,7 +100,7 @@ export function ProServicesList({ services, proSlug }: ProServicesListProps) {
     }
 
     return result
-  }, [services, catalogServices])
+  }, [services, safeCatalogServices])
 
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {

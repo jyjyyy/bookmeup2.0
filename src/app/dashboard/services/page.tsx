@@ -324,80 +324,80 @@ export default function ServicesPage() {
                   }`}
                 >
                   <div className="px-6 pb-6 pt-4">
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      <AnimatePresence>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
                         {group.services.map((service, index) => (
-                          <motion.div
-                            key={service.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ delay: index * 0.05 }}
-                          >
-                            <Card className="rounded-[32px] p-6 h-full flex flex-col shadow-bookmeup hover:shadow-bookmeup-lg transition-all duration-300 border border-white/70 bg-white/90">
-                              {/* En-tête avec nom et statut */}
-                              <div className="mb-4">
-                                <div className="flex items-start justify-between mb-3">
-                                  <h3 className="text-xl font-bold text-[#2A1F2D] flex-1 pr-2">
-                                    {service.name}
-                                  </h3>
-                                  <span
-                                    className={`text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap ${
-                                      service.isActive
-                                        ? 'bg-green-100 text-green-700 border border-green-200'
-                                        : 'bg-gray-100 text-gray-600 border border-gray-200'
-                                    }`}
-                                  >
-                                    {service.isActive ? 'Actif' : 'Inactif'}
-                                  </span>
-                                </div>
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="rounded-[32px] p-6 h-full flex flex-col shadow-bookmeup hover:shadow-bookmeup-lg transition-all duration-300 border border-white/70 bg-white/90">
+                  {/* En-tête avec nom et statut */}
+                  <div className="mb-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-xl font-bold text-[#2A1F2D] flex-1 pr-2">
+                        {service.name}
+                      </h3>
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap ${
+                          service.isActive
+                            ? 'bg-green-100 text-green-700 border border-green-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                        }`}
+                      >
+                        {service.isActive ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
 
-                                {service.description && (
-                                  <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                                    {service.description}
-                                  </p>
-                                )}
-                              </div>
+                    {service.description && (
+                      <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                        {service.description}
+                      </p>
+                    )}
+                  </div>
 
-                              {/* Prix et durée */}
-                              <div className="mt-auto pt-4 border-t border-slate-100">
-                                <div className="flex items-center justify-between mb-4">
-                                  <div>
-                                    <p className="text-xs text-slate-500 mb-1">Prix</p>
-                                    <span className="text-3xl font-bold text-primary">
-                                      {service.price} €
-                                    </span>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500 mb-1">Durée</p>
-                                    <p className="text-lg font-semibold text-[#2A1F2D]">
-                                      {service.duration} min
-                                    </p>
-                                  </div>
-                                </div>
+                  {/* Prix et durée */}
+                  <div className="mt-auto pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">Prix</p>
+                        <span className="text-3xl font-bold text-primary">
+                          {service.price} €
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500 mb-1">Durée</p>
+                        <p className="text-lg font-semibold text-[#2A1F2D]">
+                          {service.duration} min
+                        </p>
+                      </div>
+                    </div>
 
-                                {/* Boutons d'action */}
-                                <div className="flex gap-3">
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => handleEdit(service)}
-                                    className="flex-1 rounded-[32px] text-sm font-medium hover:bg-secondary transition-colors"
-                                  >
-                                    Modifier
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => handleDelete(service)}
-                                    className="flex-1 rounded-[32px] text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
-                                  >
-                                    Supprimer
-                                  </Button>
-                                </div>
-                              </div>
-                            </Card>
-                      </motion.div>
-                        ))}
-                      </AnimatePresence>
+                    {/* Boutons d'action */}
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleEdit(service)}
+                        className="flex-1 rounded-[32px] text-sm font-medium hover:bg-secondary transition-colors"
+                      >
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDelete(service)}
+                        className="flex-1 rounded-[32px] text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
+                      >
+                        Supprimer
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
                     </div>
                   </div>
                 </div>

@@ -161,6 +161,7 @@ export function TimeSlots({
                     onClick={() => slot.available && onSelectTime(slot.time)}
                     disabled={!slot.available}
                     className={`
+                      flex items-center justify-center text-center
                       rounded-[24px] px-6 py-4 text-base font-semibold transition-all
                       transform hover:scale-105 active:scale-95
                       ${

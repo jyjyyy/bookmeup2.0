@@ -16,6 +16,7 @@ export default function HomePage() {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Text Content */}
               <motion.div
+                suppressHydrationWarning
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
@@ -39,6 +40,7 @@ export default function HomePage() {
 
               {/* Illustration */}
               <motion.div
+                suppressHydrationWarning
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
@@ -65,6 +67,7 @@ export default function HomePage() {
       <section className="py-20 bg-white/50">
         <div className="container mx-auto px-6">
           <motion.div
+            suppressHydrationWarning
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -101,6 +104,7 @@ export default function HomePage() {
               },
             ].map((advantage, index) => (
               <motion.div
+                suppressHydrationWarning
                 key={advantage.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -129,6 +133,7 @@ export default function HomePage() {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <motion.div
+            suppressHydrationWarning
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}

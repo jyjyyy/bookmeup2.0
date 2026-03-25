@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
 import { Card } from '@/components/ui/card'
-import { Loader } from '@/components/ui/loader'
+import { AppointmentsSkeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
 interface Booking {
@@ -253,16 +253,7 @@ export default function ClientAppointmentsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="p-12 text-center">
-          <Loader />
-          <p className="mt-4 text-gray-600">
-            Chargement de vos rendez-vous...
-          </p>
-        </Card>
-      </div>
-    )
+    return <AppointmentsSkeleton />
   }
 
   return (

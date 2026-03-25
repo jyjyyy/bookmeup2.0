@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Loader } from '@/components/ui/loader'
+import { AccountSettingsSkeleton } from '@/components/ui/skeleton'
 import { generateSlugFromNameAndCity } from '@/lib/slug'
 import { PHOTOS_ENABLED } from '@/lib/features'
 
@@ -399,13 +399,13 @@ export default function AccountPage() {
                 const totalBytes = snap.totalBytes
                 console.log("[PHOTO] progress", pct, bytesTransferred, totalBytes)
                 setUploadProgress(pct)
-                setUploadState("uploading")
+                setUploadState("uploading" as const)
                 setDebug({ 
                   step: "state_changed", 
                   info: { 
                     uid: currentUid, 
                     bucket, 
-                    path, 
+                    path: path, 
                     progress: pct, 
                     bytesTransferred, 
                     totalBytes 
@@ -437,7 +437,7 @@ export default function AccountPage() {
                   info: { 
                     uid: currentUid, 
                     bucket, 
-                    path, 
+                    path: path, 
                     progress: uploadProgress 
                   } 
                 })
@@ -459,7 +459,7 @@ export default function AccountPage() {
                     info: { 
                       uid: currentUid, 
                       bucket, 
-                      path, 
+                      path: path, 
                       progress: 100, 
                       url 
                     } 
@@ -481,7 +481,7 @@ export default function AccountPage() {
                     info: { 
                       uid: currentUid, 
                       bucket, 
-                      path, 
+                      path: path, 
                       progress: uploadProgress 
                     } 
                   })
@@ -522,7 +522,7 @@ export default function AccountPage() {
             info: { 
               uid: currentUid, 
               bucket, 
-              path, 
+              path: path, 
               progress: uploadProgress 
             } 
           })
@@ -643,11 +643,7 @@ export default function AccountPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader />
-      </div>
-    )
+    return <AccountSettingsSkeleton />
   }
 
   return (

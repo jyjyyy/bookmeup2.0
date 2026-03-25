@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
+import { ClientsSkeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 
@@ -111,14 +111,7 @@ export default function ClientsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader />
-          <p>Chargement des clients bloqués...</p>
-        </div>
-      </div>
-    )
+    return <ClientsSkeleton />
   }
 
   if (error) {

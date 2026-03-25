@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Loader } from '@/components/ui/loader'
+import { ServicesSkeleton } from '@/components/ui/skeleton'
 import { AddServiceModal } from '@/components/services/AddServiceModal'
 import { EditServiceModal } from '@/components/services/EditServiceModal'
 import { DeleteServiceModal } from '@/components/services/DeleteServiceModal'
@@ -216,11 +216,7 @@ export default function ServicesPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader />
-      </div>
-    )
+    return <ServicesSkeleton />
   }
 
   return (

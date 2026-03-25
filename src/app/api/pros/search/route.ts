@@ -190,15 +190,15 @@ async function executeSearch(): Promise<{ pros: SearchPro[] }> {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const url = request.nextUrl
-    const q = url.searchParams.get('q') ?? ''
-    const cityId = url.searchParams.get('cityId') ?? ''
-    const serviceId = url.searchParams.get('serviceId') ?? ''
-    const limit = url.searchParams.get('limit') ?? ''
-    const cacheKey = JSON.stringify({ q, cityId, serviceId, limit })
+  const cache = globalThis.__prosSearchCache!
+  const url = request.nextUrl
+  const q = url.searchParams.get('q') ?? ''
+  const cityId = url.searchParams.get('cityId') ?? ''
+  const serviceId = url.searchParams.get('serviceId') ?? ''
+  const limit = url.searchParams.get('limit') ?? ''
+  const cacheKey = JSON.stringify({ q, cityId, serviceId, limit })
 
-    const cache = globalThis.__prosSearchCache!
+  try {
     const now = Date.now()
     const entry = cache.get(cacheKey)
 

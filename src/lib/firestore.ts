@@ -14,7 +14,7 @@ export function serializeTimestamps<T extends Record<string, any>>(
 
   // Handle arrays
   if (Array.isArray(data)) {
-    return data.map((item) => serializeTimestamps(item)) as T
+    return data.map((item) => serializeTimestamps(item)) as unknown as T
   }
 
   // Handle objects
@@ -34,7 +34,8 @@ export function serializeTimestamps<T extends Record<string, any>>(
         serialized[key] = value.toDate().toISOString()
       } catch (error) {
         console.warn(`Error serializing timestamp for key ${key}:`, error)
-        serialized[key] = null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        serialized[key] = null as any
       }
     }
     // Recursively handle nested objects
@@ -43,9 +44,9 @@ export function serializeTimestamps<T extends Record<string, any>>(
     }
     // Recursively handle arrays
     else if (Array.isArray(value)) {
-      serialized[key] = value.map((item) =>
+      serialized[key] = value.map((item: unknown) =>
         typeof item === 'object' && item !== null
-          ? serializeTimestamps(item)
+          ? serializeTimestamps(item as Record<string, any>)
           : item
       )
     }

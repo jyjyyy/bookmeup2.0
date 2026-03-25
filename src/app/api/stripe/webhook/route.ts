@@ -10,7 +10,8 @@ if (!stripeSecretKey) {
 }
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2024-11-20.acacia',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  apiVersion: '2024-11-20.acacia' as any,
 })
 
 // Get webhook secret from environment

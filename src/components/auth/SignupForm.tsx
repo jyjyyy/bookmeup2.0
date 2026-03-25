@@ -31,7 +31,7 @@ export function SignupForm() {
     setLoading(true)
 
     try {
-      await signUp(email, password)
+      await signUp(email, password, '')
       router.push('/search')
     } catch (err: any) {
       setError(

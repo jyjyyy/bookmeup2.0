@@ -20,7 +20,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
       notFound()
     }
 
-    const serviceData = serviceDoc.data()
+    const serviceData = serviceDoc.data() as any
     
     // Vérifier que le service est actif
     if (serviceData.isActive === false) {

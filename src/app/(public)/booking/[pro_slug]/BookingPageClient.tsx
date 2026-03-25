@@ -57,7 +57,7 @@ export function BookingPageClient({
     }
   }, [searchParams, selectedDate, selectedTime])
 
-  const selectedService = services.find((s) => s.id === selectedServiceId)
+  const selectedService = services.find((s) => s.id === selectedServiceId) ?? null
 
   const handleSelectService = (id: string) => {
     setSelectedServiceId(id)

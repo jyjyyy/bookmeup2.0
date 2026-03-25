@@ -128,6 +128,8 @@ export function ConfirmButton({
     }
 
     // Toutes les validations passées, on peut procéder
+    // Guard TypeScript (déjà vérifié dans validationErrors ci-dessus)
+    if (!selectedService || !selectedDate || !selectedTime) return
     setError('')
     setLoading(true)
 

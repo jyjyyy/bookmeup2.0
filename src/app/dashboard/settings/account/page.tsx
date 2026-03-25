@@ -350,6 +350,7 @@ export default function AccountPage() {
       for (const item of uploadItems) {
         const file = item.file
 
+        let path = ''
         try {
           if (!ALLOWED_TYPES.has(file.type)) {
             throw new Error('Formats acceptés : JPG, PNG')
@@ -360,7 +361,7 @@ export default function AccountPage() {
 
           // Path stable avec sanitizer simple
           const filenameSafe = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-          const path = `pros/${currentUid}/photos/${filenameSafe}`
+          path = `pros/${currentUid}/photos/${filenameSafe}`
           console.log("[PHOTO] path", path)
           setDebug({ step: "upload_clicked", info: { uid: currentUid, bucket, path, filename: file.name } })
 
@@ -574,8 +575,8 @@ export default function AccountPage() {
       // Ne pas reset le state (preview/file) tant que l'upload est en cours
       // On garde les previews pour que l'utilisateur voie ce qui a échoué
     } finally {
-      // Ne reset que si l'upload est vraiment terminé (pas annulé par l'utilisateur)
-      if (!uploadTaskRef.current && uploadState !== "uploading") {
+      // Ne reset que si l'upload est vraiment terminé (uploadTaskRef est null = pas d'upload actif)
+      if (!uploadTaskRef.current) {
         setUploading(false)
         if (uploadState !== "error") {
           setUploadProgress(0)

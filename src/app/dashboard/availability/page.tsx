@@ -47,7 +47,7 @@ export default function AccountPage() {
   const [galleryImages, setGalleryImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number>(0)
-  const [uploadState, setUploadState] = useState<"idle"|"uploading"|"success"|"error">("idle")
+  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle")
   const [uploadStatus, setUploadStatus] = useState<string | null>(null)
   const [pendingPreviews, setPendingPreviews] = useState<Array<{ tempId: string; url: string }>>([])
 
@@ -362,7 +362,7 @@ export default function AccountPage() {
           const filenameSafe = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
           const path = `pros/${currentUid}/photos/${filenameSafe}`
           console.log("[PHOTO] path", path)
-          setDebug({ step: "upload_clicked", info: { uid: currentUid, bucket, path, filename: file.name } })
+          setDebug({ step: "upload_clicked", info: { uid: currentUid, bucket, path: path, filename: file.name } })
 
           const storageRef = ref(storage, path)
 
@@ -372,7 +372,7 @@ export default function AccountPage() {
           // Stocker le task dans la ref au démarrage
           uploadTaskRef.current = uploadTask
           console.log("[PHOTO] upload start")
-          setDebug({ step: "task_created", info: { uid: currentUid, bucket, path } })
+          setDebug({ step: "task_created", info: { uid: currentUid, bucket, path: path } })
           
           // Timer pour détecter si progress reste à 0 après 15s
           // Clear any existing timer
@@ -405,7 +405,7 @@ export default function AccountPage() {
                   info: { 
                     uid: currentUid, 
                     bucket, 
-                    path, 
+                    path: path, 
                     progress: pct, 
                     bytesTransferred, 
                     totalBytes 
@@ -437,7 +437,7 @@ export default function AccountPage() {
                   info: { 
                     uid: currentUid, 
                     bucket, 
-                    path, 
+                    path: path, 
                     progress: uploadProgress 
                   } 
                 })
@@ -459,7 +459,7 @@ export default function AccountPage() {
                     info: { 
                       uid: currentUid, 
                       bucket, 
-                      path, 
+                      path: path, 
                       progress: 100, 
                       url 
                     } 
@@ -481,7 +481,7 @@ export default function AccountPage() {
                     info: { 
                       uid: currentUid, 
                       bucket, 
-                      path, 
+                      path: path, 
                       progress: uploadProgress 
                     } 
                   })
@@ -522,7 +522,7 @@ export default function AccountPage() {
             info: { 
               uid: currentUid, 
               bucket, 
-              path, 
+              path: path, 
               progress: uploadProgress 
             } 
           })

@@ -12,12 +12,22 @@ interface DashboardShellProps {
   children: ReactNode
 }
 
+const NAV_ITEMS = [
+  { href: '/dashboard', label: '📊 Tableau de bord' },
+  { href: '/dashboard/services', label: '🛠️ Services' },
+  { href: '/dashboard/calendar', label: '📅 Calendrier' },
+  { href: '/dashboard/availability', label: '⏱️ Disponibilités' },
+  { href: '/dashboard/clients', label: '🚫 Clients bloqués' },
+  { href: '/dashboard/settings', label: '🔧 Paramètres' },
+]
+
 export function DashboardShell({ children }: DashboardShellProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [current, setCurrent] = useState<CurrentUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [plan, setPlan] = useState<string>('Starter')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -33,22 +43,18 @@ export function DashboardShell({ children }: DashboardShellProps) {
         return
       }
 
-      // Check subscription status - exclude subscription page to avoid redirect loop
       const isSubscriptionPage = pathname?.includes('/dashboard/settings/subscription')
       const subscriptionStatus = await checkSubscriptionStatus(data.user.uid)
-      
-      // Set plan from subscription status (capitalize first letter)
+
       if (subscriptionStatus.plan) {
-        const planCapitalized = subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)
+        const planCapitalized =
+          subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)
         setPlan(planCapitalized)
       }
-      
-      if (!isSubscriptionPage) {
-        if (!subscriptionStatus.hasActiveSubscription) {
-          // Redirect to subscription page if no active subscription
-          router.replace('/dashboard/settings/subscription')
-          return
-        }
+
+      if (!isSubscriptionPage && !subscriptionStatus.hasActiveSubscription) {
+        router.replace('/dashboard/settings/subscription')
+        return
       }
 
       setCurrent(data)
@@ -70,69 +76,56 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }
 
   const { profile } = current
-
   const displayName = profile?.name || profile?.email || 'Votre tableau de bord'
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    return pathname?.startsWith(href)
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar desktop */}
       <aside className="hidden w-64 flex-col border-r bg-white/80 px-4 py-6 shadow-sm md:flex">
-        <div className="mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-            BookMeUp
-          </p>
-          <p className="mt-1 text-sm font-medium text-gray-800">{displayName}</p>
+        <div className="mb-8 px-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">BookMeUp</p>
+          <p className="mt-1 text-sm font-medium text-gray-800 truncate">{displayName}</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 text-sm">
-          <Link
-            href="/dashboard"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            📊 Tableau de bord
-          </Link>
-          <Link
-            href="/dashboard/services"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            🛠️ Services
-          </Link>
-          <Link
-            href="/dashboard/calendar"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            📅 Calendrier
-          </Link>
-          <Link
-            href="/dashboard/availability"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            ⏱️ Disponibilités
-          </Link>
-          <Link
-            href="/dashboard/clients"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            🚫 Clients bloqués
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="rounded-[32px] px-3 py-2 text-gray-700 hover:bg-pink-50 hover:text-primary transition-colors"
-          >
-            🔧 Paramètres
-          </Link>
+          {NAV_ITEMS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`rounded-[32px] px-3 py-2 transition-colors ${
+                isActive(href)
+                  ? 'bg-pink-50 text-primary font-medium'
+                  : 'text-gray-700 hover:bg-pink-50 hover:text-primary'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
       </aside>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0">
         <header className="flex items-center justify-between border-b bg-white/80 px-4 py-3 shadow-sm">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-              Tableau de bord
-            </p>
-            <h1 className="text-lg font-semibold text-gray-900">
-              Bonjour, {displayName}
-            </h1>
+          <div className="flex items-center gap-3">
+            {/* Burger mobile */}
+            <button
+              className="md:hidden p-2 rounded-xl hover:bg-pink-50 transition-colors"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-label="Navigation"
+            >
+              <span className="block w-5 h-0.5 bg-gray-600 mb-1" />
+              <span className="block w-5 h-0.5 bg-gray-600 mb-1" />
+              <span className="block w-5 h-0.5 bg-gray-600" />
+            </button>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Tableau de bord</p>
+              <h1 className="text-lg font-semibold text-gray-900">Bonjour, {displayName}</h1>
+            </div>
           </div>
           <div className="text-xs text-gray-500">
             Plan actuel :{' '}
@@ -141,6 +134,27 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </span>
           </div>
         </header>
+
+        {/* Nav mobile déroulante */}
+        {mobileNavOpen && (
+          <nav className="md:hidden bg-white border-b px-4 py-3 flex flex-col gap-1 shadow-sm">
+            {NAV_ITEMS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileNavOpen(false)}
+                className={`rounded-[24px] px-3 py-2 text-sm transition-colors ${
+                  isActive(href)
+                    ? 'bg-pink-50 text-primary font-medium'
+                    : 'text-gray-700 hover:bg-pink-50 hover:text-primary'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
+
         <main className="flex-1 bg-gray-50 px-4 py-6 md:px-8">
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
@@ -148,4 +162,3 @@ export function DashboardShell({ children }: DashboardShellProps) {
     </div>
   )
 }
-

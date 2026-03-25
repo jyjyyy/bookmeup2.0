@@ -1,7 +1,4 @@
-'use client'
-
 import { ReactNode, HTMLAttributes } from 'react'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -9,12 +6,10 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   hover?: boolean
 }
 
+// Card sans Framer Motion pour éviter le flash au re-render
 export function Card({ children, className = '', hover = false, ...props }: CardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+    <div
       className={cn(
         'bg-white rounded-[32px] shadow-bookmeup border border-white/50 p-8',
         hover && 'hover:shadow-bookmeup-lg transition-shadow duration-300',
@@ -23,7 +18,7 @@ export function Card({ children, className = '', hover = false, ...props }: Card
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -55,11 +50,7 @@ interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
   children: ReactNode
 }
 
-export function CardDescription({
-  children,
-  className = '',
-  ...props
-}: CardDescriptionProps) {
+export function CardDescription({ children, className = '', ...props }: CardDescriptionProps) {
   return (
     <p className={cn('text-sm text-slate-600 mt-2', className)} {...props}>
       {children}
@@ -78,4 +69,3 @@ export function CardContent({ children, className = '', ...props }: CardContentP
     </div>
   )
 }
-

@@ -1,19 +1,22 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import './globals.css'
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
+
 export const metadata: Metadata = {
-  title: 'BookMeUp - SaaS de Réservation',
-  description: 'Plateforme de réservation professionnelle',
+  title: 'BookMeUp - Réservation beauté en ligne',
+  description: 'Réservez facilement avec les meilleurs professionnels de beauté. Simple, rapide, élégant.',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={inter.variable}>
       <body className="font-sans">
         <Header />
         {children}
@@ -21,4 +24,3 @@ export default function RootLayout({
     </html>
   )
 }
-

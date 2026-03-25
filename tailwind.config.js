@@ -24,7 +24,7 @@ module.exports = {
         'bookmeup-sm': '0_10px_30px_rgba(20,0,50,0.04)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
     },
   },

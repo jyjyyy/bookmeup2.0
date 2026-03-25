@@ -20,8 +20,24 @@ import { getAccountingExportData } from '@/lib/exports/exportData'
 import { generateAccountingCsv } from '@/lib/exports/exportCsv'
 import { downloadCsvFile } from '@/lib/exports/downloadCsvClient'
 import { generateAccountingPdf } from '@/lib/exports/exportPdf'
+import { useStatsRefresh } from '@/hooks/useStatsRefresh'
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-24 rounded-[24px] bg-primary/5" />
+      ))}
+    </div>
+  )
+}
 
 export default function DashboardPage() {
+  const [userId, setUserId] = useState<string | null>(null)
+  const [plan, setPlan] = useState<'starter' | 'pro' | 'premium'>('starter')
+
+  // Stats starter
   const [loadingStats, setLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
   const [stats, setStats] = useState<{
@@ -31,9 +47,7 @@ export default function DashboardPage() {
     activeServices: number
   } | null>(null)
 
-  const [userId, setUserId] = useState<string | null>(null)
-  const [plan, setPlan] = useState<'starter' | 'pro' | 'premium'>('starter')
-
+  // Stats pro/premium
   const [period, setPeriod] = useState<PeriodSelectorValue>('7d')
   const [proStatsLoading, setProStatsLoading] = useState(false)
   const [proStatsError, setProStatsError] = useState<string | null>(null)
@@ -45,7 +59,10 @@ export default function DashboardPage() {
 
   const [exportLoading, setExportLoading] = useState(false)
 
-  const loadStarterStats = useCallback(async () => {
+  const isProOrPremium = plan === 'pro' || plan === 'premium'
+
+  // ── Chargement initial : toutes les stats en parallèle ──────────────────────
+  const loadAllStats = useCallback(async () => {
     try {
       setStatsError(null)
       setLoadingStats(true)
@@ -53,210 +70,96 @@ export default function DashboardPage() {
       const current = await getCurrentUser()
       if (!current.user) return
 
-      setUserId(current.user.uid)
+      const uid = current.user.uid
+      setUserId(uid)
 
-      // Read plan (UI-gating only, no guard changes)
-      const sub = await checkSubscriptionStatus(current.user.uid)
-      setPlan((sub.plan as any) || 'starter')
+      // Subscription + starter stats en parallèle
+      const [sub, computed] = await Promise.all([
+        checkSubscriptionStatus(uid),
+        getStarterStats(uid),
+      ])
 
-      const computed = await getStarterStats(current.user.uid)
+      const resolvedPlan = (sub.plan as 'starter' | 'pro' | 'premium') ?? 'starter'
+      setPlan(resolvedPlan)
       setStats(computed)
+      setLoadingStats(false)
+
+      // Pro / premium stats en parallèle (sans bloquer l'affichage starter)
+      if (resolvedPlan === 'pro' || resolvedPlan === 'premium') {
+        setProStatsLoading(true)
+        const proPromise = getProStats(uid, period)
+          .then((s) => setProStats(s))
+          .catch(() => setProStatsError('Impossible de charger les statistiques avancées.'))
+          .finally(() => setProStatsLoading(false))
+
+        if (resolvedPlan === 'premium') {
+          setPremiumStatsLoading(true)
+          const premiumPromise = getPremiumStats(uid, period)
+            .then((s) => setPremiumStats(s))
+            .catch(() => setPremiumStatsError('Impossible de charger les statistiques Premium.'))
+            .finally(() => setPremiumStatsLoading(false))
+          await Promise.all([proPromise, premiumPromise])
+        } else {
+          await proPromise
+        }
+      }
     } catch (err) {
-      console.error('[Dashboard] Error loading starter stats:', err)
+      console.error('[Dashboard] Error loading stats:', err)
       setStatsError('Impossible de charger vos statistiques pour le moment.')
-    } finally {
       setLoadingStats(false)
     }
-  }, [])
-
-  useEffect(() => {
-    loadStarterStats()
-
-    // Listen for attendance updates from calendar (works across pages/tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'bookingAttendanceUpdated') {
-        loadStarterStats()
-      }
-    }
-
-    // Also listen for same-page updates (when calendar and dashboard are on same page)
-    const handleCustomEvent = () => {
-      loadStarterStats()
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
-
-    // Also refetch when page becomes visible (in case user switched tabs)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadStarterStats()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [loadStarterStats])
-
-  const isProOrPremium = plan === 'pro' || plan === 'premium'
-
-  const loadProStats = useCallback(async () => {
-    if (!userId) return
-    if (!isProOrPremium) {
-      setProStats(null)
-      setProStatsError(null)
-      setProStatsLoading(false)
-      return
-    }
-
-    try {
-      setProStatsError(null)
-      setProStatsLoading(true)
-      const computed = await getProStats(userId, period)
-      setProStats(computed)
-    } catch (err) {
-      console.error('[Dashboard] Error loading pro stats:', err)
-      setProStatsError('Impossible de charger les statistiques avancées pour le moment.')
-      setProStats(null)
-    } finally {
-      setProStatsLoading(false)
-    }
-  }, [userId, period, isProOrPremium])
-
-  useEffect(() => {
-    loadProStats()
-
-    // Listen for attendance updates from calendar (works across pages/tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'bookingAttendanceUpdated' && userId && isProOrPremium) {
-        loadProStats()
-      }
-    }
-
-    // Also listen for same-page updates
-    const handleCustomEvent = () => {
-      if (userId && isProOrPremium) {
-        loadProStats()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
-    }
-  }, [userId, period, isProOrPremium, loadProStats])
-
-  const loadPremiumStats = useCallback(async () => {
-    if (!userId) return
-
-    // Strict gating:
-    // - only Premium plan calls getPremiumStats
-    // - Pro shows locked UI
-    // - Starter sees nothing
-    if (plan !== 'premium') {
-      setPremiumStats(null)
-      setPremiumStatsError(null)
-      setPremiumStatsLoading(false)
-      return
-    }
-
-    try {
-      setPremiumStatsError(null)
-      setPremiumStatsLoading(true)
-      const computed = await getPremiumStats(userId, period)
-      setPremiumStats(computed)
-    } catch (err) {
-      console.error('[Dashboard] Error loading premium stats:', err)
-      setPremiumStatsError('Impossible de charger les statistiques Premium pour le moment.')
-      setPremiumStats(null)
-    } finally {
-      setPremiumStatsLoading(false)
-    }
-  }, [userId, period, plan])
-
-  useEffect(() => {
-    loadPremiumStats()
-
-    // Listen for attendance updates from calendar (works across pages/tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'bookingAttendanceUpdated' && userId && plan === 'premium') {
-        loadPremiumStats()
-      }
-    }
-
-    // Also listen for same-page updates
-    const handleCustomEvent = () => {
-      if (userId && plan === 'premium') {
-        loadPremiumStats()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('bookingAttendanceUpdated', handleCustomEvent)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('bookingAttendanceUpdated', handleCustomEvent)
-    }
-  }, [userId, period, plan, loadPremiumStats])
-
-  const periodLabel = useMemo(() => {
-    return period === '7d' ? '7 derniers jours' : '30 derniers jours'
   }, [period])
 
-  const revenueLabel = useMemo(() => {
-    const amount = stats?.totalRevenue ?? 0
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }, [stats?.totalRevenue])
+  useEffect(() => {
+    loadAllStats()
+  }, [loadAllStats])
 
+  // Refresh quand le calendrier met à jour une présence
+  useStatsRefresh(loadAllStats)
+
+  // ── Labels ──────────────────────────────────────────────────────────────────
+  const periodLabel = useMemo(
+    () => (period === '7d' ? '7 derniers jours' : '30 derniers jours'),
+    [period]
+  )
+
+  const revenueLabel = useMemo(
+    () =>
+      new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(stats?.totalRevenue ?? 0),
+    [stats?.totalRevenue]
+  )
+
+  // ── Exports ─────────────────────────────────────────────────────────────────
   const handleExportCsv = async () => {
-    if (!userId) return
-    if (plan !== 'premium') return
-
+    if (!userId || plan !== 'premium') return
     try {
       setExportLoading(true)
-
-      const exportData = await getAccountingExportData(userId, period)
-      const csvs = generateAccountingCsv(exportData)
-
+      const data = await getAccountingExportData(userId, period)
+      const csvs = generateAccountingCsv(data)
       downloadCsvFile('resume_comptabilite.csv', csvs.resume)
       downloadCsvFile('revenu_par_service.csv', csvs.byService)
       downloadCsvFile('revenu_par_client.csv', csvs.byClient)
       downloadCsvFile('revenu_par_mois.csv', csvs.byMonth)
-    } catch (error) {
-      console.error("[Dashboard] Erreur lors de l'export comptable CSV :", error)
+    } catch (err) {
+      console.error("[Dashboard] Erreur export CSV :", err)
     } finally {
       setExportLoading(false)
     }
   }
 
   const handleExportPdf = async () => {
-    if (!userId) return
-    if (plan !== 'premium') return
-
+    if (!userId || plan !== 'premium') return
     try {
       setExportLoading(true)
-
-      const exportData = await getAccountingExportData(userId, period)
-      generateAccountingPdf(exportData, {
-        periodLabel,
-        exportedAt: new Date(),
-      })
-    } catch (error) {
-      console.error("[Dashboard] Erreur lors de l'export comptable PDF :", error)
+      const data = await getAccountingExportData(userId, period)
+      generateAccountingPdf(data, { periodLabel, exportedAt: new Date() })
+    } catch (err) {
+      console.error("[Dashboard] Erreur export PDF :", err)
     } finally {
       setExportLoading(false)
     }
@@ -264,7 +167,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* En-tête avec message de bienvenue */}
+      {/* En-tête */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-3">
           Tableau de bord
@@ -276,27 +179,23 @@ export default function DashboardPage() {
 
       {/* Statistiques principales */}
       <div className="space-y-4">
-        {statsError ? (
+        {statsError && (
           <div className="rounded-[32px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             {statsError}
           </div>
-        ) : null}
-
+        )}
         {loadingStats ? (
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <Loader />
-            <span>Chargement des statistiques…</span>
-          </div>
-        ) : null}
-
-        <StatsGrid
-          totalRevenue={loadingStats ? '…' : revenueLabel}
-          upcomingBookings={loadingStats ? '…' : stats?.upcomingBookings ?? 0}
-          activeServices={loadingStats ? '…' : stats?.activeServices ?? 0}
-        />
+          <StatsSkeleton />
+        ) : (
+          <StatsGrid
+            totalRevenue={revenueLabel}
+            upcomingBookings={stats?.upcomingBookings ?? 0}
+            activeServices={stats?.activeServices ?? 0}
+          />
+        )}
       </div>
 
-      {/* Statistiques avancées (Pro / Premium uniquement) */}
+      {/* Statistiques avancées */}
       <Card className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-bookmeup">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -310,7 +209,6 @@ export default function DashboardPage() {
               Réservations, revenus et performance par service.
             </p>
           </div>
-
           <PeriodSelector value={period} onChange={setPeriod} />
         </div>
 
@@ -321,57 +219,55 @@ export default function DashboardPage() {
             </p>
             <p className="mt-2 text-sm text-slate-600">
               Passez à <span className="font-medium text-primary">Pro</span> ou{' '}
-              <span className="font-medium text-primary">Premium</span> pour accéder aux graphiques
-              et à l’analyse détaillée.
+              <span className="font-medium text-primary">Premium</span> pour accéder aux graphiques.
             </p>
           </div>
         ) : (
           <div className="mt-6 space-y-4">
-            {proStatsError ? (
+            {proStatsError && (
               <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
                 {proStatsError}
               </div>
-            ) : null}
-
+            )}
             {proStatsLoading ? (
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <Loader />
                 <span>Chargement des statistiques avancées…</span>
               </div>
-            ) : null}
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <BookingsChart data={proStats?.bookingsByDate ?? []} />
-              <RevenueChart
-                data={(proStats?.revenueByDate ?? []).map((d) => ({
-                  date: d.date,
-                  total: d.revenue,
-                }))}
-              />
-            </div>
-
-            <ServiceStats
-              data={(proStats?.statsByService ?? []).map((s) => ({
-                serviceName: s.serviceName,
-                bookings: s.bookings,
-                revenue: s.revenue,
-              }))}
-            />
+            ) : (
+              <>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <BookingsChart data={proStats?.bookingsByDate ?? []} />
+                  <RevenueChart
+                    data={(proStats?.revenueByDate ?? []).map((d) => ({
+                      date: d.date,
+                      total: d.revenue,
+                    }))}
+                  />
+                </div>
+                <ServiceStats
+                  data={(proStats?.statsByService ?? []).map((s) => ({
+                    serviceName: s.serviceName,
+                    bookings: s.bookings,
+                    revenue: s.revenue,
+                  }))}
+                />
+              </>
+            )}
           </div>
         )}
       </Card>
 
-      {/* Section Premium (Premium uniquement / Pro = verrouillé / Starter = rien) */}
-      {plan !== 'starter' ? (
+      {/* Section Premium */}
+      {plan !== 'starter' && (
         <div className="space-y-4">
           {plan === 'premium' ? (
             <>
-              {premiumStatsError ? (
+              {premiumStatsError && (
                 <div className="rounded-[32px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
                   {premiumStatsError}
                 </div>
-              ) : null}
-
+              )}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 {premiumStatsLoading ? (
                   <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -380,10 +276,9 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-600">
-                    Accédez à vos indicateurs avancés et exportez votre comptabilité au format CSV ou PDF.
+                    Accédez à vos indicateurs avancés et exportez votre comptabilité.
                   </p>
                 )}
-
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -401,11 +296,10 @@ export default function DashboardPage() {
                     className="rounded-[32px] px-5 py-2 text-sm font-semibold shadow-bookmeup disabled:opacity-60"
                     variant="primary"
                   >
-                    {exportLoading ? 'Export PDF en cours…' : 'Exporter en PDF'}
+                    {exportLoading ? 'Export PDF…' : 'Exporter en PDF'}
                   </Button>
                 </div>
               </div>
-
               <PremiumKpis
                 periodLabel={periodLabel}
                 comparison={
@@ -423,9 +317,9 @@ export default function DashboardPage() {
             <LockedPremiumBlock />
           )}
         </div>
-      ) : null}
+      )}
 
-      {/* Message de bienvenue amélioré */}
+      {/* Message de bienvenue */}
       <Card className="rounded-[32px] border-2 border-primary/20 bg-gradient-to-br from-secondary/40 to-white p-8 shadow-bookmeup">
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -445,5 +339,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
-

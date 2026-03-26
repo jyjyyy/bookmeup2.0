@@ -2,21 +2,35 @@
 
 import { useState, FormEvent, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseClient'
 import { doc, getDoc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 
-// Helper pour forcer un timeout sur les promesses
-function withTimeout<T>(p: Promise<T>, ms = 15000): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(Object.assign(new Error("LOGIN_TIMEOUT"), { code: "LOGIN_TIMEOUT" })), ms)
+// Vérifie si identitytoolkit.googleapis.com est joignable (5s max).
+// Une réponse HTTP (même 400) prouve que le réseau fonctionne.
+// Un AbortError ou TypeError indique un bloc réseau / AdBlock / pare-feu.
+async function checkFirebaseReachable(apiKey: string): Promise<boolean> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 5000)
+  try {
+    await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal: controller.signal,
+      }
     )
-  ]) as Promise<T>
+    return true // n'importe quelle réponse = réseau OK
+  } catch {
+    return false // abort (timeout 5s) ou TypeError (bloqué)
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export default function LoginPage() {
@@ -27,21 +41,15 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Log Firebase initialization au montage
+  // Vérification Firebase au montage
   useEffect(() => {
-    console.log('[AUTH] firebase', {
-      apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    })
-  }, [])
-
-  // Debug: log onAuthStateChanged
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      console.log('[AUTH] onAuthStateChanged', u?.uid ?? null)
-    })
-    return () => unsub()
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    console.log('[AUTH] firebase config', { hasApiKey: !!apiKey, authDomain, projectId })
+    if (!apiKey || !authDomain || !projectId) {
+      setError('Configuration Firebase manquante. Vérifiez le fichier .env.local.')
+    }
   }, [])
 
   const handleSubmit = async (e: FormEvent) => {
@@ -53,8 +61,23 @@ export default function LoginPage() {
     console.log('[AUTH] submit', { email })
 
     try {
+      // Pré-test réseau (5s) : détecte AdBlock / firewall avant de tenter la connexion
+      const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+      if (apiKey) {
+        const reachable = await checkFirebaseReachable(apiKey)
+        if (!reachable) {
+          setError(
+            'Firebase est inaccessible depuis votre navigateur.\n' +
+            '→ Désactivez votre AdBlocker (uBlock, Brave, etc.)\n' +
+            '→ Ou ouvrez un onglet en navigation privée\n' +
+            '→ Ou testez depuis un autre réseau / 4G'
+          )
+          return
+        }
+      }
+
       console.time('[PERF] signIn')
-      const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password), 15000)
+      const cred = await signInWithEmailAndPassword(auth, email, password)
       console.timeEnd('[PERF] signIn')
       console.log('[AUTH] signIn resolved', { uid: cred.user.uid })
       
@@ -155,14 +178,17 @@ export default function LoginPage() {
       let errorMessage = err.message || 'Erreur lors de la connexion. Vérifiez vos identifiants.'
       
       if (err.code === 'LOGIN_TIMEOUT') {
-        errorMessage = 'Connexion bloquée (15s). Vérifiez VPN/AdBlock/DNS ou testez en 4G.'
+        errorMessage = 'La connexion a expiré (15s). Désactivez votre AdBlocker ou essayez en navigation privée.'
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet ou désactivez votre AdBlocker.'
       } else if (err.code === 'auth/unauthorized-domain') {
-        errorMessage = 'Domaine non autorisé dans Firebase Auth. Ajoutez localhost dans Authorized domains.'
+        errorMessage = 'Domaine non autorisé dans Firebase. Ajoutez ce domaine dans Firebase Console → Authentication → Settings → Authorized domains.'
       } else if (err.code === 'auth/invalid-api-key' || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        errorMessage = 'Erreur de configuration: clé API Firebase invalide ou manquante.'
+        errorMessage = 'Configuration Firebase invalide. Vérifiez le fichier .env.local.'
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        errorMessage = 'Email ou mot de passe incorrect.'
       } else if (err.code) {
-        // Afficher le code d'erreur + message
-        errorMessage = `[${err.code}] ${err.message || 'Erreur lors de la connexion'}`
+        errorMessage = `Erreur [${err.code}]: ${err.message || 'Connexion impossible'}`
       }
       
       setError(errorMessage)

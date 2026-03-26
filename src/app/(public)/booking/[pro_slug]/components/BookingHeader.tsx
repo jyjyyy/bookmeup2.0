@@ -12,30 +12,29 @@ export function BookingHeader({ pro, servicesCount }: BookingHeaderProps) {
   const avatarLetter = pro.name?.[0]?.toUpperCase() || 'P'
 
   return (
-    <Card className="rounded-[32px] p-6">
-      <div className="flex items-center gap-4">
+    <div className="hero-dark rounded-[28px] p-6 md:p-8">
+      <div className="flex items-center gap-4 relative z-10">
         {/* Avatar */}
-        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-2xl font-bold text-primary flex-shrink-0">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center text-2xl font-extrabold text-white flex-shrink-0 shadow-md border-2 border-white/20">
           {avatarLetter}
         </div>
 
         {/* Infos */}
         <div className="flex-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#2A1F2D] mb-1">
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1">
             Réserver avec {pro.name}
           </h1>
           {pro.city && (
-            <p className="text-sm text-slate-500 flex items-center gap-1.5">
-              <span>📍</span>
-              <span>{pro.city}</span>
+            <p className="text-sm text-white/65 flex items-center gap-1.5">
+              <span>📍</span><span>{pro.city}</span>
             </p>
           )}
-          <p className="text-xs text-slate-400 mt-1">
-            {servicesCount} service{servicesCount > 1 ? 's' : ''} disponible{servicesCount > 1 ? 's' : ''}
+          <p className="text-xs text-white/45 mt-1">
+            {servicesCount} prestation{servicesCount > 1 ? 's' : ''} disponible{servicesCount > 1 ? 's' : ''}
           </p>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

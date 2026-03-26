@@ -227,21 +227,21 @@ export function SearchPageClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="p-12 text-center">
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
           <Loader />
-          <p className="mt-4 text-gray-600">Chargement des professionnelles...</p>
-        </Card>
+          <p className="mt-4 text-[#7A6B80] text-sm">Chargement des professionnels…</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="p-8 bg-red-50 border-red-200 text-center">
-        <p className="text-red-700 font-medium">Erreur</p>
-        <p className="text-red-600 text-sm mt-2">{error}</p>
-      </Card>
+      <div className="p-6 bg-red-50 border border-red-200 rounded-[20px] text-center">
+        <p className="text-red-700 font-semibold">Erreur</p>
+        <p className="text-red-600 text-sm mt-1">{error}</p>
+      </div>
     )
   }
 
@@ -266,9 +266,9 @@ export function SearchPageClient() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Search Bar */}
-      <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Search Bar + filters */}
+      <div className="space-y-3">
         <div className="relative">
           <input
             ref={searchInputRef}
@@ -279,26 +279,14 @@ export function SearchPageClient() {
               setShowSuggestions(e.target.value.length >= 2)
             }}
             onFocus={() => {
-              if (searchTerm.length >= 2) {
-                setShowSuggestions(true)
-              }
+              if (searchTerm.length >= 2) setShowSuggestions(true)
             }}
-            placeholder="Rechercher un service ou une ville"
-            className="w-full px-6 py-4 rounded-[32px] bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-bookmeup-sm text-gray-900 placeholder:text-gray-400"
+            placeholder="Rechercher un service, une ville ou un professionnel…"
+            className="w-full px-5 py-4 rounded-[20px] bg-white border-2 border-[#EDE8F0] focus:outline-none focus:border-primary shadow-bookmeup-sm text-[#2A1F2D] placeholder:text-[#7A6B80] text-sm transition-colors"
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
+          <div className="absolute right-5 top-1/2 -translate-y-1/2">
+            <svg className="w-5 h-5 text-[#7A6B80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
 
@@ -306,11 +294,11 @@ export function SearchPageClient() {
           {showSuggestions && (suggestions.cities.length > 0 || suggestions.services.length > 0) && (
             <div
               ref={suggestionsRef}
-              className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-80 overflow-y-auto"
+              className="absolute z-50 w-full mt-2 bg-white border border-[#EDE8F0] rounded-[18px] shadow-bookmeup max-h-72 overflow-y-auto"
             >
               {suggestions.cities.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                  <div className="px-4 py-2 text-xs font-bold text-[#7A6B80] uppercase tracking-wider bg-background border-b border-[#EDE8F0] rounded-t-[18px]">
                     Villes
                   </div>
                   {suggestions.cities.map((city) => (
@@ -318,21 +306,18 @@ export function SearchPageClient() {
                       key={city}
                       type="button"
                       onClick={() => handleCitySelect(city)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-900"
+                      className="w-full px-4 py-3 text-left hover:bg-secondary flex items-center gap-3 text-[#2A1F2D] text-sm transition-colors"
                     >
-                      <span className="text-gray-400">📍</span>
+                      <span>📍</span>
                       <span>{city}</span>
                     </button>
                   ))}
                 </div>
               )}
-
               {suggestions.services.length > 0 && (
                 <div>
-                  {suggestions.cities.length > 0 && (
-                    <div className="border-t border-gray-100" />
-                  )}
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                  {suggestions.cities.length > 0 && <div className="border-t border-[#EDE8F0]" />}
+                  <div className="px-4 py-2 text-xs font-bold text-[#7A6B80] uppercase tracking-wider bg-background border-b border-[#EDE8F0]">
                     Services
                   </div>
                   {suggestions.services.map((service) => (
@@ -340,9 +325,9 @@ export function SearchPageClient() {
                       key={service.id}
                       type="button"
                       onClick={() => handleServiceSelect(service.id)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-900"
+                      className="w-full px-4 py-3 text-left hover:bg-secondary flex items-center gap-3 text-[#2A1F2D] text-sm transition-colors"
                     >
-                      <span className="text-gray-400">💅</span>
+                      <span>✨</span>
                       <span>{service.name}</span>
                     </button>
                   ))}
@@ -352,56 +337,40 @@ export function SearchPageClient() {
           )}
         </div>
 
-        {/* Filter Chips */}
+        {/* Active filter chips */}
         {(selectedCity !== 'all' || selectedServiceId !== 'all') && (
           <div className="flex flex-wrap gap-2">
             {selectedCity !== 'all' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">
                 <span>📍</span>
                 <span>{selectedCity}</span>
-                <button
-                  type="button"
-                  onClick={handleRemoveCityFilter}
-                  className="ml-1 hover:text-primary/80 transition-colors"
-                  aria-label="Retirer le filtre ville"
-                >
-                  ✕
-                </button>
+                <button type="button" onClick={handleRemoveCityFilter} className="ml-1 hover:opacity-75 transition-opacity" aria-label="Retirer le filtre ville">✕</button>
               </span>
             )}
             {selectedServiceId !== 'all' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm">
-                <span>💅</span>
-                <span>
-                  {availableServices.find((s) => s.id === selectedServiceId)?.name || 'Service'}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleRemoveServiceFilter}
-                  className="ml-1 hover:text-primary/80 transition-colors"
-                  aria-label="Retirer le filtre service"
-                >
-                  ✕
-                </button>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">
+                <span>✨</span>
+                <span>{availableServices.find((s) => s.id === selectedServiceId)?.name || 'Service'}</span>
+                <button type="button" onClick={handleRemoveServiceFilter} className="ml-1 hover:opacity-75 transition-opacity" aria-label="Retirer le filtre service">✕</button>
               </span>
             )}
           </div>
         )}
       </div>
 
-      {/* Results Count */}
+      {/* Results count */}
       {filteredPros.length > 0 && (
-        <p className="text-sm text-gray-600">
-          {filteredPros.length} professionnelle{filteredPros.length > 1 ? 's' : ''} trouvée{filteredPros.length > 1 ? 's' : ''}
+        <p className="text-sm text-[#7A6B80]">
+          <strong className="text-[#2A1F2D]">{filteredPros.length} professionnel{filteredPros.length > 1 ? 's' : ''}</strong> trouvé{filteredPros.length > 1 ? 's' : ''}
         </p>
       )}
 
-      {/* Results */}
+      {/* Results grid */}
       {filteredPros.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="text-gray-600 text-lg">
-            Aucun professionnel trouvé
-          </p>
+        <div className="bg-white rounded-[24px] p-12 text-center border border-[#EDE8F0] shadow-bookmeup-sm">
+          <div className="text-4xl mb-4">🔍</div>
+          <p className="text-[#2A1F2D] font-semibold text-lg mb-2">Aucun professionnel trouvé</p>
+          <p className="text-[#7A6B80] text-sm mb-6">Essayez d&apos;autres termes ou élargissez vos critères.</p>
           {(searchTerm || selectedCity !== 'all' || selectedServiceId !== 'all') && (
             <Button
               variant="outline"
@@ -410,117 +379,94 @@ export function SearchPageClient() {
                 setSelectedCity('all')
                 setSelectedServiceId('all')
               }}
-              className="mt-4 rounded-[32px]"
             >
               Réinitialiser les filtres
             </Button>
           )}
-        </Card>
+        </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
-            {filteredPros.map((pro, index) => (
-              <motion.div
-                key={pro.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card
-                  hover
-                  className="rounded-[32px] p-6 hover:shadow-bookmeup-lg transition-all duration-300"
+            {filteredPros.map((pro, index) => {
+              const avatarLetter = pro.business_name?.[0]?.toUpperCase() || 'P'
+              return (
+                <motion.div
+                  key={pro.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ delay: index * 0.04 }}
+                  className="card-hover bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm overflow-hidden"
                 >
-                  {/* Header */}
-                  <div className="mb-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-bold text-slate-900 flex-1 pr-2">
-                        {pro.business_name}
-                      </h3>
+                  {/* Card image area */}
+                  <div className="h-28 bg-gradient-to-br from-secondary to-[#e8d0f0] flex items-center justify-center relative">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center text-2xl font-bold text-white shadow-md">
+                      {avatarLetter}
                     </div>
+                  </div>
+
+                  {/* Card body */}
+                  <div className="p-5">
+                    <h3 className="text-base font-bold text-[#2A1F2D] mb-1 truncate">{pro.business_name}</h3>
 
                     {pro.city && (
-                      <p className="text-sm text-gray-600 mb-3">
-                        📍 {pro.city}
+                      <p className="text-xs text-[#7A6B80] mb-3 flex items-center gap-1">
+                        <span>📍</span> {pro.city}
                       </p>
                     )}
-                  </div>
 
-                  {/* Services List */}
-                  {pro.services.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                      <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        Services
-                      </p>
-                      <div className="space-y-1.5">
-                        {pro.services.slice(0, 3).map((service) => (
-                          <div
-                            key={service.id}
-                            className="text-sm text-gray-700 flex items-center gap-2"
-                          >
-                            <span className="text-primary">•</span>
-                            <span className="flex-1">{service.name}</span>
-                            {service.price !== null && (
-                              <span className="font-semibold text-primary">
-                                {service.price}€
-                              </span>
-                            )}
-                            {service.duration !== null && (
-                              <span className="text-xs text-gray-500">
-                                {service.duration}min
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                        {pro.services.length > 3 && (
-                          <p className="text-xs text-gray-500 italic">
-                            + {pro.services.length - 3} autre{pro.services.length - 3 > 1 ? 's' : ''} service{pro.services.length - 3 > 1 ? 's' : ''}
-                          </p>
-                        )}
+                    {/* Services */}
+                    {pro.services.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {pro.services.slice(0, 3).map((service) => (
+                            <span key={service.id} className="chip text-xs">
+                              {service.name}
+                              {service.price !== null && (
+                                <span className="ml-1 font-bold">{service.price}€</span>
+                              )}
+                            </span>
+                          ))}
+                          {pro.services.length > 3 && (
+                            <span className="chip text-xs bg-[#EDE8F0] text-[#7A6B80]">
+                              +{pro.services.length - 3}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="pt-4 border-t border-gray-100">
-                    {pro.slug ? (
-                      <Button
-                        size="sm"
-                        className="w-full rounded-[32px] text-sm"
-                        onClick={async () => {
-                          try {
-                            const current = await getCurrentUser()
-                            if (!current.user) {
-                              router.push(
-                                `/auth/login?redirect=/pro/${pro.slug}`
-                              )
-                              return
-                            }
-                            router.push(`/pro/${pro.slug}`)
-                          } catch {
-                            // En cas d'erreur, fallback vers la page de connexion
-                            router.push(
-                              `/auth/login?redirect=/pro/${pro.slug}`
-                            )
-                          }
-                        }}
-                      >
-                        Voir la fiche
-                      </Button>
-                    ) : (
-                      <Button
-                        disabled
-                        size="sm"
-                        variant="outline"
-                        className="w-full rounded-[32px] text-sm"
-                      >
-                        Profil indisponible
-                      </Button>
                     )}
+
+                    {/* CTA */}
+                    <div className="pt-3 border-t border-[#EDE8F0]">
+                      {pro.slug ? (
+                        <Button
+                          size="sm"
+                          className="w-full btn-gradient"
+                          onClick={async () => {
+                            try {
+                              const current = await getCurrentUser()
+                              if (!current.user) {
+                                router.push(`/auth/login?redirect=/pro/${pro.slug}`)
+                                return
+                              }
+                              router.push(`/pro/${pro.slug}`)
+                            } catch {
+                              router.push(`/auth/login?redirect=/pro/${pro.slug}`)
+                            }
+                          }}
+                        >
+                          Voir la fiche →
+                        </Button>
+                      ) : (
+                        <Button disabled size="sm" variant="outline" className="w-full">
+                          Profil indisponible
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </Card>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         </div>
       )}

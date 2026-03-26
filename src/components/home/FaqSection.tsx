@@ -44,6 +44,7 @@ export function FaqSection() {
     <section className="py-20 bg-white/50">
       <div className="container mx-auto px-6">
         <motion.div
+          suppressHydrationWarning
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

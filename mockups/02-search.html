@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookMeUp — Recherche</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #C86DD7;
+      --primary-dark: #9C44AF;
+      --secondary: #F5E9F8;
+      --bg: #FAF7FB;
+      --text-dark: #2A1F2D;
+      --text-muted: #7A6B80;
+      --border: #EDE8F0;
+      --white: #FFFFFF;
+      --shadow-sm: 0 2px 8px rgba(200,109,215,0.08);
+      --shadow-md: 0 8px 24px rgba(200,109,215,0.12);
+      --shadow-lg: 0 15px 40px rgba(0,0,0,0.06);
+      --radius: 32px;
+      --radius-sm: 16px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-dark); }
+
+    /* HEADER */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,247,251,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 24px;
+      height: 68px; display: flex; align-items: center; gap: 32px;
+    }
+    .logo { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; }
+    nav { display: flex; gap: 8px; flex: 1; }
+    nav a { padding: 8px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); text-decoration: none; transition: all .2s; }
+    nav a:hover, nav a.active { color: var(--primary); background: var(--secondary); }
+    .header-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+    .btn-ghost { padding: 9px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--primary); background: transparent; border: none; cursor: pointer; transition: background .2s; }
+    .btn-ghost:hover { background: var(--secondary); }
+    .btn-primary { padding: 9px 22px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(200,109,215,.35); transition: transform .15s, box-shadow .15s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,109,215,.45); }
+
+    /* SEARCH BANNER */
+    .search-banner {
+      background: linear-gradient(135deg, #2A1F2D 0%, #3d1f4a 60%, #1a0a22 100%);
+      padding: 36px 24px 0;
+      position: relative; overflow: hidden;
+    }
+    .search-banner::before {
+      content: ''; position: absolute; top: -60px; right: -80px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(200,109,215,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .search-banner::after {
+      content: ''; position: absolute; bottom: -40px; left: 10%;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(156,68,175,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .search-banner-inner { max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
+    .search-banner h1 { color: #fff; font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+    .search-banner p { color: rgba(255,255,255,0.65); font-size: 15px; margin-bottom: 24px; }
+    .search-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 6px;
+      display: flex; gap: 6px; align-items: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: -24px;
+    }
+    .search-field {
+      flex: 1; display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-radius: 14px;
+      background: var(--bg); border: 1.5px solid var(--border);
+      transition: border-color .2s;
+    }
+    .search-field:focus-within { border-color: var(--primary); background: #fff; }
+    .search-field svg { color: var(--text-muted); flex-shrink: 0; }
+    .search-field input { border: none; background: transparent; font-size: 14px; color: var(--text-dark); width: 100%; outline: none; }
+    .search-field input::placeholder { color: var(--text-muted); }
+    .search-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .btn-search {
+      padding: 12px 28px; border-radius: 14px; font-size: 15px; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(200,109,215,.4); transition: transform .15s;
+      white-space: nowrap;
+    }
+    .btn-search:hover { transform: translateY(-1px); }
+
+    /* CONTENT */
+    .content { max-width: 1280px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* FILTERS BAR */
+    .filters-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
+    .filter-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-right: 4px; }
+    .chip {
+      padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1.5px solid var(--border); background: var(--white); color: var(--text-muted);
+      cursor: pointer; transition: all .2s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+    }
+    .chip:hover { border-color: var(--primary); color: var(--primary); background: var(--secondary); }
+    .chip.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .chip svg { width: 14px; height: 14px; }
+    .filter-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+    .sort-select {
+      margin-left: auto; padding: 8px 14px; border-radius: 20px; font-size: 13px;
+      font-weight: 500; border: 1.5px solid var(--border); background: var(--white);
+      color: var(--text-dark); cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237A6B80' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 30px;
+    }
+    .results-count { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
+    .results-count strong { color: var(--text-dark); }
+
+    /* LAYOUT */
+    .search-layout { display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
+
+    /* SIDEBAR FILTERS */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .filter-card {
+      background: var(--white); border-radius: var(--radius-sm); padding: 20px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .filter-card h3 { font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 14px; }
+    .filter-option { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
+    .filter-option input[type="checkbox"] {
+      width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--border);
+      accent-color: var(--primary); cursor: pointer;
+    }
+    .filter-option label { font-size: 13px; color: var(--text-muted); cursor: pointer; flex: 1; }
+    .filter-option .count { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 2px 8px; border-radius: 10px; }
+    .price-range { margin-top: 8px; }
+    .price-range input[type="range"] { width: 100%; accent-color: var(--primary); }
+    .price-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .rating-stars { display: flex; gap: 4px; margin-top: 4px; }
+    .star { font-size: 18px; cursor: pointer; color: var(--border); transition: color .15s; }
+    .star.filled { color: #F59E0B; }
+    .availability-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .avail-chip {
+      padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+      border: 1.5px solid var(--border); background: var(--bg); color: var(--text-muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .avail-chip:hover, .avail-chip.active { border-color: var(--primary); background: var(--secondary); color: var(--primary); }
+    .filter-reset { width: 100%; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); background: var(--bg); border: 1.5px solid var(--border); cursor: pointer; transition: all .2s; }
+    .filter-reset:hover { color: var(--primary); border-color: var(--primary); }
+
+    /* PRO GRID */
+    .pros-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .pro-card {
+      background: var(--white); border-radius: 24px; overflow: hidden;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      transition: transform .2s, box-shadow .2s; cursor: pointer;
+    }
+    .pro-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .pro-card-img {
+      width: 100%; height: 160px; object-fit: cover;
+      background: linear-gradient(135deg, var(--secondary), #e8d5f0);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px; color: var(--primary); position: relative;
+    }
+    .pro-card-img .badge {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+      border-radius: 10px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--primary);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .pro-card-img .badge-verified { left: auto; right: 12px; background: #10B981; color: white; }
+    .pro-card-body { padding: 16px; }
+    .pro-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .pro-name { font-size: 16px; font-weight: 700; color: var(--text-dark); }
+    .pro-specialty { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+    .pro-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .rating { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--text-dark); }
+    .rating span { color: var(--text-muted); font-weight: 400; font-size: 12px; }
+    .pro-location { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+    .pro-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .pro-tag { padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; background: var(--secondary); color: var(--primary); }
+    .pro-slots { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .slot {
+      padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all .15s;
+    }
+    .slot:hover, .slot.active { border-color: var(--primary); background: var(--secondary); color: var(--primary); }
+    .pro-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border); }
+    .pro-price { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+    .pro-price span { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+    .btn-book {
+      padding: 8px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none; cursor: pointer; transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 3px 10px rgba(200,109,215,.35);
+    }
+    .btn-book:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(200,109,215,.45); }
+
+    /* FEATURED PRO CARD (wide) */
+    .pro-card.featured { grid-column: span 2; }
+    .pro-card.featured .pro-card-img { height: 200px; }
+    .pro-card.featured .pro-card-body { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+    .pro-card.featured .pro-card-footer { border-top: none; padding-top: 0; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+    /* PAGINATION */
+    .pagination { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 40px; }
+    .page-btn {
+      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600; border: 1.5px solid var(--border); background: var(--white);
+      color: var(--text-muted); cursor: pointer; transition: all .15s;
+    }
+    .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .page-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .page-btn.arrow { font-size: 18px; }
+
+    /* MAP TOGGLE */
+    .view-toggle { display: flex; gap: 4px; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; }
+    .view-btn {
+      padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+      border: none; cursor: pointer; color: var(--text-muted); background: transparent; transition: all .15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .view-btn.active { background: var(--white); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+    @media (max-width: 900px) {
+      .search-layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .pros-grid { grid-template-columns: repeat(2, 1fr); }
+      .pro-card.featured { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <span class="logo">BookMeUp</span>
+    <nav>
+      <a href="#">Accueil</a>
+      <a href="#" class="active">Recherche</a>
+      <a href="#">Mes réservations</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-ghost">Connexion</button>
+      <button class="btn-primary">S'inscrire</button>
+    </div>
+  </div>
+</header>
+
+<!-- SEARCH BANNER -->
+<div class="search-banner">
+  <div class="search-banner-inner">
+    <h1>Trouvez votre prochain soin</h1>
+    <p>Plus de 3 200 professionnels disponibles près de chez vous</p>
+    <div class="search-box">
+      <div class="search-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Coiffure, massage, nail art…" value="Coiffure" />
+      </div>
+      <div class="search-divider"></div>
+      <div class="search-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <input type="text" placeholder="Ville ou code postal" value="Paris" />
+      </div>
+      <div class="search-divider"></div>
+      <div class="search-field" style="max-width:160px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <input type="text" placeholder="Aujourd'hui" value="Aujourd'hui" />
+      </div>
+      <button class="btn-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Rechercher
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TOP FILTERS + VIEW TOGGLE -->
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; margin-top:8px;">
+    <div class="filters-bar" style="margin-bottom:0; flex:1;">
+      <span class="filter-label">Filtres rapides :</span>
+      <div class="chip active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H3"/><path d="M21 6H3"/><path d="M21 14H3"/><path d="M21 18H3"/></svg>
+        Tous
+      </div>
+      <div class="chip">✂️ Coiffure</div>
+      <div class="chip">💅 Ongles</div>
+      <div class="chip">💆 Massage</div>
+      <div class="chip">🧖 Soin visage</div>
+      <div class="chip">💇 Barbier</div>
+      <div class="chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Plus de filtres
+      </div>
+      <div class="filter-sep"></div>
+      <select class="sort-select">
+        <option>Trier par : Pertinence</option>
+        <option>Disponibilité</option>
+        <option>Note</option>
+        <option>Prix croissant</option>
+        <option>Prix décroissant</option>
+      </select>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Grille
+      </button>
+      <button class="view-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Carte
+      </button>
+    </div>
+  </div>
+
+  <p class="results-count"><strong>142 professionnels</strong> trouvés à Paris pour "Coiffure"</p>
+
+  <!-- LAYOUT -->
+  <div class="search-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="filter-card">
+        <h3>Type de service</h3>
+        <div class="filter-option">
+          <input type="checkbox" id="coiffure" checked />
+          <label for="coiffure">Coiffure</label>
+          <span class="count">89</span>
+        </div>
+        <div class="filter-option">
+          <input type="checkbox" id="coloration" />
+          <label for="coloration">Coloration</label>
+          <span class="count">54</span>
+        </div>
+        <div class="filter-option">
+          <input type="checkbox" id="coupe" />
+          <label for="coupe">Coupe + soin</label>
+          <span class="count">47</span>
+        </div>
+        <div class="filter-option">
+          <input type="checkbox" id="lissage" />
+          <label for="lissage">Lissage / Kératine</label>
+          <span class="count">23</span>
+        </div>
+        <div class="filter-option">
+          <input type="checkbox" id="extensions" />
+          <label for="extensions">Extensions</label>
+          <span class="count">18</span>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Budget</h3>
+        <div class="price-range">
+          <input type="range" min="0" max="200" value="120" />
+          <div class="price-labels"><span>0 €</span><span>jusqu'à 120 €</span></div>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Note minimale</h3>
+        <div class="rating-stars">
+          <span class="star filled">★</span>
+          <span class="star filled">★</span>
+          <span class="star filled">★</span>
+          <span class="star filled">★</span>
+          <span class="star">★</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">4 étoiles et plus</p>
+      </div>
+
+      <div class="filter-card">
+        <h3>Disponibilité</h3>
+        <div class="availability-chips">
+          <span class="avail-chip active">Aujourd'hui</span>
+          <span class="avail-chip">Demain</span>
+          <span class="avail-chip">Cette semaine</span>
+          <span class="avail-chip">Ce week-end</span>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Distance</h3>
+        <div class="filter-option">
+          <input type="radio" name="dist" id="d1" checked />
+          <label for="d1">Moins de 2 km</label>
+        </div>
+        <div class="filter-option">
+          <input type="radio" name="dist" id="d5" />
+          <label for="d5">Moins de 5 km</label>
+        </div>
+        <div class="filter-option">
+          <input type="radio" name="dist" id="d10" />
+          <label for="d10">Moins de 10 km</label>
+        </div>
+        <div class="filter-option">
+          <input type="radio" name="dist" id="dall" />
+          <label for="dall">Toute distance</label>
+        </div>
+      </div>
+
+      <button class="filter-reset">Réinitialiser les filtres</button>
+    </aside>
+
+    <!-- PRO GRID -->
+    <div>
+      <div class="pros-grid">
+
+        <!-- FEATURED CARD -->
+        <div class="pro-card featured">
+          <div class="pro-card-img">
+            💇‍♀️
+            <div class="badge">⭐ Top Pro</div>
+            <div class="badge badge-verified">✓ Vérifié</div>
+          </div>
+          <div class="pro-card-body">
+            <div>
+              <div class="pro-card-header">
+                <div>
+                  <div class="pro-name">Salon Élégance — Sophie Martin</div>
+                  <div class="pro-specialty">Coiffure • Coloration • Extensions</div>
+                </div>
+              </div>
+              <div class="pro-meta">
+                <div class="rating">⭐ 4.9 <span>(287 avis)</span></div>
+                <div class="pro-location">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Marais, Paris 4e • 1.2 km
+                </div>
+              </div>
+              <div class="pro-tags">
+                <span class="pro-tag">Coiffure femme</span>
+                <span class="pro-tag">Coloration</span>
+                <span class="pro-tag">Balayage</span>
+                <span class="pro-tag">Extensions</span>
+              </div>
+              <div class="pro-slots">
+                <div class="slot">10:00</div>
+                <div class="slot active">11:30</div>
+                <div class="slot">14:00</div>
+                <div class="slot">16:30</div>
+                <div class="slot">+ 8</div>
+              </div>
+            </div>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>45 €</strong><span> / séance</span></div>
+              <button class="btn-book">Réserver →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2 -->
+        <div class="pro-card">
+          <div class="pro-card-img" style="background: linear-gradient(135deg,#f0d9f5,#e8c8f0);">
+            ✂️
+            <div class="badge">✓ Certifié</div>
+          </div>
+          <div class="pro-card-body">
+            <div class="pro-card-header">
+              <div>
+                <div class="pro-name">Atelier L'Effeuillée</div>
+                <div class="pro-specialty">Coiffure créative • Couleur</div>
+              </div>
+            </div>
+            <div class="pro-meta">
+              <div class="rating">⭐ 4.8 <span>(143 avis)</span></div>
+              <div class="pro-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Bastille, Paris 11e • 2.4 km
+              </div>
+            </div>
+            <div class="pro-tags">
+              <span class="pro-tag">Coiffure</span>
+              <span class="pro-tag">Couleur</span>
+            </div>
+            <div class="pro-slots">
+              <div class="slot">09:30</div>
+              <div class="slot">13:00</div>
+              <div class="slot">17:00</div>
+            </div>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>38 €</strong></div>
+              <button class="btn-book">Réserver →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3 -->
+        <div class="pro-card">
+          <div class="pro-card-img" style="background:linear-gradient(135deg,#fce4ec,#f8d7ea);">💆‍♀️</div>
+          <div class="pro-card-body">
+            <div class="pro-card-header">
+              <div>
+                <div class="pro-name">Studio Naturel</div>
+                <div class="pro-specialty">Soins capillaires naturels</div>
+              </div>
+            </div>
+            <div class="pro-meta">
+              <div class="rating">⭐ 4.7 <span>(98 avis)</span></div>
+              <div class="pro-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Montmartre, Paris 18e • 3.8 km
+              </div>
+            </div>
+            <div class="pro-tags">
+              <span class="pro-tag">Bio</span>
+              <span class="pro-tag">Kératine</span>
+            </div>
+            <div class="pro-slots">
+              <div class="slot">10:30</div>
+              <div class="slot active">14:30</div>
+              <div class="slot">16:00</div>
+            </div>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>55 €</strong></div>
+              <button class="btn-book">Réserver →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 4 -->
+        <div class="pro-card">
+          <div class="pro-card-img" style="background:linear-gradient(135deg,#e8f4fd,#d6ecf9);">💇‍♂️</div>
+          <div class="pro-card-body">
+            <div class="pro-card-header">
+              <div>
+                <div class="pro-name">The Barber House</div>
+                <div class="pro-specialty">Barbier • Coupe homme</div>
+              </div>
+            </div>
+            <div class="pro-meta">
+              <div class="rating">⭐ 4.9 <span>(312 avis)</span></div>
+              <div class="pro-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                République, Paris 10e • 1.8 km
+              </div>
+            </div>
+            <div class="pro-tags">
+              <span class="pro-tag">Homme</span>
+              <span class="pro-tag">Barbe</span>
+            </div>
+            <div class="pro-slots">
+              <div class="slot">12:00</div>
+              <div class="slot">15:30</div>
+              <div class="slot">18:00</div>
+            </div>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>25 €</strong></div>
+              <button class="btn-book">Réserver →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 5 -->
+        <div class="pro-card">
+          <div class="pro-card-img" style="background:linear-gradient(135deg,#f3f0ff,#e8e0ff);">💅</div>
+          <div class="pro-card-body">
+            <div class="pro-card-header">
+              <div>
+                <div class="pro-name">Nails & Beauty Paris</div>
+                <div class="pro-specialty">Manucure • Nail art</div>
+              </div>
+            </div>
+            <div class="pro-meta">
+              <div class="rating">⭐ 4.6 <span>(201 avis)</span></div>
+              <div class="pro-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Opéra, Paris 9e • 0.9 km
+              </div>
+            </div>
+            <div class="pro-tags">
+              <span class="pro-tag">Nail art</span>
+              <span class="pro-tag">Gel</span>
+            </div>
+            <div class="pro-slots">
+              <div class="slot">11:00</div>
+              <div class="slot">13:30</div>
+              <div class="slot active">15:00</div>
+            </div>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>30 €</strong></div>
+              <button class="btn-book">Réserver →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 6 — NO AVAILABILITY -->
+        <div class="pro-card" style="opacity:.7;">
+          <div class="pro-card-img" style="background:linear-gradient(135deg,#f5f5f5,#ebebeb); color:#aaa;">🧖‍♀️</div>
+          <div class="pro-card-body">
+            <div class="pro-card-header">
+              <div>
+                <div class="pro-name">Spa Zen Montparnasse</div>
+                <div class="pro-specialty">Massages • Soins visage</div>
+              </div>
+            </div>
+            <div class="pro-meta">
+              <div class="rating">⭐ 4.5 <span>(76 avis)</span></div>
+              <div class="pro-location">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Montparnasse, Paris 14e • 4.1 km
+              </div>
+            </div>
+            <div class="pro-tags">
+              <span class="pro-tag" style="background:#f0f0f0;color:#888;">Massage</span>
+              <span class="pro-tag" style="background:#f0f0f0;color:#888;">Soin</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);padding:8px 0;">Prochain créneau : vendredi 28 mars</p>
+            <div class="pro-card-footer">
+              <div class="pro-price">À partir de <strong>60 €</strong></div>
+              <button class="btn-book" style="background:linear-gradient(135deg,#ccc,#bbb);box-shadow:none;">Voir →</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination">
+        <button class="page-btn arrow">←</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <span style="color:var(--text-muted);padding:0 4px;">…</span>
+        <button class="page-btn">12</button>
+        <button class="page-btn arrow">→</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -27,13 +27,15 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Log Firebase initialization au montage
+  // Vérification Firebase au montage
   useEffect(() => {
-    console.log('[AUTH] firebase', {
-      apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    })
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    console.log('[AUTH] firebase config', { hasApiKey: !!apiKey, authDomain, projectId })
+    if (!apiKey || !authDomain || !projectId) {
+      setError('Configuration Firebase manquante. Vérifiez le fichier .env.local.')
+    }
   }, [])
 
   // Debug: log onAuthStateChanged
@@ -155,14 +157,17 @@ export default function LoginPage() {
       let errorMessage = err.message || 'Erreur lors de la connexion. Vérifiez vos identifiants.'
       
       if (err.code === 'LOGIN_TIMEOUT') {
-        errorMessage = 'Connexion bloquée (15s). Vérifiez VPN/AdBlock/DNS ou testez en 4G.'
+        errorMessage = 'La connexion a expiré (15s). Désactivez votre AdBlocker ou essayez en navigation privée.'
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet ou désactivez votre AdBlocker.'
       } else if (err.code === 'auth/unauthorized-domain') {
-        errorMessage = 'Domaine non autorisé dans Firebase Auth. Ajoutez localhost dans Authorized domains.'
+        errorMessage = 'Domaine non autorisé dans Firebase. Ajoutez ce domaine dans Firebase Console → Authentication → Settings → Authorized domains.'
       } else if (err.code === 'auth/invalid-api-key' || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        errorMessage = 'Erreur de configuration: clé API Firebase invalide ou manquante.'
+        errorMessage = 'Configuration Firebase invalide. Vérifiez le fichier .env.local.'
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        errorMessage = 'Email ou mot de passe incorrect.'
       } else if (err.code) {
-        // Afficher le code d'erreur + message
-        errorMessage = `[${err.code}] ${err.message || 'Erreur lors de la connexion'}`
+        errorMessage = `Erreur [${err.code}]: ${err.message || 'Connexion impossible'}`
       }
       
       setError(errorMessage)

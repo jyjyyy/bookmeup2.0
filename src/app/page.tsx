@@ -14,13 +14,6 @@ const FEATURES = [
   { icon: '🔒', title: 'Paiement sécurisé', desc: 'Vos données sont protégées avec les derniers standards de sécurité.' },
 ]
 
-const STATS = [
-  { value: '3 200+', label: 'Professionnels' },
-  { value: '98', label: 'Villes couvertes' },
-  { value: '150k+', label: 'Réservations' },
-  { value: '4.9/5', label: 'Note moyenne' },
-]
-
 const PRICING = [
   {
     name: 'Starter',
@@ -73,7 +66,7 @@ export default function HomePage() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white/80 text-sm font-medium mb-6 backdrop-blur-sm">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                3 200+ professionnels disponibles
+                Réservation en ligne instantanée
               </div>
               <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 leading-[1.1] tracking-tight">
                 Votre beauté,{' '}
@@ -144,59 +137,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS BAR ──────────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-[#EDE8F0]">
+      {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
+      <section className="py-14 bg-white border-b border-[#EDE8F0]">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-0 max-w-4xl mx-auto">
-            {STATS.map((stat, i) => (
-              <motion.div
-                suppressHydrationWarning
-                key={stat.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="py-8 px-4 text-center border-r border-[#EDE8F0] last:border-r-0"
-              >
-                <div className="text-2xl md:text-3xl font-extrabold gradient-text">{stat.value}</div>
-                <div className="text-sm text-[#7A6B80] font-medium mt-1">{stat.label}</div>
-              </motion.div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-0 max-w-3xl mx-auto">
+            {[
+              { step: '1', label: 'Choisissez un pro' },
+              { step: '2', label: 'Sélectionnez un créneau' },
+              { step: '3', label: 'Réservez en 30 secondes' },
+            ].map((item, i) => (
+              <div key={item.step} className="flex items-center">
+                <div className="flex flex-col sm:flex-row items-center gap-3 px-6 py-4 text-center sm:text-left">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center text-white font-extrabold text-base flex-shrink-0">
+                    {item.step}
+                  </div>
+                  <span className="text-sm font-semibold text-[#2A1F2D]">{item.label}</span>
+                </div>
+                {i < 2 && <div className="hidden sm:block w-8 h-px bg-[#EDE8F0]" />}
+              </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── SEARCH BAR CTA ──────────────────────────────────────────────── */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-6">
-          <motion.div
-            suppressHydrationWarning
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="bg-white rounded-[28px] p-3 shadow-bookmeup border border-[#EDE8F0] flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-[20px] bg-background border border-[#EDE8F0]">
-                <svg className="w-5 h-5 text-[#7A6B80] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8" strokeWidth="2" /><path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                <span className="text-[#7A6B80] text-sm">Coiffure, massage, nail art…</span>
-              </div>
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-[20px] bg-background border border-[#EDE8F0]">
-                <svg className="w-5 h-5 text-[#7A6B80] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" strokeWidth="2" /><circle cx="12" cy="10" r="3" strokeWidth="2" />
-                </svg>
-                <span className="text-[#7A6B80] text-sm">Votre ville…</span>
-              </div>
-              <Link href="/search">
-                <Button size="md" className="btn-gradient w-full sm:w-auto px-8 rounded-[20px] whitespace-nowrap">
-                  Rechercher
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
         </div>
       </section>
 
@@ -334,7 +294,7 @@ export default function HomePage() {
                 Prêt à trouver votre prochain soin ?
               </h2>
               <p className="text-lg text-white/65 mb-8 max-w-xl mx-auto relative z-10">
-                Rejoignez plus de 150 000 clients satisfaits et découvrez une nouvelle façon de prendre soin de vous.
+                Trouvez les meilleurs professionnels près de chez vous et prenez soin de vous en toute simplicité.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
                 <Link href="/search">

@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 
@@ -205,173 +204,135 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary mb-2">Abonnement</h1>
-        <p className="text-gray-600 mb-3">
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Abonnement</h1>
+        <p className="text-sm text-[#7A6B80] mb-3">
           Gérez votre abonnement et choisissez le plan qui vous convient
         </p>
-        <div className="bg-primary/10 border border-primary/20 rounded-[24px] p-4">
+        <div className="bg-secondary border border-primary/20 rounded-[16px] p-4">
           <p className="text-sm text-[#2A1F2D] font-medium">
             ⚠️ Un abonnement est obligatoire pour accéder à l'espace professionnel.
           </p>
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm"
-        >
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
           {error}
-        </motion.div>
+        </div>
       )}
 
       {/* Current Plan Card */}
       {currentPlan && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Card className="rounded-[32px] shadow-bookmeup p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-2">
-                  Abonnement actuel
-                </h2>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getPlanBadgeColor(
-                      currentPlan
-                    )}`}
-                  >
-                    {PLANS.find((p) => p.id === currentPlan)?.name || currentPlan}
-                  </span>
-                  <span className="text-gray-600 text-sm">
-                    {PLANS.find((p) => p.id === currentPlan)?.price}
-                    {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
-                  </span>
-                </div>
+        <div className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-[#7A6B80] uppercase tracking-wide mb-2">Abonnement actuel</p>
+              <div className="flex items-center gap-3">
+                <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${getPlanBadgeColor(currentPlan)}`}>
+                  {PLANS.find((p) => p.id === currentPlan)?.name || currentPlan}
+                </span>
+                <span className="text-[#7A6B80] text-sm">
+                  {PLANS.find((p) => p.id === currentPlan)?.price}
+                  {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
+                </span>
               </div>
-              {(currentPlan === 'pro' || currentPlan === 'premium') && (
-                <Button
-                  onClick={handleManageSubscription}
-                  disabled={processing === 'manage'}
-                  variant="outline"
-                  className="rounded-[32px]"
-                >
-                  {processing === 'manage' ? 'Chargement...' : 'Gérer mon abonnement'}
-                </Button>
-              )}
             </div>
-          </Card>
-        </motion.div>
+            {(currentPlan === 'pro' || currentPlan === 'premium') && (
+              <Button
+                onClick={handleManageSubscription}
+                disabled={processing === 'manage'}
+                variant="outline"
+                className="rounded-[12px] text-sm font-semibold border-[#EDE8F0] hover:border-primary hover:text-primary"
+              >
+                {processing === 'manage' ? 'Chargement…' : 'Gérer mon abonnement'}
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Plans Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         {PLANS.map((plan, index) => {
           const isCurrentPlan = currentPlan === plan.id
-          const isUpgrade = currentPlan === 'starter' && (plan.id === 'pro' || plan.id === 'premium') ||
-            currentPlan === 'pro' && plan.id === 'premium'
+          const isUpgrade = (currentPlan === 'starter' && (plan.id === 'pro' || plan.id === 'premium')) ||
+            (currentPlan === 'pro' && plan.id === 'premium')
 
           return (
             <motion.div
               key={plan.id}
+              suppressHydrationWarning
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <Card
-                hover
-                className={`rounded-[32px] shadow-bookmeup p-6 relative ${
-                  plan.popular ? 'ring-2 ring-primary' : ''
-                }`}
-              >
+              <div className={`rounded-[20px] p-5 relative border ${
+                plan.popular
+                  ? 'bg-[#2A1F2D] border-transparent shadow-[0_8px_30px_rgba(0,0,0,0.2)]'
+                  : 'bg-white border-[#EDE8F0] shadow-bookmeup-sm'
+              }`}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-white px-4 py-1 rounded-full text-xs font-semibold">
-                      Populaire
+                    <span className="btn-gradient text-white px-3 py-1 rounded-full text-xs font-bold shadow-bookmeup-sm">
+                      Populaire ✨
                     </span>
                   </div>
                 )}
 
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                <div className="mb-5">
+                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${plan.popular ? 'text-primary' : 'text-[#7A6B80]'}`}>
                     {plan.name}
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-3xl font-bold text-primary">
-                      {plan.price}
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-2xl font-extrabold ${plan.popular ? 'text-white' : 'text-[#2A1F2D]'}`}>
+                      {plan.price} €
                     </span>
                     {plan.priceMonthly && (
-                      <span className="text-gray-600 text-sm">
+                      <span className={`text-xs ${plan.popular ? 'text-white/50' : 'text-[#7A6B80]'}`}>
                         {plan.priceMonthly}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-5">
                   {plan.features.map((feature, featureIndex) => (
-                    <li
-                      key={featureIndex}
-                      className="flex items-start gap-2 text-sm text-gray-700"
-                    >
-                      <svg
-                        className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                    <li key={featureIndex} className={`flex items-start gap-2 text-xs ${plan.popular ? 'text-white/80' : 'text-[#7A6B80]'}`}>
+                      <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${plan.popular ? 'bg-primary/30 text-white' : 'bg-secondary text-primary'}`}>✓</span>
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <Button
+                <button
                   onClick={() => {
-                    console.log('[Subscription] Button clicked for plan:', plan.id)
-                    
-                    // Only handle pro and premium plans for Stripe checkout
-                    if (plan.id === 'pro' || plan.id === 'premium') {
-                      console.log('[Subscription] Calling handleUpgrade for:', plan.id)
-                      handleUpgrade(plan.id)
-                    } else if (plan.id === 'starter') {
-                      console.log('[Subscription] Starter plan clicked, but not handled (should be disabled)')
-                    }
+                    if (plan.id === 'pro' || plan.id === 'premium') handleUpgrade(plan.id)
                   }}
                   disabled={
                     isCurrentPlan ||
                     processing !== null ||
                     (plan.id === 'starter' && currentPlan !== 'starter')
                   }
-                  variant={isCurrentPlan ? 'subtle' : plan.popular ? 'primary' : 'outline'}
-                  className="w-full rounded-[32px]"
-                  size="lg"
+                  className={`w-full py-2.5 rounded-[12px] text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-default ${
+                    isCurrentPlan
+                      ? plan.popular ? 'bg-white/10 text-white/60' : 'bg-secondary text-[#7A6B80]'
+                      : plan.popular
+                      ? 'btn-gradient text-white'
+                      : 'border-2 border-primary text-primary hover:bg-primary hover:text-white'
+                  }`}
                 >
                   {isCurrentPlan
                     ? 'Plan actuel'
-                    : isUpgrade
-                    ? processing === plan.id
-                      ? 'Traitement...'
-                      : `Passer au ${plan.name}`
                     : processing === plan.id
-                    ? 'Traitement...'
+                    ? 'Traitement…'
+                    : isUpgrade
+                    ? `Passer au ${plan.name}`
                     : `Choisir ${plan.name}`}
-                </Button>
-              </Card>
+                </button>
+              </div>
             </motion.div>
           )
         })}

@@ -199,19 +199,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-200">
-          <h1 className="text-3xl font-bold text-primary mb-2 text-center">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <span className="text-2xl font-extrabold gradient-text">BookMeUp</span>
+          <p className="text-sm text-[#7A6B80] mt-1">Votre espace beauté en ligne</p>
+        </div>
+
+        <div className="bg-white rounded-[32px] p-8 shadow-bookmeup border border-[#EDE8F0]">
+          <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1 text-center">
             Connexion
           </h1>
-          <p className="text-gray-600 text-center mb-6">
+          <p className="text-sm text-[#7A6B80] text-center mb-7">
             Connectez-vous à votre compte BookMeUp
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[32px] text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[16px] text-sm whitespace-pre-line">
                 {error}
               </div>
             )}
@@ -234,8 +240,8 @@ export default function LoginPage() {
               disabled={loading}
             />
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Connexion...' : 'Se connecter'}
+            <Button type="submit" disabled={loading} className="w-full btn-gradient rounded-[16px] py-3 font-bold">
+              {loading ? 'Connexion…' : 'Se connecter →'}
             </Button>
           </form>
 
@@ -246,13 +252,13 @@ export default function LoginPage() {
             >
               Mot de passe oublié ?
             </Link>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#7A6B80]">
               Pas encore de compte ?{' '}
               <Link
                 href={`/auth/signup?${searchParams.toString()}`}
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:underline font-semibold"
               >
-                S'inscrire
+                S'inscrire gratuitement
               </Link>
             </p>
           </div>

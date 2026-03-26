@@ -9,8 +9,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-primary mb-2">Paramètres</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Paramètres</h1>
+        <p className="text-sm text-[#7A6B80]">
           Gérez votre compte, votre abonnement et vos préférences
         </p>
       </div>

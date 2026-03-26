@@ -6,9 +6,7 @@ import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
-import { Card } from '@/components/ui/card'
 import { AppointmentsSkeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 
 interface Booking {
   id: string
@@ -264,53 +262,47 @@ export default function ClientAppointmentsPage() {
       className="space-y-8"
     >
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">
+        <h2 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
           Mes rendez-vous
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm text-[#7A6B80]">
           Gérez vos rendez-vous à venir et consultez votre historique.
         </p>
       </div>
 
       {/* Upcoming Appointments */}
       <section>
-        <h3 className="text-xl font-semibold text-slate-800 mb-4">
+        <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
           À venir
         </h3>
         {upcomingBookings.length === 0 ? (
-          <Card className="p-6 text-center text-gray-500 rounded-[32px]">
+          <div className="bg-white rounded-[24px] p-6 text-center text-[#7A6B80] text-sm border border-[#EDE8F0]">
             Aucun rendez-vous à venir.
-          </Card>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {upcomingBookings.map((booking) => (
-              <Card
+              <div
                 key={booking.id}
-                className="p-6 rounded-[32px] shadow-bookmeup"
+                className="bg-white rounded-[20px] p-5 border border-[#EDE8F0] shadow-bookmeup-sm"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-semibold text-primary">
+                  <h4 className="text-base font-bold text-[#2A1F2D]">
                     {booking.serviceName}
                   </h4>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                      booking.status
-                    )}`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(booking.status)}`}
                   >
                     {getStatusLabel(booking.status)}
                   </span>
                 </div>
-                <p className="text-gray-700 mb-1">
-                  Avec:{' '}
-                  <span className="font-medium">
-                    {booking.proName}
-                  </span>
+                <p className="text-sm text-[#7A6B80] mb-1">
+                  Avec <span className="font-semibold text-[#2A1F2D]">{booking.proName}</span>
                 </p>
-                <p className="text-gray-600 text-sm">
-                  Le {formatDateTime(booking.date, booking.start_time)}
+                <p className="text-xs text-[#7A6B80]">
+                  📅 {formatDateTime(booking.date, booking.start_time)}
                 </p>
-                {/* TODO: Add "Modifier" and "Annuler" buttons */}
-              </Card>
+              </div>
             ))}
           </div>
         )}
@@ -318,42 +310,37 @@ export default function ClientAppointmentsPage() {
 
       {/* Past Appointments */}
       <section>
-        <h3 className="text-xl font-semibold text-slate-800 mb-4">
+        <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
           Passés
         </h3>
         {pastBookings.length === 0 ? (
-          <Card className="p-6 text-center text-gray-500 rounded-[32px]">
+          <div className="bg-white rounded-[24px] p-6 text-center text-[#7A6B80] text-sm border border-[#EDE8F0]">
             Aucun rendez-vous passé.
-          </Card>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {pastBookings.map((booking) => (
-              <Card
+              <div
                 key={booking.id}
-                className="p-6 rounded-[32px] shadow-bookmeup"
+                className="bg-white rounded-[20px] p-5 border border-[#EDE8F0] opacity-75"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-lg font-semibold text-primary">
+                  <h4 className="text-base font-bold text-[#2A1F2D]">
                     {booking.serviceName}
                   </h4>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                      booking.status
-                    )}`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(booking.status)}`}
                   >
                     {getStatusLabel(booking.status)}
                   </span>
                 </div>
-                <p className="text-gray-700 mb-1">
-                  Avec:{' '}
-                  <span className="font-medium">
-                    {booking.proName}
-                  </span>
+                <p className="text-sm text-[#7A6B80] mb-1">
+                  Avec <span className="font-semibold text-[#2A1F2D]">{booking.proName}</span>
                 </p>
-                <p className="text-gray-600 text-sm">
-                  Le {formatDateTime(booking.date, booking.start_time)}
+                <p className="text-xs text-[#7A6B80]">
+                  📅 {formatDateTime(booking.date, booking.start_time)}
                 </p>
-              </Card>
+              </div>
             ))}
           </div>
         )}

@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { getCurrentUser, signOut, sendResetEmail } from '@/lib/auth'
 import { auth } from '@/lib/firebaseClient'
 import { deleteUser } from 'firebase/auth'
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 
@@ -137,10 +136,10 @@ export default function ClientSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="p-10 rounded-[32px] text-center">
+        <div className="flex flex-col items-center gap-3 text-[#7A6B80]">
           <Loader />
-          <p className="mt-4 text-gray-600">Chargement de vos paramètres...</p>
-        </Card>
+          <p className="text-sm">Chargement de vos paramètres…</p>
+        </div>
       </div>
     )
   }
@@ -149,93 +148,78 @@ export default function ClientSettingsPage() {
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4">
         <motion.div
+          suppressHydrationWarning
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="max-w-2xl mx-auto space-y-6"
+          className="max-w-2xl mx-auto space-y-5"
         >
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
           Paramètres du compte
         </h1>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-[#7A6B80]">
           Gérez la sécurité de votre compte et votre accès à BookMeUp.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[32px] text-sm">
+        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[16px] text-sm">
           {success}
         </div>
       )}
 
       {/* Mot de passe */}
-      <Card className="rounded-[32px] shadow-bookmeup p-6">
-        <CardHeader>
-          <CardTitle>Mot de passe</CardTitle>
-          <CardDescription>
-            Recevez un email pour changer votre mot de passe en toute sécurité.
-          </CardDescription>
-        </CardHeader>
-        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="text-sm text-gray-600">
-            <p className="font-medium">
-              Adresse email : <span className="font-semibold">{email}</span>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Un lien de réinitialisation sera envoyé à cette adresse.
-            </p>
+      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
+        <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Mot de passe</h2>
+        <p className="text-sm text-[#7A6B80] mb-4">
+          Recevez un email pour changer votre mot de passe en toute sécurité.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-sm text-[#7A6B80]">
+            <p>Email : <span className="font-semibold text-[#2A1F2D]">{email}</span></p>
+            <p className="text-xs mt-0.5">Un lien de réinitialisation sera envoyé à cette adresse.</p>
           </div>
           <Button
             type="button"
             onClick={handleChangePassword}
-            className="rounded-[32px] whitespace-nowrap"
+            className="btn-gradient rounded-[12px] whitespace-nowrap text-sm font-semibold"
           >
             Changer mon mot de passe
           </Button>
         </div>
-      </Card>
+      </div>
 
       {/* Déconnexion */}
-      <Card className="rounded-[32px] shadow-bookmeup p-6">
-        <CardHeader>
-          <CardTitle>Déconnexion</CardTitle>
-          <CardDescription>
-            Terminez votre session sur cet appareil.
-          </CardDescription>
-        </CardHeader>
-        <div className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleLogout}
-            className="rounded-[32px]"
-          >
-            Me déconnecter
-          </Button>
-        </div>
-      </Card>
+      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
+        <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Déconnexion</h2>
+        <p className="text-sm text-[#7A6B80] mb-4">Terminez votre session sur cet appareil.</p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleLogout}
+          className="rounded-[12px] text-sm font-semibold border-[#EDE8F0] text-[#2A1F2D] hover:border-primary hover:text-primary"
+        >
+          Me déconnecter
+        </Button>
+      </div>
 
       {/* Suppression du compte */}
-      <Card className="rounded-[32px] shadow-bookmeup p-6 border border-red-100">
-        <CardHeader>
-          <CardTitle className="text-red-700">Supprimer mon compte</CardTitle>
-          <CardDescription>
-            Cette action est définitive. Toutes vos réservations futures seront
-            annulées et vous ne pourrez plus accéder à votre compte.
-          </CardDescription>
-        </CardHeader>
-        <div className="mt-4 space-y-3">
+      <div className="bg-white rounded-[24px] border border-red-100 shadow-bookmeup-sm p-6">
+        <h2 className="text-base font-bold text-red-700 mb-1">Supprimer mon compte</h2>
+        <p className="text-sm text-[#7A6B80] mb-4">
+          Cette action est définitive. Toutes vos réservations futures seront annulées.
+        </p>
+        <div className="space-y-3">
           {confirmDelete && (
-            <p className="text-sm text-red-600">
-              Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est
-              irréversible.
+            <p className="text-sm text-red-600 bg-red-50 rounded-[12px] px-4 py-3">
+              Êtes-vous sûr ? Cette action est irréversible.
             </p>
           )}
           <Button
@@ -243,16 +227,16 @@ export default function ClientSettingsPage() {
             variant="destructive"
             onClick={handleDeleteAccount}
             disabled={deleting}
-            className="rounded-[32px]"
+            className="rounded-[12px] text-sm font-semibold"
           >
             {deleting
-              ? 'Suppression en cours...'
+              ? 'Suppression en cours…'
               : confirmDelete
               ? 'Confirmer la suppression définitive'
               : 'Supprimer mon compte'}
           </Button>
         </div>
-      </Card>
+      </div>
         </motion.div>
       </div>
     </div>

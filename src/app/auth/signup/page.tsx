@@ -103,19 +103,25 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-200">
-          <h1 className="text-3xl font-bold text-primary mb-2 text-center">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <span className="text-2xl font-extrabold gradient-text">BookMeUp</span>
+          <p className="text-sm text-[#7A6B80] mt-1">Créez votre compte gratuitement</p>
+        </div>
+
+        <div className="bg-white rounded-[32px] p-8 shadow-bookmeup border border-[#EDE8F0]">
+          <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1 text-center">
             Inscription
           </h1>
-          <p className="text-gray-600 text-center mb-6">
+          <p className="text-sm text-[#7A6B80] text-center mb-7">
             Créez votre compte BookMeUp
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[32px] text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[16px] text-sm">
                 {error}
               </div>
             )}
@@ -161,7 +167,7 @@ export default function SignupPage() {
 
             {/* Sélecteur de rôle */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2A1F2D] mb-2">
                 Je suis
               </label>
               <div className="flex gap-2">
@@ -170,11 +176,11 @@ export default function SignupPage() {
                   onClick={() => setRole('client')}
                   disabled={loading}
                   className={`
-                    flex-1 px-4 py-3 rounded-full font-medium transition-all
+                    flex-1 px-4 py-3 rounded-[14px] font-semibold text-sm transition-all
                     ${
                       role === 'client'
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-white shadow-bookmeup-sm'
+                        : 'bg-secondary text-[#2A1F2D] hover:bg-primary/10'
                     }
                     disabled:opacity-50
                   `}
@@ -186,11 +192,11 @@ export default function SignupPage() {
                   onClick={() => setRole('pro')}
                   disabled={loading}
                   className={`
-                    flex-1 px-4 py-3 rounded-full font-medium transition-all
+                    flex-1 px-4 py-3 rounded-[14px] font-semibold text-sm transition-all
                     ${
                       role === 'pro'
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-white shadow-bookmeup-sm'
+                        : 'bg-secondary text-[#2A1F2D] hover:bg-primary/10'
                     }
                     disabled:opacity-50
                   `}
@@ -200,17 +206,17 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Inscription...' : 'S\'inscrire'}
+            <Button type="submit" disabled={loading} className="w-full btn-gradient rounded-[16px] py-3 font-bold">
+              {loading ? 'Inscription…' : 'Créer mon compte →'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#7A6B80]">
               Déjà un compte ?{' '}
               <Link
                 href={`/auth/login?${searchParams.toString()}`}
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:underline font-semibold"
               >
                 Se connecter
               </Link>

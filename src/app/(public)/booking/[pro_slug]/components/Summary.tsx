@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import type { BookingPro, BookingService } from '../types'
 
@@ -55,26 +54,26 @@ export function Summary({
   }
 
   return (
-    <Card className="rounded-[32px] p-6">
-      <h2 className="text-xl font-bold text-[#2A1F2D] mb-6">
-        Tes informations
+    <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+      <h2 className="text-base font-bold text-[#2A1F2D] mb-5">
+        Vos informations
       </h2>
 
       {/* Récapitulatif compact */}
-      <div className="bg-secondary/30 rounded-[24px] p-4 mb-6 space-y-2 text-sm">
+      <div className="bg-secondary rounded-[16px] p-4 mb-5 space-y-2 text-sm border border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Service</span>
+          <span className="text-[#7A6B80]">Service</span>
           <span className="font-semibold text-[#2A1F2D]">{selectedService.name}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Date & Heure</span>
+          <span className="text-[#7A6B80]">Date & Heure</span>
           <span className="font-semibold text-[#2A1F2D]">
             {formatDate(selectedDate!)} à {selectedTime}
           </span>
         </div>
         <div className="flex items-center justify-between pt-2 border-t border-primary/20">
-          <span className="text-slate-500">Total</span>
-          <span className="text-xl font-bold text-primary">
+          <span className="text-[#7A6B80] font-medium">Total</span>
+          <span className="text-xl font-extrabold text-primary">
             {selectedService.price} €
           </span>
         </div>
@@ -108,7 +107,7 @@ export function Summary({
           placeholder="marie@example.com"
         />
       </div>
-    </Card>
+    </div>
   )
 }
 

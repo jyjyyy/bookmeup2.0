@@ -213,19 +213,18 @@ export function ConfirmButton({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-bookmeup-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-[#EDE8F0] shadow-bookmeup-lg">
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="py-4">
           {error && (
-            <div className="mb-3 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-[24px] text-sm text-center">
+            <div className="mb-3 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-[16px] text-sm text-center">
               {error}
             </div>
           )}
-          <Button
+          <button
             onClick={handleConfirm}
             disabled={!canConfirm || loading}
-            className="w-full rounded-[32px] py-6 text-lg font-semibold"
-            size="lg"
+            className="w-full rounded-[16px] py-4 text-base font-bold text-white btn-gradient disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -233,9 +232,9 @@ export function ConfirmButton({
                 Confirmation en cours…
               </span>
             ) : (
-              'Confirmer mon rendez-vous'
+              'Confirmer mon rendez-vous →'
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

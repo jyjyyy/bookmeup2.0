@@ -1,6 +1,5 @@
 'use client'
 
-import { Card } from '@/components/ui/card'
 
 interface DatePickerProps {
   selectedDate: string | null // "YYYY-MM-DD"
@@ -49,14 +48,14 @@ export function DatePicker({ selectedDate, onSelectDate }: DatePickerProps) {
   }
 
   return (
-    <Card className="rounded-[32px] p-6">
-      <h2 className="text-xl font-bold text-[#2A1F2D] mb-6">
-        Choisis ta date
+    <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+      <h2 className="text-base font-bold text-[#2A1F2D] mb-5">
+        Choisissez une date
       </h2>
 
       {/* Slider horizontal scrollable */}
       <div className="overflow-x-auto pb-2 -mx-2 px-2">
-        <div className="flex gap-3 min-w-max">
+        <div className="flex gap-2 min-w-max">
           {days.map((date) => {
             const dateString = formatDate(date)
             const isSelected = selectedDate === dateString
@@ -69,24 +68,24 @@ export function DatePicker({ selectedDate, onSelectDate }: DatePickerProps) {
                 onClick={() => !isPastDate && handleDateClick(date)}
                 disabled={isPastDate}
                 className={`
-                  flex-shrink-0 w-20 p-4 rounded-[24px] border-2 transition-all text-center
+                  flex-shrink-0 w-16 py-3 rounded-[16px] border-2 transition-all text-center
                   ${
                     isPastDate
-                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                      ? 'bg-background border-[#EDE8F0] text-[#C9BBD0] cursor-not-allowed'
                       : isSelected
-                      ? 'bg-primary border-primary text-white shadow-bookmeup'
-                      : 'bg-white border-gray-200 hover:border-primary hover:bg-secondary'
+                      ? 'bg-primary border-primary text-white shadow-bookmeup-sm'
+                      : 'bg-white border-[#EDE8F0] hover:border-primary hover:bg-secondary'
                   }
-                  ${isTodayDate && !isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
+                  ${isTodayDate && !isSelected ? 'ring-2 ring-primary/40 ring-offset-1' : ''}
                 `}
               >
-                <div className="text-xs font-medium mb-1">
+                <div className="text-[10px] font-semibold mb-0.5 uppercase tracking-wide">
                   {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
                 </div>
-                <div className="text-xl font-bold">
+                <div className="text-lg font-extrabold leading-tight">
                   {date.getDate()}
                 </div>
-                <div className="text-xs mt-1">
+                <div className="text-[10px] mt-0.5 opacity-70">
                   {date.toLocaleDateString('fr-FR', { month: 'short' })}
                 </div>
               </button>
@@ -94,7 +93,7 @@ export function DatePicker({ selectedDate, onSelectDate }: DatePickerProps) {
           })}
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

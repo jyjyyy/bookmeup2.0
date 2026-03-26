@@ -1,7 +1,5 @@
 'use client'
 
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import type { BookingService } from '../types'
 
 interface SelectedServiceCardProps {
@@ -16,30 +14,30 @@ export function SelectedServiceCard({ service, onChange }: SelectedServiceCardPr
 
   return (
     <div className="sticky top-4 z-10 mb-6">
-      <Card className="rounded-[32px] p-5 bg-white border-2 border-primary/20 shadow-bookmeup">
+      <div className="bg-secondary rounded-[20px] p-4 border-2 border-primary/30 shadow-bookmeup-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-[#2A1F2D] mb-1 truncate">
+            <p className="text-[10px] font-bold text-primary uppercase tracking-wide mb-0.5">Prestation sélectionnée</p>
+            <h3 className="text-sm font-bold text-[#2A1F2D] truncate">
               {service.name}
             </h3>
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-primary font-bold text-xl">
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-primary font-extrabold">
                 {service.price} €
               </span>
-              <span className="text-slate-500">
-                {service.duration} min
+              <span className="text-xs text-[#7A6B80]">
+                ⏱ {service.duration} min
               </span>
             </div>
           </div>
-          <Button
-            variant="outline"
+          <button
             onClick={onChange}
-            className="rounded-[24px] px-4 py-2 text-sm whitespace-nowrap"
+            className="text-xs font-semibold text-[#7A6B80] hover:text-primary transition-colors px-3 py-2 rounded-[12px] hover:bg-white whitespace-nowrap"
           >
             Changer
-          </Button>
+          </button>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

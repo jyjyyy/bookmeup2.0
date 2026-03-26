@@ -13,12 +13,12 @@ interface DashboardShellProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: '📊 Tableau de bord' },
-  { href: '/dashboard/services', label: '🛠️ Services' },
-  { href: '/dashboard/calendar', label: '📅 Calendrier' },
-  { href: '/dashboard/availability', label: '⏱️ Disponibilités' },
-  { href: '/dashboard/clients', label: '🚫 Clients bloqués' },
-  { href: '/dashboard/settings', label: '🔧 Paramètres' },
+  { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
+  { href: '/dashboard/services', icon: '✂️', label: 'Services' },
+  { href: '/dashboard/calendar', icon: '📅', label: 'Calendrier' },
+  { href: '/dashboard/availability', icon: '⏱️', label: 'Disponibilités' },
+  { href: '/dashboard/clients', icon: '🚫', label: 'Clients bloqués' },
+  { href: '/dashboard/settings', icon: '⚙️', label: 'Paramètres' },
 ]
 
 export function DashboardShell({ children }: DashboardShellProps) {
@@ -66,10 +66,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   if (loading || !current) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3 text-gray-500">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-[#7A6B80]">
           <Loader />
-          <p>Chargement du tableau de bord…</p>
+          <p className="text-sm">Chargement du tableau de bord…</p>
         </div>
       </div>
     )
@@ -77,6 +77,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   const { profile } = current
   const displayName = profile?.name || profile?.email || 'Votre tableau de bord'
+  const avatarLetter = (profile?.name || profile?.email || 'P')[0].toUpperCase()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -84,78 +85,118 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar desktop */}
-      <aside className="hidden w-64 flex-col border-r bg-white/80 px-4 py-6 shadow-sm md:flex">
-        <div className="mb-8 px-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">BookMeUp</p>
-          <p className="mt-1 text-sm font-medium text-gray-800 truncate">{displayName}</p>
+    <div className="flex min-h-screen bg-background">
+
+      {/* ── SIDEBAR DESKTOP ─────────────────────────────────────────── */}
+      <aside
+        className="hidden md:flex w-[240px] flex-col flex-shrink-0"
+        style={{
+          background: 'linear-gradient(180deg, #2A1F2D 0%, #1e1225 100%)',
+          minHeight: '100vh',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+        }}
+      >
+        {/* Logo */}
+        <div className="px-6 py-5 border-b border-white/8">
+          <span className="text-xl font-extrabold gradient-text">BookMeUp</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 text-sm">
-          {NAV_ITEMS.map(({ href, label }) => (
+
+        {/* Nav */}
+        <nav className="flex flex-col gap-1 px-3 py-4 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-2">
+            Navigation
+          </p>
+          {NAV_ITEMS.map(({ href, icon, label }) => (
             <Link
               key={href}
               href={href}
-              className={`rounded-[32px] px-3 py-2 transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all ${
                 isActive(href)
-                  ? 'bg-pink-50 text-primary font-medium'
-                  : 'text-gray-700 hover:bg-pink-50 hover:text-primary'
+                  ? 'bg-primary/20 text-white'
+                  : 'text-white/55 hover:bg-white/7 hover:text-white/85'
               }`}
             >
+              <span
+                className={`w-8 h-8 rounded-[9px] flex items-center justify-center text-base flex-shrink-0 ${
+                  isActive(href) ? 'bg-primary/30' : 'bg-white/5'
+                }`}
+              >
+                {icon}
+              </span>
               {label}
             </Link>
           ))}
         </nav>
-      </aside>
 
-      {/* Main */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <header className="flex items-center justify-between border-b bg-white/80 px-4 py-3 shadow-sm">
+        {/* Pro info at bottom */}
+        <div className="px-4 py-4 border-t border-white/8">
           <div className="flex items-center gap-3">
-            {/* Burger mobile */}
-            <button
-              className="md:hidden p-2 rounded-xl hover:bg-pink-50 transition-colors"
-              onClick={() => setMobileNavOpen((v) => !v)}
-              aria-label="Navigation"
-            >
-              <span className="block w-5 h-0.5 bg-gray-600 mb-1" />
-              <span className="block w-5 h-0.5 bg-gray-600 mb-1" />
-              <span className="block w-5 h-0.5 bg-gray-600" />
-            </button>
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Tableau de bord</p>
-              <h1 className="text-lg font-semibold text-gray-900">Bonjour, {displayName}</h1>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+              {avatarLetter}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white/85 truncate">{displayName}</p>
+              <p className="text-xs text-white/40 truncate">Plan {plan}</p>
             </div>
           </div>
-          <div className="text-xs text-gray-500">
-            Plan actuel :{' '}
-            <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-primary">
-              {plan}
+        </div>
+      </aside>
+
+      {/* ── MAIN ────────────────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-w-0">
+
+        {/* Top bar */}
+        <header className="glass border-b border-[#EDE8F0] px-5 py-0 h-[68px] flex items-center gap-4 sticky top-0 z-40">
+          {/* Burger mobile */}
+          <button
+            className="md:hidden p-2 rounded-[10px] hover:bg-secondary transition-colors"
+            onClick={() => setMobileNavOpen((v) => !v)}
+            aria-label="Navigation"
+          >
+            <span className="block w-5 h-0.5 bg-[#2A1F2D] mb-1.5" />
+            <span className="block w-5 h-0.5 bg-[#2A1F2D] mb-1.5" />
+            <span className="block w-5 h-0.5 bg-[#2A1F2D]" />
+          </button>
+
+          <div>
+            <h1 className="text-base font-bold text-[#2A1F2D] leading-tight">
+              Bonjour, {displayName} 👋
+            </h1>
+            <p className="text-xs text-[#7A6B80]">Tableau de bord professionnel</p>
+          </div>
+
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-secondary text-primary">
+              Plan {plan}
             </span>
           </div>
         </header>
 
-        {/* Nav mobile déroulante */}
+        {/* Mobile nav */}
         {mobileNavOpen && (
-          <nav className="md:hidden bg-white border-b px-4 py-3 flex flex-col gap-1 shadow-sm">
-            {NAV_ITEMS.map(({ href, label }) => (
+          <nav className="md:hidden border-b border-[#EDE8F0] px-4 py-3 flex flex-col gap-1 bg-white animate-fadeIn">
+            {NAV_ITEMS.map(({ href, icon, label }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileNavOpen(false)}
-                className={`rounded-[24px] px-3 py-2 text-sm transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all ${
                   isActive(href)
-                    ? 'bg-pink-50 text-primary font-medium'
-                    : 'text-gray-700 hover:bg-pink-50 hover:text-primary'
+                    ? 'bg-secondary text-primary'
+                    : 'text-[#7A6B80] hover:bg-secondary hover:text-primary'
                 }`}
               >
+                <span className="text-base">{icon}</span>
                 {label}
               </Link>
             ))}
           </nav>
         )}
 
-        <main className="flex-1 bg-gray-50 px-4 py-6 md:px-8">
+        {/* Content */}
+        <main className="flex-1 px-5 py-8 md:px-8">
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookMeUp — Profil Pro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #C86DD7; --primary-dark: #9C44AF;
+      --secondary: #F5E9F8; --bg: #FAF7FB;
+      --text-dark: #2A1F2D; --text-muted: #7A6B80;
+      --border: #EDE8F0; --white: #FFFFFF;
+      --shadow-sm: 0 2px 8px rgba(200,109,215,0.08);
+      --shadow-md: 0 8px 24px rgba(200,109,215,0.12);
+      --shadow-lg: 0 15px 40px rgba(0,0,0,0.06);
+      --radius: 32px; --radius-sm: 16px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-dark); }
+
+    /* HEADER */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,247,251,0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; gap: 32px; }
+    .logo { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    nav { display: flex; gap: 8px; flex: 1; }
+    nav a { padding: 8px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--text-muted); text-decoration: none; transition: all .2s; }
+    nav a:hover { color: var(--primary); background: var(--secondary); }
+    .header-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+    .btn-ghost { padding: 9px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--primary); background: transparent; border: none; cursor: pointer; }
+    .btn-primary-sm { padding: 9px 22px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(200,109,215,.35); }
+
+    /* BREADCRUMB */
+    .breadcrumb { max-width: 1280px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; } .breadcrumb a:hover { color: var(--primary); }
+    .breadcrumb span { color: var(--text-dark); font-weight: 500; }
+    .chevron { color: var(--border); }
+
+    /* HERO BANNER */
+    .hero-banner {
+      width: 100%; height: 280px; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #2A1F2D 0%, #4a1f5a 50%, #2d0f3a 100%);
+    }
+    .hero-banner-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 100%; display: flex; align-items: flex-end; padding-bottom: 0; }
+    .gallery-strip { display: flex; gap: 8px; height: 200px; width: 100%; align-items: flex-end; }
+    .gallery-item {
+      border-radius: 16px 16px 0 0; overflow: hidden; cursor: pointer;
+      transition: transform .2s; position: relative;
+      display: flex; align-items: center; justify-content: center; font-size: 40px;
+    }
+    .gallery-item:hover { transform: translateY(-4px); }
+    .gallery-item.main { flex: 2; height: 100%; background: linear-gradient(135deg, #f5e9f8, #e8d0f0); }
+    .gallery-item.sm { flex: 1; height: 70%; background: linear-gradient(135deg, #fce4ec, #f8d0e8); }
+    .gallery-item.sm2 { flex: 1; height: 55%; background: linear-gradient(135deg, #e8f4fd, #d4eaf7); }
+    .gallery-item.sm3 { flex: 1; height: 70%; background: linear-gradient(135deg, #f3f0ff, #e8e0ff); }
+    .gallery-more {
+      position: absolute; bottom: 0; right: 0; left: 0;
+      background: rgba(42,31,45,0.6); backdrop-filter: blur(4px);
+      color: white; font-size: 13px; font-weight: 600;
+      padding: 8px; text-align: center;
+    }
+    .hero-orb {
+      position: absolute; border-radius: 50%; pointer-events: none;
+    }
+    .hero-orb-1 { top: -80px; right: -60px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(200,109,215,.2) 0%, transparent 70%); }
+    .hero-orb-2 { top: 20px; left: 20%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(156,68,175,.15) 0%, transparent 70%); }
+
+    /* PRO INFO CARD */
+    .main-layout { max-width: 1280px; margin: 0 auto; padding: 0 24px 80px; display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; }
+    .pro-info-card {
+      background: var(--white); border-radius: var(--radius); padding: 28px;
+      margin-top: -60px; position: relative; z-index: 10;
+      border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+    }
+    .pro-avatar-row { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 20px; }
+    .pro-avatar {
+      width: 88px; height: 88px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
+      border: 4px solid var(--white); box-shadow: var(--shadow-md); flex-shrink: 0;
+    }
+    .pro-avatar-info { flex: 1; }
+    .pro-main-name { font-size: 26px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .pro-type { font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
+    .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge-pill {
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .badge-verified { background: #DCFCE7; color: #16A34A; }
+    .badge-top { background: var(--secondary); color: var(--primary); }
+    .badge-new { background: #FEF3C7; color: #D97706; }
+
+    .pro-stats-row { display: flex; gap: 24px; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .pro-stat { text-align: center; }
+    .pro-stat-value { font-size: 22px; font-weight: 800; color: var(--text-dark); }
+    .pro-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .pro-about { margin-bottom: 20px; }
+    .pro-about h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .pro-about p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+    .pro-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .meta-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg); border-radius: 14px; border: 1px solid var(--border); }
+    .meta-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--secondary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .meta-text-label { font-size: 11px; color: var(--text-muted); }
+    .meta-text-value { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+    .tab { flex: 1; padding: 10px; border-radius: 12px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; color: var(--text-muted); background: transparent; transition: all .15s; text-align: center; }
+    .tab.active { background: var(--white); color: var(--primary); font-weight: 700; box-shadow: var(--shadow-sm); }
+
+    /* SERVICES */
+    .section-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 16px; }
+    .service-category { margin-bottom: 24px; }
+    .service-cat-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .service-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px; border-radius: 16px; background: var(--white);
+      border: 1px solid var(--border); margin-bottom: 10px;
+      transition: border-color .2s, box-shadow .2s; cursor: pointer;
+    }
+    .service-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .service-item.selected { border-color: var(--primary); background: var(--secondary); }
+    .service-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--secondary); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .service-name { font-size: 15px; font-weight: 600; color: var(--text-dark); }
+    .service-duration { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .service-price { margin-left: auto; font-size: 16px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+
+    /* REVIEWS */
+    .reviews-summary { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; padding: 20px; background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .big-rating { font-size: 56px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+    .rating-bars { flex: 1; }
+    .rating-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .rating-bar-label { font-size: 12px; color: var(--text-muted); width: 14px; text-align: right; }
+    .rating-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .rating-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); border-radius: 3px; }
+    .rating-count { font-size: 12px; color: var(--text-muted); width: 28px; }
+    .review-card { padding: 18px; background: var(--white); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; }
+    .review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .reviewer-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), #e0c8f0); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .reviewer-name { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    .reviewer-date { font-size: 12px; color: var(--text-muted); }
+    .review-stars { margin-left: auto; color: #F59E0B; font-size: 13px; letter-spacing: 1px; }
+    .review-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .review-service-tag { display: inline-block; margin-top: 8px; padding: 3px 10px; background: var(--secondary); color: var(--primary); border-radius: 8px; font-size: 11px; font-weight: 500; }
+
+    /* BOOKING SIDEBAR */
+    .booking-sidebar { position: sticky; top: 88px; }
+    .booking-card {
+      background: var(--white); border-radius: var(--radius); padding: 24px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+      margin-top: -20px; position: relative; z-index: 5;
+    }
+    .booking-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .booking-card .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .selected-service-preview {
+      padding: 14px; background: var(--secondary); border-radius: 14px; border: 1.5px solid rgba(200,109,215,.3);
+      margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .ssp-name { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    .ssp-duration { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .ssp-price { font-size: 18px; font-weight: 800; color: var(--primary); }
+
+    .mini-calendar { margin-bottom: 16px; }
+    .mini-cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .mini-cal-title { font-size: 14px; font-weight: 700; }
+    .cal-nav { width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-muted); }
+    .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+    .cal-day-header { font-size: 11px; font-weight: 600; color: var(--text-muted); padding: 4px 0; }
+    .cal-day {
+      padding: 7px 4px; border-radius: 8px; font-size: 13px; cursor: pointer;
+      transition: all .15s; color: var(--text-dark);
+    }
+    .cal-day:hover { background: var(--secondary); color: var(--primary); }
+    .cal-day.active { background: var(--primary); color: white; font-weight: 700; }
+    .cal-day.has-slots { position: relative; }
+    .cal-day.has-slots::after { content: '•'; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--primary); }
+    .cal-day.active::after { color: rgba(255,255,255,.7); }
+    .cal-day.disabled { color: var(--border); cursor: default; pointer-events: none; }
+
+    .time-slots-label { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .time-slots-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .slot-btn {
+      padding: 9px 4px; border-radius: 12px; font-size: 13px; font-weight: 600; text-align: center;
+      border: 1.5px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted);
+      transition: all .15s;
+    }
+    .slot-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--secondary); }
+    .slot-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
+    .slot-btn.booked { background: var(--bg); color: var(--border); cursor: default; text-decoration: line-through; border-color: var(--border); }
+
+    .btn-book-main {
+      width: 100%; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700;
+      color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(200,109,215,.4);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-book-main:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(200,109,215,.5); }
+    .booking-note { margin-top: 12px; font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.5; }
+    .contact-row { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .contact-btn {
+      flex: 1; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted);
+      transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .contact-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--secondary); }
+
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .booking-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="logo">BookMeUp</span>
+    <nav>
+      <a href="#">Accueil</a>
+      <a href="#">Recherche</a>
+      <a href="#">Mes réservations</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-ghost">Connexion</button>
+      <button class="btn-primary-sm">S'inscrire</button>
+    </div>
+  </div>
+</header>
+
+<div class="breadcrumb">
+  <a href="#">Accueil</a><span class="chevron">›</span>
+  <a href="#">Coiffure · Paris</a><span class="chevron">›</span>
+  <span>Salon Élégance — Sophie Martin</span>
+</div>
+
+<!-- HERO GALLERY -->
+<div class="hero-banner">
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-banner-inner">
+    <div class="gallery-strip">
+      <div class="gallery-item main">💇‍♀️</div>
+      <div class="gallery-item sm">✂️</div>
+      <div class="gallery-item sm2">🌸</div>
+      <div class="gallery-item sm3" style="position:relative;">
+        🎨
+        <div class="gallery-more">+12 photos</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- LEFT: PRO INFO -->
+  <div>
+    <div class="pro-info-card">
+      <div class="pro-avatar-row">
+        <div class="pro-avatar">👩‍🎨</div>
+        <div class="pro-avatar-info">
+          <div class="pro-main-name">Salon Élégance</div>
+          <div class="pro-type">Coiffure & Coloration — Sophie Martin</div>
+          <div class="badges-row">
+            <span class="badge-pill badge-verified">✓ Profil vérifié</span>
+            <span class="badge-pill badge-top">⭐ Top Pro</span>
+            <span class="badge-pill badge-new">🏅 +500 réservations</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pro-stats-row">
+        <div class="pro-stat"><div class="pro-stat-value">4.9</div><div class="pro-stat-label">⭐ Note</div></div>
+        <div class="pro-stat"><div class="pro-stat-value">287</div><div class="pro-stat-label">Avis</div></div>
+        <div class="pro-stat"><div class="pro-stat-value">8 ans</div><div class="pro-stat-label">d'expérience</div></div>
+        <div class="pro-stat"><div class="pro-stat-value">512</div><div class="pro-stat-label">Réservations</div></div>
+      </div>
+
+      <div class="pro-meta-grid">
+        <div class="meta-item">
+          <div class="meta-icon">📍</div>
+          <div>
+            <div class="meta-text-label">Adresse</div>
+            <div class="meta-text-value">12 rue de Bretagne, Paris 3e</div>
+          </div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-icon">🕐</div>
+          <div>
+            <div class="meta-text-label">Horaires</div>
+            <div class="meta-text-value">Lun–Sam · 9h–19h</div>
+          </div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-icon">🌐</div>
+          <div>
+            <div class="meta-text-label">Langues</div>
+            <div class="meta-text-value">Français, Anglais</div>
+          </div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-icon">💳</div>
+          <div>
+            <div class="meta-text-label">Paiement</div>
+            <div class="meta-text-value">CB, Esp, Chèque</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pro-about">
+        <h3>À propos</h3>
+        <p>Coiffeuse professionnelle depuis 8 ans, spécialisée en coloration et techniques balayage. Mon salon vous accueille dans une atmosphère chaleureuse et intimiste au cœur du Marais. Je travaille exclusivement avec des produits respectueux de vos cheveux et de l'environnement.</p>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div style="margin-top:24px;">
+      <div class="tabs">
+        <button class="tab active">Prestations</button>
+        <button class="tab">Avis (287)</button>
+        <button class="tab">Photos</button>
+        <button class="tab">Infos</button>
+      </div>
+
+      <!-- SERVICES LIST -->
+      <h2 class="section-title">Toutes les prestations</h2>
+
+      <div class="service-category">
+        <div class="service-cat-title">Coiffure</div>
+        <div class="service-item selected">
+          <div class="service-icon">✂️</div>
+          <div>
+            <div class="service-name">Coupe femme + brushing</div>
+            <div class="service-duration">⏱ 60 min</div>
+          </div>
+          <div class="service-price">45 €</div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon">💇‍♀️</div>
+          <div>
+            <div class="service-name">Coupe + shampoing + soin</div>
+            <div class="service-duration">⏱ 75 min</div>
+          </div>
+          <div class="service-price">55 €</div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon">🌀</div>
+          <div>
+            <div class="service-name">Brushing seul</div>
+            <div class="service-duration">⏱ 45 min</div>
+          </div>
+          <div class="service-price">30 €</div>
+        </div>
+      </div>
+
+      <div class="service-category">
+        <div class="service-cat-title">Coloration</div>
+        <div class="service-item">
+          <div class="service-icon">🎨</div>
+          <div>
+            <div class="service-name">Balayage californien</div>
+            <div class="service-duration">⏱ 2h30</div>
+          </div>
+          <div class="service-price">120 €</div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon">✨</div>
+          <div>
+            <div class="service-name">Couleur complète</div>
+            <div class="service-duration">⏱ 1h30</div>
+          </div>
+          <div class="service-price">75 €</div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon">🌟</div>
+          <div>
+            <div class="service-name">Mèches + brushing</div>
+            <div class="service-duration">⏱ 2h</div>
+          </div>
+          <div class="service-price">95 €</div>
+        </div>
+      </div>
+
+      <!-- REVIEWS SECTION -->
+      <h2 class="section-title" style="margin-top:32px;">Avis clients</h2>
+      <div class="reviews-summary">
+        <div>
+          <div class="big-rating">4.9</div>
+          <div style="color:#F59E0B;font-size:18px;margin-top:4px;">★★★★★</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">287 avis</div>
+        </div>
+        <div class="rating-bars">
+          <div class="rating-bar-row"><span class="rating-bar-label">5</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:82%"></div></div><span class="rating-count">236</span></div>
+          <div class="rating-bar-row"><span class="rating-bar-label">4</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:12%"></div></div><span class="rating-count">35</span></div>
+          <div class="rating-bar-row"><span class="rating-bar-label">3</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:4%"></div></div><span class="rating-count">11</span></div>
+          <div class="rating-bar-row"><span class="rating-bar-label">2</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:1%"></div></div><span class="rating-count">3</span></div>
+          <div class="rating-bar-row"><span class="rating-bar-label">1</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:0.5%"></div></div><span class="rating-count">2</span></div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-header">
+          <div class="reviewer-avatar">👩</div>
+          <div>
+            <div class="reviewer-name">Marie D.</div>
+            <div class="reviewer-date">Il y a 3 jours</div>
+          </div>
+          <div class="review-stars">★★★★★</div>
+        </div>
+        <p class="review-text">Sophie est absolument incroyable ! Mon balayage est parfait, exactement ce que je voulais. Le salon est magnifique, propre et très chaleureux. Je recommande les yeux fermés !</p>
+        <span class="review-service-tag">Balayage californien</span>
+      </div>
+
+      <div class="review-card">
+        <div class="review-header">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#fce4ec,#f8d0e8);">👱‍♀️</div>
+          <div>
+            <div class="reviewer-name">Camille R.</div>
+            <div class="reviewer-date">Il y a 1 semaine</div>
+          </div>
+          <div class="review-stars">★★★★★</div>
+        </div>
+        <p class="review-text">Deuxième visite chez Sophie, toujours aussi satisfaite. Elle prend le temps d'écouter ce qu'on veut et donne de bons conseils. Le résultat est toujours top !</p>
+        <span class="review-service-tag">Coupe + soin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: BOOKING SIDEBAR -->
+  <div class="booking-sidebar">
+    <div class="booking-card">
+      <h3>Réserver</h3>
+      <p class="subtitle">Choisissez une prestation et un créneau</p>
+
+      <div class="selected-service-preview">
+        <div>
+          <div class="ssp-name">Coupe femme + brushing</div>
+          <div class="ssp-duration">⏱ 60 min</div>
+        </div>
+        <div class="ssp-price">45 €</div>
+      </div>
+
+      <div class="mini-calendar">
+        <div class="mini-cal-header">
+          <button class="cal-nav">←</button>
+          <span class="mini-cal-title">Mars 2026</span>
+          <button class="cal-nav">→</button>
+        </div>
+        <div class="mini-cal-grid">
+          <span class="cal-day-header">L</span><span class="cal-day-header">M</span><span class="cal-day-header">M</span><span class="cal-day-header">J</span><span class="cal-day-header">V</span><span class="cal-day-header">S</span><span class="cal-day-header">D</span>
+          <span class="cal-day disabled">24</span><span class="cal-day disabled">25</span><span class="cal-day has-slots">26</span><span class="cal-day has-slots active">27</span><span class="cal-day has-slots">28</span><span class="cal-day has-slots">29</span><span class="cal-day">30</span>
+          <span class="cal-day has-slots">31</span><span class="cal-day has-slots">1</span><span class="cal-day has-slots">2</span><span class="cal-day has-slots">3</span><span class="cal-day has-slots">4</span><span class="cal-day has-slots">5</span><span class="cal-day">6</span>
+          <span class="cal-day has-slots">7</span><span class="cal-day has-slots">8</span><span class="cal-day has-slots">9</span><span class="cal-day has-slots">10</span><span class="cal-day has-slots">11</span><span class="cal-day has-slots">12</span><span class="cal-day">13</span>
+        </div>
+      </div>
+
+      <div class="time-slots-label"><span class="dot"></span> Jeudi 27 mars — créneaux disponibles</div>
+      <div class="slots-grid">
+        <button class="slot-btn booked">09:00</button>
+        <button class="slot-btn">09:30</button>
+        <button class="slot-btn">10:00</button>
+        <button class="slot-btn active">10:30</button>
+        <button class="slot-btn">11:00</button>
+        <button class="slot-btn">11:30</button>
+        <button class="slot-btn booked">14:00</button>
+        <button class="slot-btn">14:30</button>
+        <button class="slot-btn">15:00</button>
+        <button class="slot-btn">16:00</button>
+        <button class="slot-btn">17:00</button>
+        <button class="slot-btn booked">18:00</button>
+      </div>
+
+      <button class="btn-book-main">Confirmer la réservation →</button>
+      <p class="booking-note">Annulation gratuite jusqu'à 24h avant · Paiement en salon</p>
+
+      <div class="contact-row">
+        <button class="contact-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8 8.09a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Appeler
+        </button>
+        <button class="contact-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Message
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

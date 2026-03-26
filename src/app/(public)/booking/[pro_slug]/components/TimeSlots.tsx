@@ -108,50 +108,50 @@ export function TimeSlots({
 
   if (loading) {
     return (
-      <Card className="rounded-[32px] p-6">
-        <div className="flex items-center justify-center py-12">
+      <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+        <div className="flex items-center gap-3 py-8 justify-center text-[#7A6B80]">
           <Loader />
-          <span className="ml-3 text-slate-500">Chargement des créneaux...</span>
+          <span className="text-sm">Chargement des créneaux…</span>
         </div>
-      </Card>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="rounded-[32px] p-6">
-        <div className="mt-4 rounded-[24px] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+        <div className="rounded-[16px] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
-      </Card>
+      </div>
     )
   }
 
   if (slots.length === 0) {
     return (
-      <Card className="rounded-[32px] p-6">
-        <div className="text-center py-12 text-slate-600">
+      <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+        <div className="text-center py-8 text-[#7A6B80] text-sm">
           Aucun créneau disponible pour cette date.
         </div>
-      </Card>
+      </div>
     )
   }
 
   const groupedSlots = groupSlotsByTime(slots)
 
   return (
-    <Card className="rounded-[32px] p-6">
-      <h2 className="text-xl font-bold text-[#2A1F2D] mb-6">
-        Choisis un créneau
+    <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+      <h2 className="text-base font-bold text-[#2A1F2D] mb-5">
+        Choisissez un créneau
       </h2>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {groupedSlots.map((group) => (
           <div key={group.label}>
-            <h3 className="text-sm font-semibold text-slate-500 mb-4 uppercase tracking-wide">
+            <h3 className="text-xs font-bold text-[#7A6B80] mb-3 uppercase tracking-wider">
               {group.label}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {group.slots.map((slot) => {
                 const isSelected = selectedTime === slot.time
                 return (
@@ -162,16 +162,13 @@ export function TimeSlots({
                     disabled={!slot.available}
                     className={`
                       flex items-center justify-center text-center
-                      rounded-[24px] px-6 py-4 text-base font-semibold transition-all
-                      transform hover:scale-105 active:scale-95
+                      rounded-[12px] px-3 py-3 text-sm font-bold transition-all
                       ${
                         !slot.available
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : isSelected && slot.available
-                          ? 'bg-primary text-white shadow-bookmeup-lg'
-                          : slot.available
-                          ? 'bg-secondary text-[#2A1F2D] hover:bg-primary hover:text-white hover:shadow-bookmeup'
-                          : ''
+                          ? 'bg-background text-[#EDE8F0] cursor-not-allowed line-through'
+                          : isSelected
+                          ? 'bg-primary text-white shadow-bookmeup-sm'
+                          : 'bg-secondary text-[#2A1F2D] hover:bg-primary hover:text-white hover:shadow-bookmeup-sm'
                       }
                     `}
                   >
@@ -183,7 +180,7 @@ export function TimeSlots({
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   )
 }
 

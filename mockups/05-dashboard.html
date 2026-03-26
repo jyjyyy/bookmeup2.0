@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookMeUp — Dashboard Pro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #C86DD7; --primary-dark: #9C44AF;
+      --secondary: #F5E9F8; --bg: #FAF7FB;
+      --text-dark: #2A1F2D; --text-muted: #7A6B80;
+      --border: #EDE8F0; --white: #FFFFFF;
+      --shadow-sm: 0 2px 8px rgba(200,109,215,0.08);
+      --shadow-md: 0 8px 24px rgba(200,109,215,0.12);
+      --shadow-lg: 0 15px 40px rgba(0,0,0,0.06);
+      --radius: 24px; --radius-sm: 16px;
+      --sidebar-width: 240px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-dark); min-height: 100vh; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar-width); flex-shrink: 0;
+      background: linear-gradient(180deg, #2A1F2D 0%, #1e1225 100%);
+      min-height: 100vh; display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+      padding: 0 0 24px;
+    }
+    .sidebar-logo {
+      padding: 22px 24px 20px;
+      font-size: 22px; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), #e890f0);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-section { padding: 16px 12px 4px; }
+    .sidebar-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.3); padding: 0 12px; margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+      border-radius: 12px; margin-bottom: 2px; cursor: pointer;
+      color: rgba(255,255,255,.55); font-size: 14px; font-weight: 500;
+      transition: all .2s; text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); }
+    .nav-item.active { background: rgba(200,109,215,.2); color: white; }
+    .nav-item .icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: rgba(255,255,255,.05); }
+    .nav-item.active .icon { background: rgba(200,109,215,.3); }
+    .nav-badge { margin-left: auto; background: var(--primary); color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .sidebar-pro {
+      margin-top: auto; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-pro-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .sidebar-pro-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+    .sidebar-pro-plan { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 1px; }
+    .sidebar-pro-chevron { margin-left: auto; color: rgba(255,255,255,.3); font-size: 16px; }
+
+    /* MAIN CONTENT */
+    .main { margin-left: var(--sidebar-width); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOP BAR */
+    .topbar {
+      background: rgba(250,247,251,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 0 32px; height: 68px;
+      display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-size: 20px; font-weight: 800; color: var(--text-dark); }
+    .topbar-sub { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
+    .topbar-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .topbar-search {
+      display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+      border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);
+      font-size: 13px; color: var(--text-muted); cursor: pointer;
+    }
+    .topbar-icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all .15s; position: relative; }
+    .topbar-icon-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--secondary); }
+    .notif-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #EF4444; border: 2px solid white; }
+
+    /* PAGE CONTENT */
+    .page-content { padding: 28px 32px 60px; }
+
+    /* KPI CARDS */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .kpi-card {
+      background: var(--white); border-radius: var(--radius); padding: 20px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .kpi-card.featured { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-color: transparent; }
+    .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .kpi-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .kpi-icon.purple { background: var(--secondary); }
+    .kpi-icon.green { background: #DCFCE7; }
+    .kpi-icon.blue { background: #DBEAFE; }
+    .kpi-icon.amber { background: #FEF3C7; }
+    .kpi-icon.white { background: rgba(255,255,255,.2); }
+    .kpi-trend { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 8px; display: flex; align-items: center; gap: 3px; }
+    .kpi-trend.up { color: #16A34A; background: #DCFCE7; }
+    .kpi-trend.down { color: #DC2626; background: #FEE2E2; }
+    .kpi-trend.neutral { color: var(--text-muted); background: var(--bg); }
+    .kpi-trend.white { color: rgba(255,255,255,.8); background: rgba(255,255,255,.15); }
+    .kpi-value { font-size: 30px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+    .kpi-card.featured .kpi-value { color: white; }
+    .kpi-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .kpi-card.featured .kpi-label { color: rgba(255,255,255,.7); }
+    .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .kpi-card.featured .kpi-sub { color: rgba(255,255,255,.6); }
+
+    /* CONTENT GRID */
+    .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+
+    /* SECTION HEADER */
+    .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .section-head h2 { font-size: 17px; font-weight: 700; }
+    .section-link { font-size: 13px; color: var(--primary); font-weight: 600; cursor: pointer; }
+
+    /* CALENDAR */
+    .calendar-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px; margin-bottom: 20px; }
+    .cal-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .cal-label { font-size: 16px; font-weight: 700; }
+    .cal-nav { display: flex; gap: 6px; }
+    .cal-nav-btn { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-muted); }
+    .week-header { display: grid; grid-template-columns: 50px repeat(7, 1fr); gap: 4px; text-align: center; margin-bottom: 8px; }
+    .week-header span { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); padding: 4px 0; }
+    .week-body { display: grid; grid-template-columns: 50px repeat(7, 1fr); gap: 4px; }
+    .time-label { font-size: 11px; color: var(--text-muted); text-align: right; padding-right: 8px; padding-top: 4px; line-height: 36px; }
+    .day-col { display: flex; flex-direction: column; gap: 3px; }
+    .cal-slot-empty { height: 36px; border-radius: 6px; }
+    .cal-slot-empty:hover { background: var(--bg); }
+    .cal-event {
+      border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s; line-height: 1.3;
+    }
+    .cal-event.purple { background: rgba(200,109,215,.15); color: var(--primary); border-left: 3px solid var(--primary); }
+    .cal-event.green { background: #DCFCE7; color: #16A34A; border-left: 3px solid #16A34A; }
+    .cal-event.blue { background: #DBEAFE; color: #2563EB; border-left: 3px solid #2563EB; }
+    .cal-event.amber { background: #FEF3C7; color: #D97706; border-left: 3px solid #D97706; }
+    .cal-event.tall { min-height: 54px; display: flex; flex-direction: column; justify-content: center; }
+    .cal-event:hover { opacity: .8; }
+
+    /* UPCOMING LIST */
+    .upcoming-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px; }
+    .appt-item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .appt-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .appt-time-col { text-align: center; min-width: 52px; padding: 8px; background: var(--secondary); border-radius: 12px; }
+    .appt-time { font-size: 15px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .appt-duration { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .appt-client-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), #e0c8f0); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .appt-name { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+    .appt-service { font-size: 12px; color: var(--text-muted); }
+    .appt-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+    .appt-price { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+    .appt-status { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+    .status-confirmed { background: #DCFCE7; color: #16A34A; }
+    .status-pending { background: #FEF3C7; color: #D97706; }
+    .status-cancelled { background: #FEE2E2; color: #DC2626; }
+
+    /* RIGHT SIDEBAR */
+    .right-col { display: flex; flex-direction: column; gap: 20px; }
+    .mini-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 20px; }
+
+    /* CHART */
+    .chart-bars { display: flex; gap: 8px; align-items: flex-end; height: 90px; margin: 12px 0 4px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar {
+      width: 100%; border-radius: 6px 6px 0 0;
+      background: linear-gradient(to top, var(--primary-dark), var(--primary));
+      transition: opacity .15s; cursor: pointer;
+    }
+    .bar:hover { opacity: .8; }
+    .bar.muted { background: var(--secondary); }
+    .bar-day { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+    .chart-footer { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+
+    /* QUICK ACTIONS */
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .qa-btn {
+      padding: 12px 10px; border-radius: 14px; border: 1.5px solid var(--border);
+      background: var(--bg); cursor: pointer; text-align: center; transition: all .15s;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .qa-btn:hover { border-color: var(--primary); background: var(--secondary); }
+    .qa-icon { font-size: 20px; }
+    .qa-label { font-size: 12px; font-weight: 600; color: var(--text-dark); }
+
+    /* NOTIFICATIONS */
+    .notif-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .notif-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .notif-dot-icon { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .notif-dot-icon.purple { background: var(--primary); }
+    .notif-dot-icon.green { background: #16A34A; }
+    .notif-dot-icon.amber { background: #D97706; }
+    .notif-text { font-size: 13px; color: var(--text-dark); line-height: 1.4; }
+    .notif-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">BookMeUp</div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Principal</div>
+    <a class="nav-item active" href="#">
+      <span class="icon">📊</span> Tableau de bord
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">📅</span> Agenda
+      <span class="nav-badge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">👥</span> Clients
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">✂️</span> Prestations
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Gestion</div>
+    <a class="nav-item" href="#">
+      <span class="icon">💬</span> Messages
+      <span class="nav-badge">2</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">📈</span> Statistiques
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">⭐</span> Avis
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">💳</span> Paiements
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Compte</div>
+    <a class="nav-item" href="#">
+      <span class="icon">🌐</span> Mon profil public
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">⚙️</span> Paramètres
+    </a>
+  </div>
+
+  <div class="sidebar-pro">
+    <div class="sidebar-pro-avatar">👩‍🎨</div>
+    <div>
+      <div class="sidebar-pro-name">Sophie Martin</div>
+      <div class="sidebar-pro-plan">Plan Pro · Actif</div>
+    </div>
+    <span class="sidebar-pro-chevron">⋯</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Bonjour, Sophie 👋</div>
+      <div class="topbar-sub">Jeudi 27 mars 2026 · 3 rendez-vous aujourd'hui</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Rechercher…
+      </div>
+      <button class="topbar-icon-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <button class="topbar-icon-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE CONTENT -->
+  <div class="page-content">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card featured">
+        <div class="kpi-top">
+          <div class="kpi-icon white">💰</div>
+          <span class="kpi-trend white">↑ +12%</span>
+        </div>
+        <div class="kpi-value">2 840 €</div>
+        <div class="kpi-label">Revenus ce mois</div>
+        <div class="kpi-sub">vs 2 536 € le mois dernier</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon purple">📅</div>
+          <span class="kpi-trend up">↑ +8%</span>
+        </div>
+        <div class="kpi-value">47</div>
+        <div class="kpi-label">Réservations ce mois</div>
+        <div class="kpi-sub">3 aujourd'hui · 8 cette semaine</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon green">👥</div>
+          <span class="kpi-trend up">↑ +5</span>
+        </div>
+        <div class="kpi-value">134</div>
+        <div class="kpi-label">Clients actifs</div>
+        <div class="kpi-sub">12 nouveaux ce mois</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon amber">⭐</div>
+          <span class="kpi-trend neutral">stable</span>
+        </div>
+        <div class="kpi-value">4.9</div>
+        <div class="kpi-label">Note moyenne</div>
+        <div class="kpi-sub">287 avis · 96% positifs</div>
+      </div>
+    </div>
+
+    <!-- CONTENT GRID -->
+    <div class="content-grid">
+
+      <!-- LEFT: CALENDAR + UPCOMING -->
+      <div>
+        <!-- MINI WEEK CALENDAR -->
+        <div class="calendar-card">
+          <div class="cal-controls">
+            <div class="cal-label">Semaine du 24 mars</div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn">←</button>
+              <button class="cal-nav-btn" style="padding:0 12px;width:auto;font-size:12px;font-weight:600;color:var(--primary);border-color:var(--primary);">Aujourd'hui</button>
+              <button class="cal-nav-btn">→</button>
+            </div>
+          </div>
+          <div class="week-header">
+            <span></span>
+            <span>Lun 24</span>
+            <span>Mar 25</span>
+            <span>Mer 26</span>
+            <span style="color:var(--primary);">Jeu 27</span>
+            <span>Ven 28</span>
+            <span>Sam 29</span>
+            <span>Dim 30</span>
+          </div>
+          <div class="week-body">
+            <!-- 09h -->
+            <span class="time-label">09h</span>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event purple">Marie D.<br/>Coupe</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event green tall">Clara M.<br/>Balayage<br/>2h30</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event amber">Emma R.<br/>Coloration</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <!-- 10h -->
+            <span class="time-label">10h</span>
+            <div class="day-col"><div class="cal-event blue">Julie P.<br/>Mèches</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event purple">Sophie L.<br/>Brushing</div></div>
+            <div class="day-col"></div>
+            <div class="day-col"><div class="cal-event green">Lucie T.<br/>Coupe</div></div>
+            <div class="day-col"></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <!-- 11h -->
+            <span class="time-label">11h</span>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event amber">Camille V.<br/>Soin</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event purple">Inès F.<br/>Balayage</div></div>
+            <div class="day-col"></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <!-- 14h -->
+            <span class="time-label">14h</span>
+            <div class="day-col"><div class="cal-event green">Anne S.<br/>Coupe</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event blue">Nora B.<br/>Couleur</div></div>
+            <div class="day-col"><div class="cal-event purple">Alice K.<br/>Brushing</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+            <div class="day-col"><div class="cal-event amber tall">Marie-L.<br/>Kératine<br/>2h</div></div>
+            <div class="day-col"><div class="cal-slot-empty"></div></div>
+          </div>
+        </div>
+
+        <!-- TODAY'S APPOINTMENTS -->
+        <div class="upcoming-card">
+          <div class="section-head">
+            <h2>Aujourd'hui · 27 mars</h2>
+            <span class="section-link">Voir tout →</span>
+          </div>
+
+          <div class="appt-item">
+            <div class="appt-time-col">
+              <div class="appt-time">09:30</div>
+              <div class="appt-duration">2h30</div>
+            </div>
+            <div class="appt-client-avatar">👩</div>
+            <div>
+              <div class="appt-name">Clara Martin</div>
+              <div class="appt-service">Balayage californien · 120 €</div>
+            </div>
+            <div class="appt-actions">
+              <span class="appt-status status-confirmed">Confirmé</span>
+            </div>
+          </div>
+
+          <div class="appt-item">
+            <div class="appt-time-col" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));">
+              <div class="appt-time" style="color:white;">10:30</div>
+              <div class="appt-duration" style="color:rgba(255,255,255,.7);">60 min</div>
+            </div>
+            <div class="appt-client-avatar" style="background:linear-gradient(135deg,#fce4ec,#f8d0e8);">👱‍♀️</div>
+            <div>
+              <div class="appt-name">Alice Kowalski</div>
+              <div class="appt-service">Coupe femme + brushing · 45 €</div>
+            </div>
+            <div class="appt-actions">
+              <span class="appt-status status-confirmed" style="background:rgba(200,109,215,.15);color:var(--primary);">En cours</span>
+            </div>
+          </div>
+
+          <div class="appt-item">
+            <div class="appt-time-col">
+              <div class="appt-time">14:30</div>
+              <div class="appt-duration">1h30</div>
+            </div>
+            <div class="appt-client-avatar" style="background:linear-gradient(135deg,#e8f4fd,#d4eaf7);">👩‍🦰</div>
+            <div>
+              <div class="appt-name">Nora Benamar</div>
+              <div class="appt-service">Couleur complète · 75 €</div>
+            </div>
+            <div class="appt-actions">
+              <span class="appt-status status-pending">À venir</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
+
+        <!-- REVENUE CHART -->
+        <div class="mini-card">
+          <div class="section-head" style="margin-bottom:4px;">
+            <h2>Revenus (7 derniers jours)</h2>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--text-dark);">840 €</div>
+          <div style="font-size:12px;color:#16A34A;font-weight:600;">↑ +18% vs semaine dernière</div>
+          <div class="chart-bars">
+            <div class="bar-col"><div class="bar muted" style="height:40%;"></div><span class="bar-day">L</span></div>
+            <div class="bar-col"><div class="bar" style="height:65%;"></div><span class="bar-day">M</span></div>
+            <div class="bar-col"><div class="bar muted" style="height:50%;"></div><span class="bar-day">M</span></div>
+            <div class="bar-col"><div class="bar" style="height:85%;"></div><span class="bar-day">J</span></div>
+            <div class="bar-col"><div class="bar" style="height:100%;"></div><span class="bar-day">V</span></div>
+            <div class="bar-col"><div class="bar" style="height:70%;"></div><span class="bar-day">S</span></div>
+            <div class="bar-col"><div class="bar muted" style="height:20%;"></div><span class="bar-day">D</span></div>
+          </div>
+          <div class="chart-footer">
+            <span>Lun</span><span>Dim</span>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="mini-card">
+          <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;">Actions rapides</h2>
+          <div class="quick-actions">
+            <button class="qa-btn">
+              <span class="qa-icon">➕</span>
+              <span class="qa-label">Nouveau RDV</span>
+            </button>
+            <button class="qa-btn">
+              <span class="qa-icon">📋</span>
+              <span class="qa-label">Gérer dispo</span>
+            </button>
+            <button class="qa-btn">
+              <span class="qa-icon">💌</span>
+              <span class="qa-label">Envoyer SMS</span>
+            </button>
+            <button class="qa-btn">
+              <span class="qa-icon">📊</span>
+              <span class="qa-label">Exporter</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        <div class="mini-card">
+          <div class="section-head" style="margin-bottom:12px;">
+            <h2 style="font-size:15px;font-weight:700;">Notifications</h2>
+            <span class="section-link" style="font-size:12px;">Tout voir</span>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot-icon purple"></div>
+            <div>
+              <div class="notif-text"><strong>Emma Rodriguez</strong> a réservé une Coupe + soin pour demain 11h.</div>
+              <div class="notif-time">Il y a 12 min</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot-icon amber"></div>
+            <div>
+              <div class="notif-text"><strong>Rappel :</strong> 2 rendez-vous demain vendredi — confirmations envoyées.</div>
+              <div class="notif-time">Il y a 1h</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot-icon green"></div>
+            <div>
+              <div class="notif-text"><strong>Camille V.</strong> vous a laissé un avis 5 étoiles ⭐ !</div>
+              <div class="notif-time">Il y a 3h</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot-icon purple" style="background:var(--border);"></div>
+            <div>
+              <div class="notif-text">Marie L. a annulé son RDV du 29 mars 14h.</div>
+              <div class="notif-time">Hier à 18h42</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -656,8 +656,8 @@ export default function AccountPage() {
     >
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary mb-2">Compte</h1>
-        <p className="text-gray-600 text-sm">
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Compte</h1>
+        <p className="text-[#7A6B80] text-sm">
           Ces informations sont visibles sur votre fiche publique BookMeUp.
         </p>
       </div>
@@ -667,7 +667,7 @@ export default function AccountPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm"
+          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm"
         >
           {error}
         </motion.div>
@@ -678,7 +678,7 @@ export default function AccountPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[32px] text-sm"
+          className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[16px] text-sm"
         >
           {success}
         </motion.div>
@@ -695,16 +695,16 @@ export default function AccountPage() {
 
         <div className="space-y-4 mt-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2.5">
+            <label className="block text-sm font-medium text-[#2A1F2D] mb-2.5">
               Email
             </label>
             <input
               type="email"
               value={email}
               disabled
-              className="w-full px-5 py-3.5 rounded-[32px] border border-gray-200 bg-gray-50 text-slate-500 cursor-not-allowed"
+              className="w-full px-5 py-3.5 rounded-[32px] border border-[#EDE8F0] bg-background text-[#7A6B80] cursor-not-allowed"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[#7A6B80] mt-1">
               L'email ne peut pas être modifié
             </p>
           </div>
@@ -773,19 +773,19 @@ export default function AccountPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2.5">
+            <label className="block text-sm font-medium text-[#2A1F2D] mb-2.5">
               Description courte
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Décrivez votre salon en quelques mots..."
-              className="w-full px-5 py-3.5 rounded-[32px] border border-gray-200 bg-white text-slate-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 min-h-[120px] resize-y"
+              className="w-full px-5 py-3.5 rounded-[32px] border border-[#EDE8F0] bg-white text-slate-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 min-h-[120px] resize-y"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2.5">
+            <label className="block text-sm font-medium text-[#2A1F2D] mb-2.5">
               Lien public (slug)
             </label>
             <div className="flex gap-2">
@@ -804,18 +804,18 @@ export default function AccountPage() {
                 Générer automatiquement
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[#7A6B80] mt-1">
               Votre fiche sera accessible sur : /pro/{slug || 'votre-slug'}
             </p>
           </div>
 
-          <div className="pt-4 border-t border-gray-200">
+          <div className="pt-4 border-t border-[#EDE8F0]">
             <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-[#2A1F2D] mb-1">
                   Afficher dans la recherche
                 </label>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[#7A6B80]">
                   Permet aux clients de vous trouver via la recherche BookMeUp
                 </p>
                 {showInSearch && !slug.trim() && (
@@ -861,10 +861,10 @@ export default function AccountPage() {
         <div className="space-y-4 mt-6">
           {/* Bloc informatif Portfolio */}
           <div className="bg-pink-50 border border-pink-200 rounded-[24px] p-4">
-            <h3 className="text-sm font-semibold text-gray-800 mb-1.5">
+            <h3 className="text-sm font-semibold text-[#2A1F2D] mb-1.5">
               📸 Portfolio
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-[#7A6B80] leading-relaxed">
               Les photos sont temporairement disponibles via vos réseaux.
               Ajoutez votre lien Instagram ou Facebook pour que vos clientes puissent voir vos réalisations.
             </p>
@@ -878,7 +878,7 @@ export default function AccountPage() {
               onChange={(e) => setInstagram(e.target.value)}
               placeholder="https://instagram.com/..."
             />
-            <p className="text-xs text-gray-500 mt-1.5 ml-1">
+            <p className="text-xs text-[#7A6B80] mt-1.5 ml-1">
               Ex: https://instagram.com/moncompte
             </p>
           </div>
@@ -938,12 +938,12 @@ export default function AccountPage() {
                     handleFileUpload(e.dataTransfer.files)
                   }}
                 >
-                  <div className="border-2 border-dashed border-gray-300 rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
+                  <div className="border-2 border-dashed border-[#EDE8F0] rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
                     <div className="text-4xl mb-2">📸</div>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-sm text-[#7A6B80] mb-1">
                       Cliquez ou glissez-déposez vos photos ici
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[#7A6B80]">
                       Formats acceptés : JPG, PNG (max 2MB par image)
                     </p>
                   </div>
@@ -974,10 +974,10 @@ export default function AccountPage() {
                 {uploadState === "uploading" && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Progression</span>
-                      <span className="text-sm font-medium text-gray-900">{uploadProgress}%</span>
+                      <span className="text-sm text-[#7A6B80]">Progression</span>
+                      <span className="text-sm font-medium text-[#2A1F2D]">{uploadProgress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full bg-[#EDE8F0] rounded-full h-2.5">
                       <div
                         className="bg-primary h-2.5 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
@@ -986,15 +986,15 @@ export default function AccountPage() {
                   </div>
                 )}
                 {uploadStatus && (
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-2 text-sm text-[#7A6B80]">
                     {uploadStatus}
                   </div>
                 )}
                 {/* Debug panel */}
                 {debug && (
-                  <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono">
-                    <div className="font-semibold mb-2 text-gray-700">🔍 Debug Upload</div>
-                    <div className="space-y-1 text-gray-600">
+                  <div className="mt-4 p-4 bg-background border border-[#EDE8F0] rounded-lg text-xs font-mono">
+                    <div className="font-semibold mb-2 text-[#7A6B80]">🔍 Debug Upload</div>
+                    <div className="space-y-1 text-[#7A6B80]">
                       <div><strong>Step:</strong> {debug.step}</div>
                       {debug.info && (
                         <>
@@ -1017,12 +1017,12 @@ export default function AccountPage() {
             </>
           ) : (
             <div className="mb-6">
-              <div className="border-2 border-dashed border-gray-200 rounded-[32px] p-8 text-center bg-gray-50">
+              <div className="border-2 border-dashed border-[#EDE8F0] rounded-[32px] p-8 text-center bg-background">
                 <div className="text-4xl mb-3">📸</div>
-                <p className="text-base font-medium text-gray-700 mb-2">
+                <p className="text-base font-medium text-[#7A6B80] mb-2">
                   Photos bientôt disponibles
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[#7A6B80]">
                   Nous finalisons cette fonctionnalité. Vous pourrez bientôt ajouter vos photos ici.
                 </p>
               </div>
@@ -1062,7 +1062,7 @@ export default function AccountPage() {
               ))}
             </div>
           ) : PHOTOS_ENABLED ? (
-            <p className="text-sm text-gray-500 text-center py-8">
+            <p className="text-sm text-[#7A6B80] text-center py-8">
               Aucune photo pour le moment
             </p>
           ) : null}

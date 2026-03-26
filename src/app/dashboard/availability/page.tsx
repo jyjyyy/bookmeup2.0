@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { AvailabilitySkeleton } from '@/components/ui/skeleton'
 
 const DAY_LABELS = [
@@ -183,42 +181,41 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-5 max-w-3xl">
       <div>
-        <h1 className="text-3xl font-bold text-primary mb-2">Disponibilités</h1>
-        <p className="text-gray-600 text-sm">
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Disponibilités</h1>
+        <p className="text-sm text-[#7A6B80]">
           Définissez vos horaires de travail pour chaque jour de la semaine.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[32px] text-sm">
+        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[16px] text-sm">
           {success}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {DAY_ORDER.map((dayOfWeek) => {
           const day = days.find((d) => d.dayOfWeek === dayOfWeek)
           if (!day) return null
 
           return (
-            <Card key={dayOfWeek} className="rounded-[32px] shadow-bookmeup p-6">
+            <div key={dayOfWeek} className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
               {/* En-tête du jour */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  {/* Toggle */}
                   <button
                     type="button"
                     onClick={() => toggleDay(dayOfWeek)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                      day.isEnabled ? 'bg-primary' : 'bg-gray-200'
+                      day.isEnabled ? 'bg-primary' : 'bg-[#EDE8F0]'
                     }`}
                     aria-label={`${day.isEnabled ? 'Désactiver' : 'Activer'} ${DAY_LABELS[dayOfWeek]}`}
                   >
@@ -228,50 +225,46 @@ export default function AvailabilityPage() {
                       }`}
                     />
                   </button>
-                  <h2 className="text-base font-semibold text-[#2A1F2D]">
+                  <h2 className={`text-sm font-bold ${day.isEnabled ? 'text-[#2A1F2D]' : 'text-[#7A6B80]'}`}>
                     {DAY_LABELS[dayOfWeek]}
                   </h2>
                 </div>
 
-                <Button
+                <button
+                  type="button"
                   onClick={() => saveDay(dayOfWeek)}
                   disabled={saving === dayOfWeek}
-                  size="sm"
-                  className="rounded-[32px]"
+                  className="text-xs font-semibold text-primary hover:text-primaryDark border border-primary/30 hover:border-primary rounded-[10px] px-3 py-1.5 transition-all disabled:opacity-50"
                 >
                   {saving === dayOfWeek ? 'Enregistrement…' : 'Enregistrer'}
-                </Button>
+                </button>
               </div>
 
               {/* Plages horaires */}
               {day.isEnabled ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {day.slots.map((slot, slotIndex) => (
-                    <div key={slotIndex} className="flex items-center gap-3">
+                    <div key={slotIndex} className="flex items-center gap-2">
                       <div className="flex items-center gap-2 flex-1">
                         <input
                           type="time"
                           value={slot.start}
-                          onChange={(e) =>
-                            updateSlot(dayOfWeek, slotIndex, 'start', e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 rounded-[16px] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                          onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'start', e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-[12px] border border-[#EDE8F0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                         />
-                        <span className="text-gray-400 text-sm">→</span>
+                        <span className="text-[#C9BBD0] text-sm">→</span>
                         <input
                           type="time"
                           value={slot.end}
-                          onChange={(e) =>
-                            updateSlot(dayOfWeek, slotIndex, 'end', e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 rounded-[16px] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                          onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'end', e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-[12px] border border-[#EDE8F0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                         />
                       </div>
                       {day.slots.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeSlot(dayOfWeek, slotIndex)}
-                          className="text-red-400 hover:text-red-600 text-lg leading-none px-1"
+                          className="text-red-400 hover:text-red-600 text-lg leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50"
                           aria-label="Supprimer cette plage"
                         >
                           ×
@@ -282,15 +275,15 @@ export default function AvailabilityPage() {
                   <button
                     type="button"
                     onClick={() => addSlot(dayOfWeek)}
-                    className="text-sm text-primary hover:underline mt-1"
+                    className="text-xs text-primary hover:underline mt-1 font-semibold"
                   >
                     + Ajouter une plage
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">Fermé ce jour-là</p>
+                <p className="text-xs text-[#C9BBD0]">Fermé ce jour-là</p>
               )}
-            </Card>
+            </div>
           )
         })}
       </div>

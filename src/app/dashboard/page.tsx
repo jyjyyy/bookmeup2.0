@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-3">
           Tableau de bord
         </h1>
-        <p className="text-lg text-slate-600">
+        <p className="text-lg text-[#7A6B80]">
           Bienvenue sur votre espace professionnel BookMeUp
         </p>
       </div>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
             <h2 className="mt-2 text-xl font-bold text-[#2A1F2D]">
               Analyse de votre activité
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-[#7A6B80]">
               Réservations, revenus et performance par service.
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
             <p className="text-sm font-semibold text-[#2A1F2D]">
               🔒 Statistiques avancées indisponibles avec le plan Starter
             </p>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-[#7A6B80]">
               Passez à <span className="font-medium text-primary">Pro</span> ou{' '}
               <span className="font-medium text-primary">Premium</span> pour accéder aux graphiques.
             </p>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                     <span>Chargement des statistiques Premium…</span>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-[#7A6B80]">
                     Accédez à vos indicateurs avancés et exportez votre comptabilité.
                   </p>
                 )}
@@ -329,7 +329,7 @@ export default function DashboardPage() {
             <h2 className="text-xl md:text-2xl font-bold text-[#2A1F2D] mb-3">
               Bienvenue sur votre espace beauté
             </h2>
-            <p className="text-base text-slate-600 leading-relaxed">
+            <p className="text-base text-[#7A6B80] leading-relaxed">
               Ajoutez vos services, définissez vos horaires et commencez à accepter
               des réservations en ligne en quelques minutes.
             </p>

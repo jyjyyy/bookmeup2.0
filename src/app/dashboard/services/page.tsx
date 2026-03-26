@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ServicesSkeleton } from '@/components/ui/skeleton'
 import { AddServiceModal } from '@/components/services/AddServiceModal'
@@ -221,179 +220,142 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header amélioré */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-2">
+          <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
             Mes services
           </h1>
-          <p className="text-base text-slate-600">
+          <p className="text-sm text-[#7A6B80]">
             Gérez vos services et tarifs
           </p>
         </div>
         {proId && (
           <Button
             onClick={() => setAddModalOpen(true)}
-            className="rounded-[32px] px-6 py-3 shadow-bookmeup hover:shadow-bookmeup-lg transition-all"
+            className="btn-gradient rounded-[14px] px-5 py-2.5 text-sm font-bold shadow-bookmeup-sm"
           >
             + Ajouter un service
           </Button>
         )}
       </div>
 
-      {/* Error Message amélioré */}
       {error && (
-        <Card className="rounded-[32px] bg-red-50 border-2 border-red-200 p-6 shadow-bookmeup-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-red-700 font-semibold mb-1">Erreur</p>
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReload}
-              className="rounded-[32px] border-red-300 text-red-700 hover:bg-red-100"
-            >
-              Réessayer
-            </Button>
+        <div className="bg-red-50 border border-red-200 rounded-[16px] p-4 flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-red-700 font-semibold text-sm mb-0.5">Erreur</p>
+            <p className="text-red-600 text-xs">{error}</p>
           </div>
-        </Card>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReload}
+            className="rounded-[12px] border-red-300 text-red-700 hover:bg-red-100 text-xs"
+          >
+            Réessayer
+          </Button>
+        </div>
       )}
 
-      {/* Services Grid amélioré */}
       {services.length === 0 ? (
-        <Card className="rounded-[32px] p-12 md:p-16 text-center shadow-bookmeup">
+        <div className="bg-white rounded-[24px] border border-[#EDE8F0] p-12 text-center shadow-bookmeup-sm">
           <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">✨</span>
-            </div>
-            <h3 className="text-xl font-semibold text-[#2A1F2D] mb-3">
+            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-5 text-3xl">✨</div>
+            <h3 className="text-base font-bold text-[#2A1F2D] mb-2">
               Aucun service pour le moment
             </h3>
-            <p className="text-slate-600 mb-6">
-              Vous n'avez pas encore de services. Créez votre premier service pour commencer à accepter des réservations.
+            <p className="text-sm text-[#7A6B80] mb-6">
+              Créez votre premier service pour commencer à accepter des réservations.
             </p>
             {proId && (
               <Button
                 onClick={() => setAddModalOpen(true)}
-                className="rounded-[32px] px-6 py-3 shadow-bookmeup hover:shadow-bookmeup-lg transition-all"
+                className="btn-gradient rounded-[14px] px-5 py-2.5 text-sm font-bold"
               >
                 Créer votre premier service
               </Button>
             )}
           </div>
-        </Card>
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {groupedServices.map((group) => {
             const isExpanded = expandedCategories.has(group.category)
             return (
-              <div key={group.category} className="border border-slate-200 rounded-[24px] overflow-hidden bg-white shadow-bookmeup-sm">
+              <div key={group.category} className="bg-white border border-[#EDE8F0] rounded-[20px] overflow-hidden shadow-bookmeup-sm">
                 <button
                   type="button"
                   onClick={() => toggleCategory(group.category)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-secondary transition-colors"
                 >
-                  <h2 className="text-xl font-semibold text-[#2A1F2D]">
-                    {group.category} ({group.services.length})
+                  <h2 className="text-sm font-bold text-[#2A1F2D]">
+                    {group.category} <span className="text-[#7A6B80] font-normal">({group.services.length})</span>
                   </h2>
                   <svg
-                    className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${
-                      isExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className={`w-4 h-4 text-[#7A6B80] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <div className="px-6 pb-6 pt-4">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="px-5 pb-5 pt-2 border-t border-[#EDE8F0]">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <AnimatePresence>
                         {group.services.map((service, index) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="rounded-[32px] p-6 h-full flex flex-col shadow-bookmeup hover:shadow-bookmeup-lg transition-all duration-300 border border-white/70 bg-white/90">
-                  {/* En-tête avec nom et statut */}
-                  <div className="mb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-xl font-bold text-[#2A1F2D] flex-1 pr-2">
-                        {service.name}
-                      </h3>
-                      <span
-                        className={`text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap ${
-                          service.isActive
-                            ? 'bg-green-100 text-green-700 border border-green-200'
-                            : 'bg-gray-100 text-gray-600 border border-gray-200'
-                        }`}
-                      >
-                        {service.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </div>
+                          <motion.div
+                            key={service.id}
+                            suppressHydrationWarning
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <div className="bg-background rounded-[16px] p-5 h-full flex flex-col border border-[#EDE8F0] hover:border-primary/30 transition-all">
+                              <div className="mb-3">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h3 className="text-sm font-bold text-[#2A1F2D] flex-1 pr-2">
+                                    {service.name}
+                                  </h3>
+                                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${
+                                    service.isActive
+                                      ? 'bg-[#DCFCE7] text-[#166534]'
+                                      : 'bg-secondary text-[#7A6B80]'
+                                  }`}>
+                                    {service.isActive ? 'Actif' : 'Inactif'}
+                                  </span>
+                                </div>
+                                {service.description && (
+                                  <p className="text-xs text-[#7A6B80] line-clamp-2 leading-relaxed">
+                                    {service.description}
+                                  </p>
+                                )}
+                              </div>
 
-                    {service.description && (
-                      <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                        {service.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Prix et durée */}
-                  <div className="mt-auto pt-4 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Prix</p>
-                        <span className="text-3xl font-bold text-primary">
-                          {service.price} €
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-slate-500 mb-1">Durée</p>
-                        <p className="text-lg font-semibold text-[#2A1F2D]">
-                          {service.duration} min
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Boutons d'action */}
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleEdit(service)}
-                        className="flex-1 rounded-[32px] text-sm font-medium hover:bg-secondary transition-colors"
-                      >
-                        Modifier
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDelete(service)}
-                        className="flex-1 rounded-[32px] text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
-                      >
-                        Supprimer
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                              <div className="mt-auto pt-3 border-t border-[#EDE8F0]">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-xl font-extrabold text-primary">{service.price} €</span>
+                                  <span className="text-xs text-[#7A6B80]">⏱ {service.duration} min</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEdit(service)}
+                                    className="flex-1 py-2 rounded-[10px] text-xs font-semibold bg-white border border-[#EDE8F0] text-[#2A1F2D] hover:border-primary hover:text-primary transition-all"
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(service)}
+                                    className="flex-1 py-2 rounded-[10px] text-xs font-semibold bg-white border border-[#EDE8F0] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all"
+                                  >
+                                    Supprimer
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>

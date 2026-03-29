@@ -73,7 +73,7 @@ const getProBySlugCached = unstable_cache(
           slug: proData.slug || slug,
           city: proData.city || null,
           description,
-          ...(isClientViewer ? {} : { plan: proData.plan || 'starter' }),
+          ...(isClientViewer ? {} : { plan: proData.plan || null }),
           socials: proData.socials || null,
           gallery: proData.gallery || null,
         },
@@ -106,7 +106,7 @@ const getProBySlugCached = unstable_cache(
         slug: profileData?.slug || slug,
         city: profileData?.city || prosData?.city || null,
         description: profileData?.description || prosData?.description || null,
-        ...(isClientViewer ? {} : { plan: prosData?.plan || 'starter' }),
+        ...(isClientViewer ? {} : { plan: prosData?.plan || null }),
         socials: prosData?.socials || null,
         gallery: prosData?.gallery || null,
       },
@@ -308,13 +308,13 @@ export default async function ProPage({ params }: ProPageProps) {
     return (
       <div className="min-h-screen bg-background">
         {/* Hero banner */}
-        <div className="hero-dark h-48 md:h-56 relative">
+        <div className="hero-light h-48 md:h-56 relative">
           <div className="max-w-5xl mx-auto px-4 h-full flex items-end pb-0 relative z-10" />
         </div>
 
         <div className="max-w-5xl mx-auto px-4 pb-16">
           {/* 1. Profile card (overlapping hero) */}
-          <div className="bg-white rounded-[32px] p-6 md:p-8 shadow-bookmeup border border-[#EDE8F0] -mt-10 mb-8 relative z-10">
+          <div className="bg-white rounded-[32px] p-6 md:p-8 shadow-[0_20px_60px_rgba(20,0,50,0.1)] border border-primary/10 -mt-10 mb-8 relative z-10">
             <div className="flex flex-col md:flex-row md:items-start gap-5">
               {/* Avatar */}
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center text-3xl md:text-4xl font-extrabold text-white flex-shrink-0 border-4 border-white shadow-md">
@@ -363,7 +363,7 @@ export default async function ProPage({ params }: ProPageProps) {
           {/* 3. Portfolio social (si pas de galerie) */}
           {pro.socials && (pro.socials.instagram_url || pro.socials.facebook_url) && (
             <div className="mb-8">
-              <div className="bg-white rounded-[24px] p-6 border border-[#EDE8F0] shadow-bookmeup-sm">
+              <div className="bg-white rounded-[24px] p-6 border border-primary/10 shadow-[0_6px_24px_rgba(20,0,50,0.05)]">
                 <h2 className="text-lg font-bold text-[#2A1F2D] mb-1">Portfolio</h2>
                 <p className="text-sm text-[#7A6B80] mb-4">Retrouvez mes réalisations sur mes réseaux.</p>
                 <div className="flex flex-col sm:flex-row gap-3">

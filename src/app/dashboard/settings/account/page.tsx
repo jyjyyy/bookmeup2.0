@@ -116,7 +116,7 @@ export default function AccountPage() {
             setGalleryImages(prosData.gallery.images || [])
           }
         } else {
-          // Create minimal pros document
+          // Create minimal pros document (no plan assigned — user must choose)
           const defaultBusinessName = name || currentUser.profile.name || 'Mon salon'
           await setDoc(doc(db, 'pros', userId), {
             profile_id: userId,
@@ -126,7 +126,7 @@ export default function AccountPage() {
             address: null,
             description: null,
             slug: null,
-            plan: 'starter',
+            plan: null,
             show_in_search: false,
             created_at: serverTimestamp(),
             updated_at: serverTimestamp(),

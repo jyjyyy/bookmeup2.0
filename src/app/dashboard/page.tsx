@@ -35,7 +35,7 @@ function StatsSkeleton() {
 
 export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null)
-  const [plan, setPlan] = useState<'starter' | 'pro' | 'premium'>('starter')
+  const [plan, setPlan] = useState<'starter' | 'pro' | 'premium' | null>(null)
 
   // Stats starter
   const [loadingStats, setLoadingStats] = useState(true)
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         getStarterStats(uid),
       ])
 
-      const resolvedPlan = (sub.plan as 'starter' | 'pro' | 'premium') ?? 'starter'
+      const resolvedPlan = (sub.plan as 'starter' | 'pro' | 'premium') || null
       setPlan(resolvedPlan)
       setStats(computed)
       setLoadingStats(false)
@@ -177,6 +177,26 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Alerte : aucun abonnement */}
+      {!loadingStats && plan === null && (
+        <div className="rounded-[20px] border-2 border-orange-300 bg-orange-50 px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-bold text-orange-800 mb-1">
+              Aucun abonnement actif
+            </p>
+            <p className="text-sm text-orange-700">
+              Choisissez un abonnement pour débloquer toutes les fonctionnalités de votre espace pro.
+            </p>
+          </div>
+          <a
+            href="/dashboard/settings/subscription"
+            className="btn-gradient text-white px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap shadow-md hover:shadow-lg transition-shadow"
+          >
+            Choisir un abonnement →
+          </a>
+        </div>
+      )}
+
       {/* Statistiques principales */}
       <div className="space-y-4">
         {statsError && (
@@ -259,7 +279,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* Section Premium */}
-      {plan !== 'starter' && (
+      {plan !== null && plan !== 'starter' && (
         <div className="space-y-4">
           {plan === 'premium' ? (
             <>

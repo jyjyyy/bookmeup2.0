@@ -176,7 +176,7 @@ export default function ClientSettingsPage() {
       )}
 
       {/* Mot de passe */}
-      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
+      <div className="bg-white rounded-[24px] border border-primary/10 shadow-[0_6px_24px_rgba(20,0,50,0.05)] p-6">
         <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Mot de passe</h2>
         <p className="text-sm text-[#7A6B80] mb-4">
           Recevez un email pour changer votre mot de passe en toute sécurité.
@@ -197,7 +197,7 @@ export default function ClientSettingsPage() {
       </div>
 
       {/* Déconnexion */}
-      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
+      <div className="bg-white rounded-[24px] border border-primary/10 shadow-[0_6px_24px_rgba(20,0,50,0.05)] p-6">
         <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Déconnexion</h2>
         <p className="text-sm text-[#7A6B80] mb-4">Terminez votre session sur cet appareil.</p>
         <Button
@@ -211,7 +211,7 @@ export default function ClientSettingsPage() {
       </div>
 
       {/* Suppression du compte */}
-      <div className="bg-white rounded-[24px] border border-red-100 shadow-bookmeup-sm p-6">
+      <div className="bg-white rounded-[24px] border border-red-100 shadow-[0_6px_24px_rgba(20,0,50,0.05)] p-6">
         <h2 className="text-base font-bold text-red-700 mb-1">Supprimer mon compte</h2>
         <p className="text-sm text-[#7A6B80] mb-4">
           Cette action est définitive. Toutes vos réservations futures seront annulées.

@@ -254,6 +254,15 @@ export default function ClientAppointmentsPage() {
     return <AppointmentsSkeleton />
   }
 
+  const formatDateShort = (dateString: string) => {
+    const date = new Date(`${dateString}T00:00:00`)
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    })
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -270,13 +279,13 @@ export default function ClientAppointmentsPage() {
         </p>
       </div>
 
-      {/* Upcoming Appointments */}
+      {/* Upcoming Appointments — cards with full details */}
       <section>
         <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
           À venir
         </h3>
         {upcomingBookings.length === 0 ? (
-          <div className="bg-white rounded-[24px] p-6 text-center text-[#7A6B80] text-sm border border-[#EDE8F0]">
+          <div className="bg-white rounded-[20px] p-5 text-center text-[#7A6B80] text-sm border border-primary/10">
             Aucun rendez-vous à venir.
           </div>
         ) : (
@@ -284,62 +293,74 @@ export default function ClientAppointmentsPage() {
             {upcomingBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-white rounded-[20px] p-5 border border-[#EDE8F0] shadow-bookmeup-sm"
+                className="bg-white rounded-[20px] p-4 border border-primary/10 shadow-[0_4px_16px_rgba(20,0,50,0.04)] flex items-center gap-4"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-base font-bold text-[#2A1F2D]">
-                    {booking.serviceName}
-                  </h4>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(booking.status)}`}
-                  >
-                    {getStatusLabel(booking.status)}
+                {/* Date block */}
+                <div className="flex-shrink-0 w-14 h-14 rounded-[14px] bg-secondary flex flex-col items-center justify-center">
+                  <span className="text-xs font-semibold text-primary leading-none">
+                    {new Date(`${booking.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short' })}
+                  </span>
+                  <span className="text-lg font-extrabold text-[#2A1F2D] leading-tight">
+                    {new Date(`${booking.date}T00:00:00`).getDate()}
                   </span>
                 </div>
-                <p className="text-sm text-[#7A6B80] mb-1">
-                  Avec <span className="font-semibold text-[#2A1F2D]">{booking.proName}</span>
-                </p>
-                <p className="text-xs text-[#7A6B80]">
-                  📅 {formatDateTime(booking.date, booking.start_time)}
-                </p>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h4 className="text-sm font-bold text-[#2A1F2D] truncate">{booking.serviceName}</h4>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
+                    >
+                      {getStatusLabel(booking.status)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#7A6B80] truncate">
+                    {booking.proName} · {booking.start_time}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Past Appointments */}
+      {/* Past Appointments — compact table-like rows */}
       <section>
         <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
-          Passés
+          Historique
         </h3>
         {pastBookings.length === 0 ? (
-          <div className="bg-white rounded-[24px] p-6 text-center text-[#7A6B80] text-sm border border-[#EDE8F0]">
+          <div className="bg-white rounded-[20px] p-5 text-center text-[#7A6B80] text-sm border border-primary/10">
             Aucun rendez-vous passé.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="bg-white rounded-[20px] border border-primary/10 overflow-hidden divide-y divide-[#EDE8F0]">
             {pastBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-white rounded-[20px] p-5 border border-[#EDE8F0] opacity-75"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-base font-bold text-[#2A1F2D]">
-                    {booking.serviceName}
-                  </h4>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(booking.status)}`}
-                  >
-                    {getStatusLabel(booking.status)}
-                  </span>
+                {/* Date compact */}
+                <span className="text-xs text-[#7A6B80] w-20 flex-shrink-0 font-medium">
+                  {formatDateShort(booking.date)}
+                </span>
+
+                {/* Service + pro */}
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#2A1F2D] truncate">{booking.serviceName}</span>
+                  <span className="text-xs text-[#7A6B80] truncate hidden sm:inline">· {booking.proName}</span>
                 </div>
-                <p className="text-sm text-[#7A6B80] mb-1">
-                  Avec <span className="font-semibold text-[#2A1F2D]">{booking.proName}</span>
-                </p>
-                <p className="text-xs text-[#7A6B80]">
-                  📅 {formatDateTime(booking.date, booking.start_time)}
-                </p>
+
+                {/* Time */}
+                <span className="text-xs text-[#7A6B80] flex-shrink-0">{booking.start_time}</span>
+
+                {/* Status badge */}
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
+                >
+                  {getStatusLabel(booking.status)}
+                </span>
               </div>
             ))}
           </div>

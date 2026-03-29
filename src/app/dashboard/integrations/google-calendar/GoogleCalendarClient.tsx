@@ -51,10 +51,10 @@ export function GoogleCalendarClient() {
 
         // Get pro plan
         const proDoc = await getDoc(doc(db, 'pros', uid))
-        let userPlan: 'starter' | 'pro' | 'premium' = 'starter'
+        let userPlan: 'starter' | 'pro' | 'premium' | null = null
         if (proDoc.exists()) {
           const proData = proDoc.data()
-          userPlan = (proData?.plan as 'starter' | 'pro' | 'premium') || 'starter'
+          userPlan = (proData?.plan as 'starter' | 'pro' | 'premium') || null
         }
         setPlan(userPlan)
 

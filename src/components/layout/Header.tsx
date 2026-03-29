@@ -26,7 +26,7 @@ export function Header() {
   }
 
   return (
-    <header className="glass sticky top-0 z-50 border-b border-[#EDE8F0] animate-slideDown">
+    <header className="sticky top-0 z-50 animate-slideDown" style={{ background: 'rgba(250,247,251,0.85)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(200,109,215,0.12)', borderRadius: '0 0 28px 28px', boxShadow: '0 4px 20px rgba(200,109,215,0.08)' }}>
       <div className="container mx-auto px-6">
         <div className="flex items-center gap-8 h-[68px]">
           {/* Logo */}

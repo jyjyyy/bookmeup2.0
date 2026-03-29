@@ -45,10 +45,10 @@ export default async function ConfirmPage({ searchParams }: ConfirmPageProps) {
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-primary mb-4">
+          <h1 className="text-3xl font-extrabold text-[#2A1F2D] mb-4">
             Réservation non trouvée
           </h1>
-          <p className="text-slate-600">
+          <p className="text-[#8a7a92]">
             Les informations de réservation sont manquantes.
           </p>
         </div>

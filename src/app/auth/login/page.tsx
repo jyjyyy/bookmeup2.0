@@ -199,15 +199,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center hero-light px-4 py-12">
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-2xl font-extrabold gradient-text">BookMeUp</span>
-          <p className="text-sm text-[#7A6B80] mt-1">Votre espace beauté en ligne</p>
+          <p className="text-sm text-[#8a7a92] mt-1">Votre espace beauté en ligne</p>
         </div>
 
-        <div className="bg-white rounded-[32px] p-8 shadow-bookmeup border border-[#EDE8F0]">
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_20px_60px_rgba(20,0,50,0.1)] border border-primary/10">
           <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1 text-center">
             Connexion
           </h1>

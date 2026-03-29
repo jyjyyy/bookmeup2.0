@@ -42,16 +42,17 @@ export function FaqSection() {
 
   return (
     <section className="py-20 bg-white/50">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-6 max-w-6xl">
         <motion.div
           suppressHydrationWarning
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="mb-12"
         >
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">Questions fréquentes</h2>
+          <p className="section-label">FAQ</p>
+          <h2 className="text-4xl font-extrabold text-[#2A1F2D] mb-4">Questions fréquentes</h2>
         </motion.div>
 
         <div className="max-w-3xl mx-auto space-y-4">
@@ -61,7 +62,7 @@ export function FaqSection() {
             const panelId = `${baseId}-faq-panel-${index}`
 
             return (
-              <Card key={item.question} className="p-0">
+              <Card key={item.question} className="p-0 border-primary/8">
                 <button
                   type="button"
                   className="w-full text-left px-8 py-6 flex items-center justify-between gap-6"
@@ -70,9 +71,9 @@ export function FaqSection() {
                   id={buttonId}
                   onClick={() => setOpenIndex((prev) => (prev === index ? null : index))}
                 >
-                  <span className="text-lg font-bold text-slate-900">{item.question}</span>
+                  <span className="text-lg font-bold text-[#2A1F2D]">{item.question}</span>
                   <span
-                    className="shrink-0 text-slate-600"
+                    className="shrink-0 text-[#8a7a92] text-xl font-medium"
                     aria-hidden="true"
                     title={isOpen ? 'Réduire' : 'Développer'}
                   >
@@ -85,7 +86,7 @@ export function FaqSection() {
                     id={panelId}
                     role="region"
                     aria-labelledby={buttonId}
-                    className="px-8 pb-7 -mt-2 text-slate-600 leading-relaxed"
+                    className="px-8 pb-7 -mt-2 text-[#8a7a92] leading-relaxed"
                   >
                     {item.answer}
                   </div>

@@ -3,13 +3,14 @@ import { SearchPageClient } from './SearchPageClient'
 export default function SearchPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Dark search banner */}
-      <div className="hero-dark pt-10 pb-16">
+      {/* Light search banner */}
+      <div className="hero-light pt-10 pb-16">
         <div className="container mx-auto px-6 relative z-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 text-center">
+          <p className="section-label text-center">Recherche</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#2A1F2D] mb-2 text-center">
             Trouvez votre prochain soin
           </h1>
-          <p className="text-white/65 text-center text-base">
+          <p className="text-[#8a7a92] text-center text-base">
             Coiffure, massage, nail art, soins du visage et bien plus
           </p>
         </div>

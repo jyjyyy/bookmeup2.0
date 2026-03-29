@@ -58,7 +58,7 @@ export function ConfirmCard({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="bg-white rounded-[32px] p-8 md:p-12 shadow-bookmeup border border-[#EDE8F0]">
+          <div className="bg-white rounded-[32px] p-8 md:p-12 shadow-[0_20px_60px_rgba(20,0,50,0.1)] border border-primary/10">
             {/* Header avec icône de succès */}
             <motion.div
               suppressHydrationWarning

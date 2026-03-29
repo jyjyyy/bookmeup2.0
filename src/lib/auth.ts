@@ -128,7 +128,7 @@ export async function signUp(
       business_name: name.trim(),
       city: null,
       slug: null,
-      plan: 'starter',
+      plan: null,
       show_in_search: false,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),

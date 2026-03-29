@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     const proData = proDoc.data()
-    const plan = proData?.plan || 'starter'
+    const plan = proData?.plan || null
 
-    // Check service limit for starter plan
-    if (plan === 'starter') {
+    // Check service limit for starter plan (or no plan)
+    if (plan === 'starter' || plan === null) {
       const servicesSnapshot = await adminDb
         .collection('services')
         .where('proId', '==', proId)

@@ -107,11 +107,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <div className="min-h-screen bg-background py-12">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto text-center">
-              <h1 className="text-3xl font-bold text-primary mb-4">
+              <h1 className="text-3xl font-extrabold text-[#2A1F2D] mb-4">
                 Aucun service disponible
               </h1>
-              <p className="text-slate-600">
-                Ce professionnel n'a pas encore de services disponibles.
+              <p className="text-[#8a7a92]">
+                Ce professionnel n&apos;a pas encore de services disponibles.
               </p>
             </div>
           </div>

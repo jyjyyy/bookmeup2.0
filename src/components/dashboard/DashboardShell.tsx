@@ -98,11 +98,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
           height: '100vh',
         }}
       >
-        {/* Logo */}
-        <div className="px-6 py-5 border-b border-white/8">
-          <span className="text-xl font-extrabold gradient-text">BookMeUp</span>
-        </div>
-
         {/* Nav */}
         <nav className="flex flex-col gap-1 px-3 py-4 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-2">

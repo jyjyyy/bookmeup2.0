@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { doc, getDoc } from 'firebase/firestore'
@@ -64,10 +64,13 @@ const PLANS: Plan[] = [
 
 export default function SubscriptionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [currentPlan, setCurrentPlan] = useState<PlanType | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState(false)
 
   useEffect(() => {
     const loadPlan = async () => {
@@ -89,14 +92,50 @@ export default function SubscriptionPage() {
 
         const uid = currentUser.user.uid
 
+        // Check if returning from Stripe checkout
+        const isSuccess = searchParams.get('success') === 'true'
+        const sessionId = searchParams.get('session_id')
+
+        if (isSuccess && sessionId) {
+          // Verify the Stripe session and activate the plan
+          setVerifying(true)
+          try {
+            const verifyRes = await fetch('/api/stripe/verify-session', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId }),
+            })
+
+            const verifyData = await verifyRes.json()
+
+            if (verifyRes.ok && verifyData.verified) {
+              setSuccessMessage('Abonnement activé avec succès !')
+              setCurrentPlan(verifyData.plan as PlanType)
+              // Clean up URL params
+              router.replace('/dashboard/settings/subscription', { scroll: false })
+              setVerifying(false)
+              setLoading(false)
+              return
+            } else {
+              console.error('[Subscription] Verification failed:', verifyData)
+              // Fall through to load plan normally
+            }
+          } catch (verifyErr) {
+            console.error('[Subscription] Verification error:', verifyErr)
+            // Fall through to load plan normally
+          }
+          setVerifying(false)
+        }
+
         // Load current plan from Firestore
         const proDoc = await getDoc(doc(db, 'pros', uid))
         if (proDoc.exists()) {
           const proData = proDoc.data()
-          const plan = (proData?.plan as PlanType) || 'starter'
-          setCurrentPlan(plan)
+          const plan = proData?.plan as PlanType | null
+          setCurrentPlan(plan) // null if no plan chosen yet
         } else {
-          setCurrentPlan('starter')
+          setCurrentPlan(null) // no plan
         }
       } catch (err: any) {
         console.error('Error loading plan:', err)
@@ -107,11 +146,11 @@ export default function SubscriptionPage() {
     }
 
     loadPlan()
-  }, [router])
+  }, [router, searchParams])
 
-  const handleUpgrade = async (planType: 'pro' | 'premium') => {
+  const handleSelectPlan = async (planType: PlanType) => {
     try {
-      console.log('[Subscription] handleUpgrade called with plan:', planType)
+      console.log('[Subscription] handleSelectPlan called with plan:', planType)
       setProcessing(planType)
       setError(null)
 
@@ -126,14 +165,13 @@ export default function SubscriptionPage() {
       })
 
       console.log('[Subscription] API response status:', response.status)
-      
+
       if (!response.ok) {
-        // Handle 404 specifically (route doesn't exist)
         if (response.status === 404) {
           console.error('[Subscription] Route not found: /api/stripe/create-checkout')
           throw new Error('Route API introuvable. La route /api/stripe/create-checkout doit être implémentée.')
         }
-        
+
         const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
         console.error('[Subscription] API error:', errorData)
         throw new Error(errorData.error || 'Erreur lors de la création de la session')
@@ -141,9 +179,8 @@ export default function SubscriptionPage() {
 
       const data = await response.json()
       console.log('[Subscription] API response data:', data)
-      
+
       if (data.url) {
-        console.log(data) // Debug: verify response structure before redirect
         console.log('[Subscription] Redirecting to Stripe:', data.url)
         window.open(data.url, '_self')
       } else {
@@ -151,8 +188,8 @@ export default function SubscriptionPage() {
         throw new Error('URL de checkout non disponible')
       }
     } catch (err: any) {
-      console.error('[Subscription] Error upgrading plan:', err)
-      setError(err.message || 'Erreur lors de la mise à niveau')
+      console.error('[Subscription] Error selecting plan:', err)
+      setError(err.message || 'Erreur lors de la sélection du plan')
       setProcessing(null)
     }
   }
@@ -184,14 +221,16 @@ export default function SubscriptionPage() {
     }
   }
 
-  const getPlanBadgeColor = (plan: PlanType) => {
+  const getPlanBadgeColor = (plan: PlanType | null) => {
     switch (plan) {
       case 'premium':
         return 'bg-gradient-to-r from-yellow-100 to-pink-100 text-pink-700 border border-pink-200'
       case 'pro':
         return 'bg-primary/10 text-primary border border-primary/20'
-      default:
+      case 'starter':
         return 'bg-gray-100 text-gray-600 border border-gray-200'
+      default:
+        return 'bg-orange-100 text-orange-700 border border-orange-200'
     }
   }
 
@@ -203,20 +242,40 @@ export default function SubscriptionPage() {
     )
   }
 
+  const hasNoPlan = currentPlan === null
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Abonnement</h1>
         <p className="text-sm text-[#7A6B80] mb-3">
-          Gérez votre abonnement et choisissez le plan qui vous convient
+          {hasNoPlan
+            ? 'Choisissez un abonnement pour accéder à toutes les fonctionnalités.'
+            : 'Gérez votre abonnement et choisissez le plan qui vous convient.'
+          }
         </p>
-        <div className="bg-secondary border border-primary/20 rounded-[16px] p-4">
-          <p className="text-sm text-[#2A1F2D] font-medium">
-            ⚠️ Un abonnement est obligatoire pour accéder à l'espace professionnel.
-          </p>
-        </div>
+        {hasNoPlan && (
+          <div className="bg-orange-50 border border-orange-200 rounded-[16px] p-4">
+            <p className="text-sm text-orange-800 font-medium">
+              Vous n&apos;avez pas encore d&apos;abonnement. Choisissez un plan ci-dessous pour commencer.
+            </p>
+          </div>
+        )}
       </div>
+
+      {verifying && (
+        <div className="p-4 bg-purple-50 border border-purple-200 text-purple-700 rounded-[16px] text-sm flex items-center gap-2">
+          <Loader />
+          <span>Vérification de votre paiement en cours…</span>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[16px] text-sm font-medium">
+          {successMessage}
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
@@ -224,8 +283,8 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {/* Current Plan Card */}
-      {currentPlan && (
+      {/* Current Plan Card — only show if user already has a plan */}
+      {!hasNoPlan && (
         <div className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -258,7 +317,9 @@ export default function SubscriptionPage() {
       <div className="grid gap-4 md:grid-cols-3">
         {PLANS.map((plan, index) => {
           const isCurrentPlan = currentPlan === plan.id
-          const isUpgrade = (currentPlan === 'starter' && (plan.id === 'pro' || plan.id === 'premium')) ||
+          const isUpgrade =
+            hasNoPlan || // If no plan, everything is selectable
+            (currentPlan === 'starter' && (plan.id === 'pro' || plan.id === 'premium')) ||
             (currentPlan === 'pro' && plan.id === 'premium')
 
           return (
@@ -308,14 +369,8 @@ export default function SubscriptionPage() {
                 </ul>
 
                 <button
-                  onClick={() => {
-                    if (plan.id === 'pro' || plan.id === 'premium') handleUpgrade(plan.id)
-                  }}
-                  disabled={
-                    isCurrentPlan ||
-                    processing !== null ||
-                    (plan.id === 'starter' && currentPlan !== 'starter')
-                  }
+                  onClick={() => handleSelectPlan(plan.id)}
+                  disabled={isCurrentPlan || processing !== null}
                   className={`w-full py-2.5 rounded-[12px] text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-default ${
                     isCurrentPlan
                       ? plan.popular ? 'bg-white/10 text-white/60' : 'bg-secondary text-[#7A6B80]'
@@ -328,6 +383,8 @@ export default function SubscriptionPage() {
                     ? 'Plan actuel'
                     : processing === plan.id
                     ? 'Traitement…'
+                    : hasNoPlan
+                    ? `Choisir ${plan.name}`
                     : isUpgrade
                     ? `Passer au ${plan.name}`
                     : `Choisir ${plan.name}`}

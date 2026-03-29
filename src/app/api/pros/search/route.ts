@@ -162,16 +162,16 @@ async function executeSearch(): Promise<{ pros: SearchPro[] }> {
       slug: proData.slug || null,
       business_name,
       city: proData.city || null,
-      plan: (proData.plan as 'starter' | 'pro' | 'premium') || 'starter',
+      plan: (proData.plan as 'starter' | 'pro' | 'premium') || null,
       show_in_search: Boolean(proData.show_in_search),
       services,
     }
   })
 
-  const planOrder = { premium: 0, pro: 1, starter: 2 }
+  const planOrder: Record<string, number> = { premium: 0, pro: 1, starter: 2 }
   pros.sort((a, b) => {
-    const orderA = planOrder[a.plan || 'starter']
-    const orderB = planOrder[b.plan || 'starter']
+    const orderA = a.plan ? (planOrder[a.plan] ?? 3) : 3
+    const orderB = b.plan ? (planOrder[b.plan] ?? 3) : 3
     if (orderA !== orderB) return orderA - orderB
     return (a.business_name || '').localeCompare(b.business_name || '')
   })

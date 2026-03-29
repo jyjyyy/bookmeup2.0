@@ -190,82 +190,77 @@ export function CalendarClient({ proId }: CalendarClientProps) {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header avec contrôles amélioré */}
-      <Card className="rounded-[32px] p-6 md:p-8 shadow-bookmeup border border-white/70 bg-white/90">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-3">
-              Mon agenda
-            </h1>
-            <p className="text-base text-slate-600">
-              Visualisez tous vos rendez-vous de la semaine ou du mois.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            {/* Toggle Semaine / Mois amélioré */}
-            <div className="flex bg-secondary/30 rounded-[32px] p-1.5 shadow-inner">
-              <button
-                onClick={() => setView('week')}
-                className={`px-5 py-2.5 rounded-[32px] text-sm font-semibold transition-all ${
-                  view === 'week'
-                    ? 'bg-primary text-white shadow-bookmeup-sm'
-                    : 'text-[#2A1F2D] hover:bg-secondary/50'
-                }`}
-              >
-                Semaine
-              </button>
-              <button
-                onClick={() => setView('month')}
-                className={`px-5 py-2.5 rounded-[32px] text-sm font-semibold transition-all ${
-                  view === 'month'
-                    ? 'bg-primary text-white shadow-bookmeup-sm'
-                    : 'text-[#2A1F2D] hover:bg-secondary/50'
-                }`}
-              >
-                Mois
-              </button>
-            </div>
-
-            {/* Navigation améliorée */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPrevious}
-                className="rounded-[32px] px-4 py-2 hover:bg-secondary transition-colors"
-              >
-                ←
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToToday}
-                className="rounded-[32px] px-5 py-2 hover:bg-secondary transition-colors font-medium"
-              >
-                Aujourd&apos;hui
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNext}
-                className="rounded-[32px] px-4 py-2 hover:bg-secondary transition-colors"
-              >
-                →
-              </Button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Header avec contrôles */}
+      <div>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Calendrier
         </div>
-      </Card>
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
+          Mon agenda
+        </h1>
+        <p className="text-sm text-[#8a7a92]">
+          Visualisez tous vos rendez-vous de la semaine ou du mois.
+        </p>
+      </div>
 
-      {/* Calendrier dans conteneur arrondi */}
-      <div className="rounded-[32px] overflow-hidden shadow-bookmeup border border-white/70 bg-white/90">
+      {/* Controls bar */}
+      <div className="bg-white rounded-[22px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        {/* Toggle Semaine / Mois */}
+        <div className="flex bg-[#F5F0F7] rounded-full p-1">
+          <button
+            onClick={() => setView('week')}
+            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+              view === 'week'
+                ? 'bg-white text-[#2A1F2D] shadow-sm'
+                : 'text-[#8a7a92] hover:text-[#2A1F2D]'
+            }`}
+          >
+            Semaine
+          </button>
+          <button
+            onClick={() => setView('month')}
+            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+              view === 'month'
+                ? 'bg-white text-[#2A1F2D] shadow-sm'
+                : 'text-[#8a7a92] hover:text-[#2A1F2D]'
+            }`}
+          >
+            Mois
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPrevious}
+            className="w-9 h-9 rounded-[10px] border border-[#EDE8F0] hover:border-primary/20 hover:bg-secondary/30 flex items-center justify-center text-[#7A6B80] transition-all"
+          >
+            ←
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-4 py-2 rounded-full text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all"
+          >
+            Aujourd&apos;hui
+          </button>
+          <button
+            onClick={goToNext}
+            className="w-9 h-9 rounded-[10px] border border-[#EDE8F0] hover:border-primary/20 hover:bg-secondary/30 flex items-center justify-center text-[#7A6B80] transition-all"
+          >
+            →
+          </button>
+        </div>
+      </div>
+
+      {/* Calendrier */}
+      <div className="bg-white rounded-[22px] overflow-hidden border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)]">
         {loading ? (
           <div className="p-12 md:p-16">
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-3">
               <Loader />
-              <span className="ml-4 text-slate-600 font-medium">Chargement des rendez-vous...</span>
+              <span className="text-sm text-[#8a7a92] font-medium">Chargement des rendez-vous…</span>
             </div>
           </div>
         ) : view === 'week' ? (

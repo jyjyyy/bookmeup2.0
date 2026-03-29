@@ -711,10 +711,10 @@ export default function AccountPage() {
               type="email"
               value={email}
               disabled
-              className="w-full px-5 py-3.5 rounded-[32px] border border-[#EDE8F0] bg-background text-[#7A6B80] cursor-not-allowed"
+              className="w-full px-4 py-3 rounded-[14px] border border-[#EDE8F0] bg-[#F5F0F7] text-[#8a7a92] cursor-not-allowed text-sm"
             />
-            <p className="text-xs text-[#7A6B80] mt-1">
-              L'email ne peut pas être modifié
+            <p className="text-xs text-[#b5a8bc] mt-1.5">
+              L&apos;email ne peut pas être modifié
             </p>
           </div>
 
@@ -731,7 +731,7 @@ export default function AccountPage() {
           <Button
             onClick={handleSaveProfile}
             disabled={savingProfile}
-            className="rounded-[32px]"
+            className="btn-gradient rounded-full px-6 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)]"
           >
             {savingProfile ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
@@ -741,10 +741,15 @@ export default function AccountPage() {
       {/* Card 2: Fiche professionnelle */}
       <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
-          <CardTitle>Fiche professionnelle (publique)</CardTitle>
-          <CardDescription>
-            Informations visibles sur votre profil public BookMeUp
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">💼</div>
+            <div>
+              <CardTitle>Fiche professionnelle</CardTitle>
+              <CardDescription>
+                Informations visibles sur votre profil public
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
 
         <div className="space-y-4 mt-6">
@@ -789,7 +794,7 @@ export default function AccountPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Décrivez votre salon en quelques mots..."
-              className="w-full px-5 py-3.5 rounded-[32px] border border-[#EDE8F0] bg-white text-slate-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 min-h-[120px] resize-y"
+              className="w-full px-4 py-3 rounded-[16px] border border-[#EDE8F0] bg-white text-[#2A1F2D] placeholder:text-[#b5a8bc] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 min-h-[120px] resize-y"
             />
           </div>
 
@@ -851,7 +856,7 @@ export default function AccountPage() {
           <Button
             onClick={handleSavePro}
             disabled={saving || (showInSearch && !slug.trim())}
-            className="rounded-[32px]"
+            className="btn-gradient rounded-full px-6 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)]"
           >
             {saving ? 'Enregistrement...' : 'Enregistrer ma fiche'}
           </Button>
@@ -861,22 +866,28 @@ export default function AccountPage() {
       {/* Card 3: Réseaux sociaux */}
       <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
-          <CardTitle>Réseaux sociaux</CardTitle>
-          <CardDescription>
-            Ajoutez vos liens pour renforcer votre visibilité
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">🔗</div>
+            <div>
+              <CardTitle>Réseaux sociaux</CardTitle>
+              <CardDescription>
+                Ajoutez vos liens pour renforcer votre visibilité
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
 
         <div className="space-y-4 mt-6">
           {/* Bloc informatif Portfolio */}
-          <div className="bg-pink-50 border border-pink-200 rounded-[24px] p-4">
-            <h3 className="text-sm font-semibold text-[#2A1F2D] mb-1.5">
-              📸 Portfolio
-            </h3>
-            <p className="text-xs text-[#7A6B80] leading-relaxed">
-              Les photos sont temporairement disponibles via vos réseaux.
-              Ajoutez votre lien Instagram ou Facebook pour que vos clientes puissent voir vos réalisations.
-            </p>
+          <div className="bg-primary/5 border border-primary/10 rounded-[16px] p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-[8px] bg-white flex items-center justify-center text-sm flex-shrink-0">📸</div>
+            <div>
+              <h3 className="text-sm font-bold text-[#2A1F2D] mb-0.5">Portfolio</h3>
+              <p className="text-xs text-[#8a7a92] leading-relaxed">
+                Les photos sont temporairement disponibles via vos réseaux.
+                Ajoutez votre lien Instagram pour que vos clientes puissent voir vos réalisations.
+              </p>
+            </div>
           </div>
 
           <div>
@@ -905,7 +916,7 @@ export default function AccountPage() {
           <Button
             onClick={handleSaveSocials}
             disabled={saving}
-            className="rounded-[32px]"
+            className="btn-gradient rounded-full px-6 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)]"
           >
             {saving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
@@ -915,10 +926,15 @@ export default function AccountPage() {
       {/* Card 4: Galerie photos */}
       <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
-          <CardTitle>Galerie photos</CardTitle>
-          <CardDescription>
-            Les photos améliorent votre visibilité et vos réservations
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">📸</div>
+            <div>
+              <CardTitle>Galerie photos</CardTitle>
+              <CardDescription>
+                Les photos améliorent votre visibilité et vos réservations
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
 
         <div className="mt-6">
@@ -947,12 +963,12 @@ export default function AccountPage() {
                     handleFileUpload(e.dataTransfer.files)
                   }}
                 >
-                  <div className="border-2 border-dashed border-[#EDE8F0] rounded-[32px] p-8 text-center cursor-pointer hover:border-primary transition-colors">
-                    <div className="text-4xl mb-2">📸</div>
-                    <p className="text-sm text-[#7A6B80] mb-1">
+                  <div className="border-2 border-dashed border-primary/15 rounded-[20px] p-8 text-center cursor-pointer hover:border-primary/30 hover:bg-primary/3 transition-all">
+                    <div className="w-12 h-12 rounded-[14px] bg-[#F5F0F7] flex items-center justify-center text-2xl mx-auto mb-3">📸</div>
+                    <p className="text-sm text-[#2A1F2D] font-medium mb-1">
                       Cliquez ou glissez-déposez vos photos ici
                     </p>
-                    <p className="text-xs text-[#7A6B80]">
+                    <p className="text-xs text-[#b5a8bc]">
                       Formats acceptés : JPG, PNG (max 2MB par image)
                     </p>
                   </div>
@@ -973,7 +989,7 @@ export default function AccountPage() {
                       type="button"
                       variant="outline"
                       onClick={handleCancelUpload}
-                      className="rounded-[32px]"
+                      className="btn-gradient rounded-full px-6 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)]"
                     >
                       Annuler upload
                     </Button>
@@ -1026,12 +1042,12 @@ export default function AccountPage() {
             </>
           ) : (
             <div className="mb-6">
-              <div className="border-2 border-dashed border-[#EDE8F0] rounded-[32px] p-8 text-center bg-background">
-                <div className="text-4xl mb-3">📸</div>
-                <p className="text-base font-medium text-[#7A6B80] mb-2">
+              <div className="border-2 border-dashed border-primary/10 rounded-[20px] p-8 text-center bg-[#FDFBFE]">
+                <div className="w-14 h-14 rounded-[16px] bg-[#F5F0F7] flex items-center justify-center text-2xl mx-auto mb-3">📸</div>
+                <p className="text-sm font-bold text-[#2A1F2D] mb-1">
                   Photos bientôt disponibles
                 </p>
-                <p className="text-sm text-[#7A6B80]">
+                <p className="text-xs text-[#8a7a92]">
                   Nous finalisons cette fonctionnalité. Vous pourrez bientôt ajouter vos photos ici.
                 </p>
               </div>

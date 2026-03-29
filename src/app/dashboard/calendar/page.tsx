@@ -65,10 +65,8 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4">
-        <CalendarClient proId={proId} />
-      </div>
+    <div>
+      <CalendarClient proId={proId} />
     </div>
   )
 }

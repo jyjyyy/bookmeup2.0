@@ -283,25 +283,30 @@ export default function SubscriptionPage() {
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
+          <span>⚠️</span> {error}
         </div>
       )}
 
       {/* Current Plan Card — only show if user already has a plan */}
       {!hasNoPlan && (
-        <div className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
+        <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-[#7A6B80] uppercase tracking-wide mb-2">Abonnement actuel</p>
-              <div className="flex items-center gap-3">
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${getPlanBadgeColor(currentPlan)}`}>
-                  {PLANS.find((p) => p.id === currentPlan)?.name || currentPlan}
-                </span>
-                <span className="text-[#7A6B80] text-sm">
-                  {PLANS.find((p) => p.id === currentPlan)?.price}
-                  {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
-                </span>
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-[12px] bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-sm">💳</span>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#8a7a92] uppercase tracking-wide mb-1">Abonnement actuel</p>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${getPlanBadgeColor(currentPlan)}`}>
+                    {PLANS.find((p) => p.id === currentPlan)?.name || currentPlan}
+                  </span>
+                  <span className="text-[#8a7a92] text-sm">
+                    {PLANS.find((p) => p.id === currentPlan)?.price}
+                    {PLANS.find((p) => p.id === currentPlan)?.priceMonthly}
+                  </span>
+                </div>
               </div>
             </div>
             {(currentPlan === 'pro' || currentPlan === 'premium') && (
@@ -309,9 +314,9 @@ export default function SubscriptionPage() {
                 onClick={handleManageSubscription}
                 disabled={processing === 'manage'}
                 variant="outline"
-                className="rounded-[12px] text-sm font-semibold border-[#EDE8F0] hover:border-primary hover:text-primary"
+                className="rounded-full text-sm font-bold border-primary/20 text-primary hover:bg-primary/5"
               >
-                {processing === 'manage' ? 'Chargement…' : 'Gérer mon abonnement'}
+                {processing === 'manage' ? 'Chargement…' : 'Gérer'}
               </Button>
             )}
           </div>
@@ -319,11 +324,11 @@ export default function SubscriptionPage() {
       )}
 
       {/* Plans Grid */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3">
         {PLANS.map((plan, index) => {
           const isCurrentPlan = currentPlan === plan.id
           const isUpgrade =
-            hasNoPlan || // If no plan, everything is selectable
+            hasNoPlan ||
             (currentPlan === 'starter' && (plan.id === 'pro' || plan.id === 'premium')) ||
             (currentPlan === 'pro' && plan.id === 'premium')
 
@@ -335,39 +340,41 @@ export default function SubscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <div className={`rounded-[20px] p-5 relative border ${
+              <div className={`rounded-[24px] p-6 relative border transition-all ${
                 plan.popular
-                  ? 'bg-[#2A1F2D] border-transparent shadow-[0_8px_30px_rgba(0,0,0,0.2)]'
-                  : 'bg-white border-[#EDE8F0] shadow-bookmeup-sm'
+                  ? 'bg-[#2A1F2D] border-transparent shadow-[0_12px_40px_rgba(0,0,0,0.25)]'
+                  : isCurrentPlan
+                  ? 'bg-white border-primary/20 shadow-[0_4px_20px_rgba(200,109,215,0.1)]'
+                  : 'bg-white border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] hover:shadow-[0_8px_32px_rgba(20,0,50,0.08)] hover:border-primary/15'
               }`}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="btn-gradient text-white px-3 py-1 rounded-full text-xs font-bold shadow-bookmeup-sm">
+                    <span className="btn-gradient text-white px-4 py-1 rounded-full text-xs font-bold shadow-[0_4px_12px_rgba(200,109,215,0.4)]">
                       Populaire ✨
                     </span>
                   </div>
                 )}
 
-                <div className="mb-5">
-                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${plan.popular ? 'text-primary' : 'text-[#7A6B80]'}`}>
+                <div className="mb-5 pt-1">
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${plan.popular ? 'text-primary' : 'text-[#8a7a92]'}`}>
                     {plan.name}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className={`text-2xl font-extrabold ${plan.popular ? 'text-white' : 'text-[#2A1F2D]'}`}>
+                    <span className={`text-3xl font-extrabold ${plan.popular ? 'text-white' : 'text-[#2A1F2D]'}`}>
                       {plan.price} €
                     </span>
                     {plan.priceMonthly && (
-                      <span className={`text-xs ${plan.popular ? 'text-white/50' : 'text-[#7A6B80]'}`}>
+                      <span className={`text-xs ${plan.popular ? 'text-white/40' : 'text-[#b5a8bc]'}`}>
                         {plan.priceMonthly}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <ul className="space-y-2 mb-5">
+                <ul className="space-y-2.5 mb-6">
                   {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className={`flex items-start gap-2 text-xs ${plan.popular ? 'text-white/80' : 'text-[#7A6B80]'}`}>
-                      <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${plan.popular ? 'bg-primary/30 text-white' : 'bg-secondary text-primary'}`}>✓</span>
+                    <li key={featureIndex} className={`flex items-start gap-2.5 text-xs ${plan.popular ? 'text-white/80' : 'text-[#64576b]'}`}>
+                      <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-[6px] flex items-center justify-center text-[10px] font-bold ${plan.popular ? 'bg-primary/25 text-white' : 'bg-primary/10 text-primary'}`}>✓</span>
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -376,11 +383,11 @@ export default function SubscriptionPage() {
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
                   disabled={isCurrentPlan || processing !== null}
-                  className={`w-full py-2.5 rounded-[12px] text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-default ${
+                  className={`w-full py-3 rounded-full text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-default ${
                     isCurrentPlan
-                      ? plan.popular ? 'bg-white/10 text-white/60' : 'bg-secondary text-[#7A6B80]'
+                      ? plan.popular ? 'bg-white/10 text-white/60' : 'bg-[#F5F0F7] text-[#8a7a92]'
                       : plan.popular
-                      ? 'btn-gradient text-white'
+                      ? 'btn-gradient text-white shadow-[0_4px_16px_rgba(200,109,215,0.4)]'
                       : 'border-2 border-primary text-primary hover:bg-primary hover:text-white'
                   }`}
                 >

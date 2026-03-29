@@ -23,6 +23,9 @@ interface EditServiceModalProps {
   service: Service | null
 }
 
+const inputStyles = "w-full px-4 py-3 rounded-[14px] border border-[#EDE8F0] bg-[#FDFBFE] text-[#2A1F2D] text-sm placeholder:text-[#B5A8BE] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-white transition-all duration-200"
+const labelStyles = "block text-xs font-semibold text-[#2A1F2D] mb-2 tracking-wide"
+
 export function EditServiceModal({
   isOpen,
   onClose,
@@ -116,10 +119,11 @@ export function EditServiceModal({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Modifier le service">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[32px] text-sm">
-            {error}
+          <div className="flex items-center gap-3 bg-red-50/80 border border-red-200/60 text-red-600 px-4 py-3 rounded-[14px] text-sm">
+            <div className="w-8 h-8 rounded-[8px] bg-red-100 flex items-center justify-center shrink-0 text-xs">⚠️</div>
+            <p className="text-xs leading-relaxed">{error}</p>
           </div>
         )}
 
@@ -133,20 +137,18 @@ export function EditServiceModal({
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
+          <label className={labelStyles}>Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading}
-            rows={4}
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none placeholder:text-gray-400"
+            rows={3}
+            className={`${inputStyles} resize-none`}
             placeholder="Décrivez votre service..."
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Input
             type="number"
             label="Prix (€)"
@@ -159,14 +161,12 @@ export function EditServiceModal({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Durée (minutes)
-            </label>
+            <label className={labelStyles}>Durée</label>
             <select
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-3 pr-10 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat"
+              className={`${inputStyles} pr-10 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%239A8DA3%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.1rem] bg-[right_0.8rem_center] bg-no-repeat`}
             >
               <option value="15">15 min</option>
               <option value="30">30 min</option>
@@ -178,9 +178,18 @@ export function EditServiceModal({
           </div>
         </div>
 
-        <div className="pt-2">
+        {/* Active toggle */}
+        <div className="flex items-center justify-between p-4 rounded-[16px] bg-[#FDFBFE] border border-[#EDE8F0]">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-[10px] flex items-center justify-center ${isActive ? 'bg-emerald-50' : 'bg-[#F5F0F7]'}`}>
+              <div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-[#C5BAD0]'}`} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Service actif</p>
+              <p className="text-[11px] text-[#8a7a92]">{isActive ? 'Visible et réservable' : 'Masqué pour les clients'}</p>
+            </div>
+          </div>
           <Switch
-            label="Service actif"
             checked={isActive}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setIsActive(e.target.checked)
@@ -189,22 +198,25 @@ export function EditServiceModal({
           />
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <Button
+        {/* Buttons */}
+        <div className="flex gap-3 pt-3">
+          <button
             type="button"
-            variant="outline"
             onClick={handleClose}
             disabled={loading}
-            className="flex-1"
+            className="flex-1 py-3 rounded-full text-sm font-semibold border border-[#EDE8F0] text-[#2A1F2D] hover:bg-[#F5F0F7] transition-colors disabled:opacity-50"
           >
             Annuler
-          </Button>
-          <Button type="submit" disabled={loading} className="flex-1">
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 py-3 rounded-full text-sm font-bold btn-gradient shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_6px_24px_rgba(200,109,215,0.4)] transition-all disabled:opacity-50"
+          >
             {loading ? 'Mise à jour...' : 'Enregistrer'}
-          </Button>
+          </button>
         </div>
       </form>
     </Modal>
   )
 }
-

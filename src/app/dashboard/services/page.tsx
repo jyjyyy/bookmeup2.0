@@ -32,6 +32,22 @@ interface GroupedServices {
   services: Service[]
 }
 
+const categoryIcons: Record<string, string> = {
+  'Coiffure': '✂️',
+  'Esthétique': '💅',
+  'Massage': '💆',
+  'Maquillage': '💄',
+  'Onglerie': '💅',
+  'Épilation': '🪒',
+  'Soins': '🧴',
+  'Barbier': '🪒',
+  'Autres': '📦',
+}
+
+function getCategoryIcon(category: string) {
+  return categoryIcons[category] || '✨'
+}
+
 export default function ServicesPage() {
   const router = useRouter()
   const [services, setServices] = useState<Service[]>([])
@@ -51,9 +67,8 @@ export default function ServicesPage() {
         setError(null)
         setLoading(true)
 
-        // Get current user to get proId
         const currentUser = await getCurrentUser()
-        
+
         if (!currentUser.user || !currentUser.profile) {
           router.push('/auth/login')
           return
@@ -64,9 +79,8 @@ export default function ServicesPage() {
           return
         }
 
-        // Check subscription status
         const subscriptionStatus = await checkSubscriptionStatus(currentUser.user.uid)
-        
+
         if (!subscriptionStatus.hasActiveSubscription) {
           router.push('/dashboard/settings/subscription')
           return
@@ -76,9 +90,8 @@ export default function ServicesPage() {
         console.log('[Dashboard Services] Loading services for proId:', uid)
         setProId(uid)
 
-        // Fetch services
         const response = await fetch(`/api/services/list?proId=${uid}`)
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           const errorMessage = errorData.error || `Erreur ${response.status}: Impossible de charger les services`
@@ -89,7 +102,6 @@ export default function ServicesPage() {
         console.log('[Dashboard Services] Loaded', data.services?.length || 0, 'services')
         setServices(data.services || [])
 
-        // Load services catalog to get categories
         try {
           const catalogResponse = await fetch('/api/services/catalog')
           if (catalogResponse.ok) {
@@ -117,7 +129,7 @@ export default function ServicesPage() {
       setError(null)
       console.log('[Dashboard Services] Reloading services for proId:', proId)
       const response = await fetch(`/api/services/list?proId=${proId}`)
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         const errorMessage = errorData.error || 'Erreur lors du rechargement'
@@ -128,7 +140,6 @@ export default function ServicesPage() {
       console.log('[Dashboard Services] Reloaded', data.services?.length || 0, 'services')
       setServices(data.services || [])
 
-      // Reload services catalog
       try {
         const catalogResponse = await fetch('/api/services/catalog')
         if (catalogResponse.ok) {
@@ -144,9 +155,7 @@ export default function ServicesPage() {
     }
   }
 
-  // Group services by category (reusable logic)
   const groupedServices = useMemo(() => {
-    // Create a map of serviceId -> category
     const categoryMap = new Map<string, string>()
     catalogServices.forEach((catalogService) => {
       if (catalogService.category) {
@@ -154,13 +163,12 @@ export default function ServicesPage() {
       }
     })
 
-    // Group services by category
     const groups = new Map<string, Service[]>()
     const uncategorized: Service[] = []
 
     services.forEach((service) => {
       const category = service.serviceId ? categoryMap.get(service.serviceId) : null
-      
+
       if (category) {
         if (!groups.has(category)) {
           groups.set(category, [])
@@ -171,19 +179,15 @@ export default function ServicesPage() {
       }
     })
 
-    // Convert to array and sort
     const result: GroupedServices[] = []
-    
-    // Add categorized groups (sorted alphabetically)
+
     const sortedCategories = Array.from(groups.keys()).sort()
     sortedCategories.forEach((category) => {
       const categoryServices = groups.get(category)!
-      // Sort services within category alphabetically
       categoryServices.sort((a, b) => a.name.localeCompare(b.name))
       result.push({ category, services: categoryServices })
     })
 
-    // Add uncategorized services if any
     if (uncategorized.length > 0) {
       uncategorized.sort((a, b) => a.name.localeCompare(b.name))
       result.push({ category: 'Autres', services: uncategorized })
@@ -218,144 +222,259 @@ export default function ServicesPage() {
     return <ServicesSkeleton />
   }
 
+  const totalServices = services.length
+  const activeServices = services.filter(s => s.isActive).length
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
         <div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Services
-          </div>
-          <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Services
+            </div>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="text-2xl font-extrabold text-[#2A1F2D] mb-1"
+          >
             Mes services
-          </h1>
-          <p className="text-sm text-[#8a7a92]">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-sm text-[#8a7a92]"
+          >
             Gérez vos services et tarifs proposés à vos clientes.
-          </p>
+          </motion.p>
         </div>
         {proId && (
-          <Button
-            onClick={() => setAddModalOpen(true)}
-            className="btn-gradient rounded-full px-6 py-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_6px_24px_rgba(200,109,215,0.4)] transition-shadow"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
           >
-            + Ajouter un service
-          </Button>
+            <Button
+              onClick={() => setAddModalOpen(true)}
+              className="btn-gradient rounded-full px-7 py-3 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_8px_28px_rgba(200,109,215,0.4)] transition-all hover:-translate-y-0.5"
+            >
+              <span className="mr-2 text-base">+</span> Ajouter un service
+            </Button>
+          </motion.div>
         )}
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-[16px] p-4 flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <p className="text-red-700 font-semibold text-sm mb-0.5">Erreur</p>
-            <p className="text-red-600 text-xs">{error}</p>
+      {/* Stats bar */}
+      {totalServices > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="flex items-center gap-3"
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-white border border-primary/8 shadow-[0_2px_8px_rgba(20,0,50,0.03)]">
+            <div className="w-7 h-7 rounded-[8px] bg-[#F5F0F7] flex items-center justify-center text-xs">📋</div>
+            <span className="text-sm font-bold text-[#2A1F2D]">{totalServices}</span>
+            <span className="text-xs text-[#8a7a92]">service{totalServices > 1 ? 's' : ''}</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReload}
-            className="rounded-[12px] border-red-300 text-red-700 hover:bg-red-100 text-xs"
-          >
-            Réessayer
-          </Button>
-        </div>
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-white border border-primary/8 shadow-[0_2px_8px_rgba(20,0,50,0.03)]">
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-sm font-bold text-[#2A1F2D]">{activeServices}</span>
+            <span className="text-xs text-[#8a7a92]">actif{activeServices > 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-white border border-primary/8 shadow-[0_2px_8px_rgba(20,0,50,0.03)]">
+            <div className="w-2 h-2 rounded-full bg-[#C5BAD0]" />
+            <span className="text-sm font-bold text-[#2A1F2D]">{totalServices - activeServices}</span>
+            <span className="text-xs text-[#8a7a92]">inactif{(totalServices - activeServices) > 1 ? 's' : ''}</span>
+          </div>
+        </motion.div>
       )}
 
+      {/* Error */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50/80 border border-red-200/60 rounded-[18px] p-5 flex items-center justify-between gap-4 backdrop-blur-sm"
+        >
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-[12px] bg-red-100 flex items-center justify-center text-lg shrink-0">⚠️</div>
+            <div>
+              <p className="text-red-700 font-semibold text-sm mb-0.5">Erreur de chargement</p>
+              <p className="text-red-600/80 text-xs">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleReload}
+            className="px-4 py-2 rounded-full border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors shrink-0"
+          >
+            Réessayer
+          </button>
+        </motion.div>
+      )}
+
+      {/* Empty state */}
       {services.length === 0 ? (
-        <div className="bg-white rounded-[28px] border border-primary/10 p-12 text-center shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-[20px] bg-secondary flex items-center justify-center mx-auto mb-5 text-3xl">✨</div>
-            <h3 className="text-lg font-bold text-[#2A1F2D] mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white rounded-[28px] border border-primary/10 p-16 text-center shadow-[0_8px_40px_rgba(20,0,50,0.05)]"
+        >
+          <div className="max-w-sm mx-auto">
+            <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center mx-auto mb-6 text-4xl shadow-[0_4px_16px_rgba(200,109,215,0.1)]">
+              ✨
+            </div>
+            <h3 className="text-xl font-extrabold text-[#2A1F2D] mb-2">
               Aucun service pour le moment
             </h3>
-            <p className="text-sm text-[#8a7a92] mb-6">
-              Créez votre premier service pour commencer à accepter des réservations.
+            <p className="text-sm text-[#8a7a92] mb-8 leading-relaxed">
+              Créez votre premier service pour commencer à accepter des réservations de vos clientes.
             </p>
             {proId && (
               <Button
                 onClick={() => setAddModalOpen(true)}
-                className="btn-gradient rounded-full px-6 py-2.5 text-sm font-bold"
+                className="btn-gradient rounded-full px-8 py-3 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_8px_28px_rgba(200,109,215,0.4)] transition-all hover:-translate-y-0.5"
               >
                 Créer votre premier service
               </Button>
             )}
           </div>
-        </div>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
-          {groupedServices.map((group) => {
+        <div className="space-y-5">
+          {groupedServices.map((group, groupIndex) => {
             const isExpanded = expandedCategories.has(group.category)
             return (
-              <div key={group.category} className="bg-white border border-primary/8 rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgba(20,0,50,0.04)]">
+              <motion.div
+                key={group.category}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: groupIndex * 0.08 }}
+                className="bg-white border border-primary/8 rounded-[24px] overflow-hidden shadow-[0_4px_24px_rgba(20,0,50,0.04)] hover:shadow-[0_6px_30px_rgba(20,0,50,0.06)] transition-shadow"
+              >
+                {/* Category header */}
                 <button
                   type="button"
                   onClick={() => toggleCategory(group.category)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/30 transition-colors"
+                  className="w-full px-6 py-5 flex items-center justify-between hover:bg-[#FDFBFE] transition-colors group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">✂️</div>
-                    <h2 className="text-sm font-bold text-[#2A1F2D]">
-                      {group.category} <span className="text-[#8a7a92] font-medium ml-1">({group.services.length})</span>
-                    </h2>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-primary/8 to-secondary flex items-center justify-center text-lg">
+                      {getCategoryIcon(group.category)}
+                    </div>
+                    <div className="text-left">
+                      <h2 className="text-sm font-bold text-[#2A1F2D]">
+                        {group.category}
+                      </h2>
+                      <p className="text-xs text-[#8a7a92] mt-0.5">
+                        {group.services.length} service{group.services.length > 1 ? 's' : ''}
+                        {' · '}
+                        {group.services.filter(s => s.isActive).length} actif{group.services.filter(s => s.isActive).length > 1 ? 's' : ''}
+                      </p>
+                    </div>
                   </div>
-                  <svg
-                    className={`w-4 h-4 text-[#7A6B80] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      {group.services.slice(0, 3).map((s) => (
+                        <div
+                          key={s.id}
+                          className={`w-2 h-2 rounded-full ${s.isActive ? 'bg-emerald-400' : 'bg-[#D5CCD9]'}`}
+                        />
+                      ))}
+                      {group.services.length > 3 && (
+                        <span className="text-[10px] text-[#8a7a92] ml-0.5">+{group.services.length - 3}</span>
+                      )}
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-[#9A8DA3] transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''} group-hover:text-primary`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
+
+                {/* Expanded services */}
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="px-6 pb-6 pt-3 border-t border-[#EDE8F0]">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="px-6 pb-6 pt-2 border-t border-[#EDE8F0]/60">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <AnimatePresence>
                         {group.services.map((service, index) => (
                           <motion.div
                             key={service.id}
                             suppressHydrationWarning
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ delay: index * 0.05 }}
+                            exit={{ opacity: 0, y: -16 }}
+                            transition={{ delay: index * 0.04, duration: 0.3 }}
                           >
-                            <div className="bg-[#FDFBFE] rounded-[20px] p-5 h-full flex flex-col border border-primary/8 hover:border-primary/20 hover:shadow-[0_4px_16px_rgba(200,109,215,0.08)] transition-all">
-                              <div className="mb-3">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h3 className="text-sm font-bold text-[#2A1F2D] flex-1 pr-2">
+                            <div className="group/card bg-[#FDFBFE] rounded-[20px] p-5 h-full flex flex-col border border-[#EDE8F0] hover:border-primary/20 hover:shadow-[0_8px_24px_rgba(200,109,215,0.08)] transition-all duration-300">
+                              {/* Top row: name + status */}
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-[15px] font-bold text-[#2A1F2D] truncate">
                                     {service.name}
                                   </h3>
-                                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${
-                                    service.isActive
-                                      ? 'bg-[#DCFCE7] text-[#166534]'
-                                      : 'bg-secondary text-[#7A6B80]'
-                                  }`}>
-                                    {service.isActive ? 'Actif' : 'Inactif'}
-                                  </span>
                                 </div>
-                                {service.description && (
-                                  <p className="text-xs text-[#7A6B80] line-clamp-2 leading-relaxed">
-                                    {service.description}
-                                  </p>
-                                )}
+                                <span className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1.5 ${
+                                  service.isActive
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                                    : 'bg-[#F5F0F7] text-[#8a7a92] border border-[#EDE8F0]'
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${service.isActive ? 'bg-emerald-400' : 'bg-[#C5BAD0]'}`} />
+                                  {service.isActive ? 'Actif' : 'Inactif'}
+                                </span>
                               </div>
 
-                              <div className="mt-auto pt-3 border-t border-[#EDE8F0]">
-                                <div className="flex items-center justify-between mb-3">
-                                  <span className="text-xl font-extrabold text-primary">{service.price} €</span>
-                                  <span className="text-xs text-[#7A6B80]">⏱ {service.duration} min</span>
+                              {/* Description */}
+                              {service.description && (
+                                <p className="text-xs text-[#8a7a92] line-clamp-2 leading-relaxed mb-4">
+                                  {service.description}
+                                </p>
+                              )}
+
+                              {/* Price + duration */}
+                              <div className="mt-auto">
+                                <div className="flex items-end justify-between mb-4 pt-3 border-t border-[#EDE8F0]/60">
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-wider text-[#8a7a92] mb-0.5 font-medium">Prix</p>
+                                    <span className="text-xl font-extrabold bg-gradient-to-r from-primary to-[#9C44AF] bg-clip-text text-transparent">
+                                      {service.price} €
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F0F7]">
+                                    <svg className="w-3.5 h-3.5 text-[#9C44AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-xs font-semibold text-[#2A1F2D]">{service.duration} min</span>
+                                  </div>
                                 </div>
+
+                                {/* Actions */}
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleEdit(service)}
-                                    className="flex-1 py-2 rounded-[10px] text-xs font-semibold bg-white border border-[#EDE8F0] text-[#2A1F2D] hover:border-primary hover:text-primary transition-all"
+                                    className="flex-1 py-2.5 rounded-full text-xs font-semibold bg-white border border-[#EDE8F0] text-[#2A1F2D] hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
                                   >
                                     Modifier
                                   </button>
                                   <button
                                     onClick={() => handleDelete(service)}
-                                    className="flex-1 py-2 rounded-[10px] text-xs font-semibold bg-white border border-[#EDE8F0] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all"
+                                    className="py-2.5 px-4 rounded-full text-xs font-semibold bg-white border border-[#EDE8F0] text-red-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
                                   >
-                                    Supprimer
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
                                   </button>
                                 </div>
                               </div>
@@ -366,7 +485,7 @@ export default function ServicesPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
         </div>

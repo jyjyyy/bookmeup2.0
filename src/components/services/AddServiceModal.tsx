@@ -19,6 +19,9 @@ interface AddServiceModalProps {
   proId: string
 }
 
+const inputStyles = "w-full px-4 py-3 rounded-[14px] border border-[#EDE8F0] bg-[#FDFBFE] text-[#2A1F2D] text-sm placeholder:text-[#B5A8BE] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-white transition-all duration-200"
+const labelStyles = "block text-xs font-semibold text-[#2A1F2D] mb-2 tracking-wide"
+
 export function AddServiceModal({
   isOpen,
   onClose,
@@ -44,7 +47,6 @@ export function AddServiceModal({
   const serviceTypeRef = useRef<HTMLDivElement>(null)
   const serviceNameRef = useRef<HTMLDivElement>(null)
 
-  // Load services catalog on mount
   useEffect(() => {
     if (isOpen) {
       const loadCatalog = async () => {
@@ -62,50 +64,41 @@ export function AddServiceModal({
     }
   }, [isOpen])
 
-  // Extract unique categories
   const categories = useMemo(() => {
     return Array.from(
       new Set(catalogServices.map((s) => s.category).filter(Boolean))
     ).sort() as string[]
   }, [catalogServices])
 
-  // Get services for selected type
   const servicesForSelectedType = useMemo(() => {
     if (!serviceType) return []
     return catalogServices.filter((s) => s.category === serviceType)
   }, [serviceType, catalogServices])
 
-  // Filter service type suggestions (derived value)
   const serviceTypeSuggestions = useMemo(() => {
     const term = serviceTypeInput.toLowerCase().trim()
     if (term) {
-      // Filter based on input
       return categories.filter((cat) =>
         cat.toLowerCase().includes(term)
       )
     } else {
-      // Show all categories when input is empty
       return categories
     }
   }, [serviceTypeInput, categories])
 
-  // Filter service name suggestions (derived value)
   const serviceNameSuggestions = useMemo(() => {
     if (!serviceType) return []
 
     const term = serviceNameInput.toLowerCase().trim()
     if (term) {
-      // Filter based on input
       return servicesForSelectedType.filter((s) =>
         s.name.toLowerCase().includes(term)
       )
     } else {
-      // Show all services when input is empty
       return servicesForSelectedType
     }
   }, [serviceNameInput, serviceType, servicesForSelectedType])
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -132,7 +125,6 @@ export function AddServiceModal({
     setServiceType(category)
     setServiceTypeInput(category)
     setShowServiceTypeSuggestions(false)
-    // Clear service name when type changes
     setServiceName('')
     setServiceNameInput('')
     setSelectedServiceId(null)
@@ -196,7 +188,6 @@ export function AddServiceModal({
         return
       }
 
-      // Reset form
       setServiceType('')
       setServiceTypeInput('')
       setServiceName('')
@@ -231,17 +222,36 @@ export function AddServiceModal({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Ajouter un service">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-[32px] text-sm">
-            {error}
+          <div className="flex items-center gap-3 bg-red-50/80 border border-red-200/60 text-red-600 px-4 py-3 rounded-[14px] text-sm">
+            <div className="w-8 h-8 rounded-[8px] bg-red-100 flex items-center justify-center shrink-0 text-xs">⚠️</div>
+            <p className="text-xs leading-relaxed">{error}</p>
           </div>
         )}
 
+        {/* Step indicators */}
+        <div className="flex items-center gap-2 mb-1">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ${serviceType ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60' : 'bg-primary/10 text-primary border border-primary/20'}`}>
+            <span className="w-4 h-4 rounded-full bg-current/10 flex items-center justify-center text-[9px]">1</span>
+            Type
+          </div>
+          <div className="w-4 h-px bg-[#EDE8F0]" />
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ${selectedServiceId ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60' : serviceType ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-[#F5F0F7] text-[#B5A8BE] border border-[#EDE8F0]'}`}>
+            <span className="w-4 h-4 rounded-full bg-current/10 flex items-center justify-center text-[9px]">2</span>
+            Service
+          </div>
+          <div className="w-4 h-px bg-[#EDE8F0]" />
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ${price ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60' : selectedServiceId ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-[#F5F0F7] text-[#B5A8BE] border border-[#EDE8F0]'}`}>
+            <span className="w-4 h-4 rounded-full bg-current/10 flex items-center justify-center text-[9px]">3</span>
+            Détails
+          </div>
+        </div>
+
         {/* 1. Service type (category) */}
         <div ref={serviceTypeRef} className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Type de service *
+          <label className={labelStyles}>
+            Type de service <span className="text-primary">*</span>
           </label>
           <input
             type="text"
@@ -259,16 +269,16 @@ export function AddServiceModal({
             disabled={loading}
             required
             placeholder="Tapez pour rechercher un type..."
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            className={inputStyles}
           />
           {showServiceTypeSuggestions && serviceTypeSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1.5 bg-white border border-[#EDE8F0] rounded-[14px] shadow-[0_8px_32px_rgba(20,0,50,0.1)] max-h-52 overflow-y-auto">
               {serviceTypeSuggestions.map((category) => (
                 <button
                   key={category}
                   type="button"
                   onClick={() => handleServiceTypeSelect(category)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900"
+                  className="w-full px-4 py-2.5 text-left hover:bg-[#F5F0F7] text-sm text-[#2A1F2D] first:rounded-t-[14px] last:rounded-b-[14px] transition-colors"
                 >
                   {category}
                 </button>
@@ -279,11 +289,11 @@ export function AddServiceModal({
 
         {/* 2. Service name */}
         <div ref={serviceNameRef} className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nom du service *
+          <label className={labelStyles}>
+            Nom du service <span className="text-primary">*</span>
           </label>
           <input
-          type="text"
+            type="text"
             name="service-name-input"
             autoComplete="off"
             value={serviceNameInput}
@@ -301,22 +311,22 @@ export function AddServiceModal({
               }
             }}
             disabled={loading || !serviceType}
-          required
+            required
             placeholder={
               serviceType
                 ? "Tapez pour rechercher un service..."
                 : "Sélectionnez d'abord un type de service"
             }
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500"
+            className={`${inputStyles} disabled:bg-[#F5F0F7] disabled:text-[#B5A8BE] disabled:cursor-not-allowed`}
           />
           {showServiceNameSuggestions && serviceNameSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[16px] shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1.5 bg-white border border-[#EDE8F0] rounded-[14px] shadow-[0_8px_32px_rgba(20,0,50,0.1)] max-h-52 overflow-y-auto">
               {serviceNameSuggestions.map((service) => (
                 <button
                   key={service.id}
                   type="button"
                   onClick={() => handleServiceNameSelect(service)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 text-gray-900"
+                  className="w-full px-4 py-2.5 text-left hover:bg-[#F5F0F7] text-sm text-[#2A1F2D] first:rounded-t-[14px] last:rounded-b-[14px] transition-colors"
                 >
                   {service.name}
                 </button>
@@ -327,44 +337,42 @@ export function AddServiceModal({
 
         {/* 3. Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
+          <label className={labelStyles}>Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading}
-            rows={4}
-            className="w-full px-4 py-3 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-gray-400"
+            rows={3}
+            className={`${inputStyles} resize-none`}
             placeholder="Décrivez votre service..."
           />
         </div>
 
-        {/* 4. Price */}
-        <div>
-          <Input
-            type="number"
-            label="Prix (€) *"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            disabled={loading}
-            min="0"
-            step="0.01"
-            placeholder="45"
-          />
-        </div>
-
-        {/* 5. Duration */}
+        {/* 4. Price & Duration row */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-            Durée (minutes) *
+            <Input
+              type="number"
+              label="Prix (€) *"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
+              disabled={loading}
+              min="0"
+              step="0.01"
+              placeholder="45"
+            />
+          </div>
+
+          <div>
+            <label className={labelStyles}>
+              Durée <span className="text-primary">*</span>
             </label>
             <select
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               disabled={loading}
-            className="w-full px-4 py-3 pr-10 rounded-[32px] border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat"
+              className={`${inputStyles} pr-10 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%239A8DA3%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E')] bg-[length:1.1rem] bg-[right_0.8rem_center] bg-no-repeat`}
             >
               <option value="15">15 min</option>
               <option value="30">30 min</option>
@@ -373,24 +381,28 @@ export function AddServiceModal({
               <option value="90">90 min</option>
               <option value="120">120 min</option>
             </select>
+          </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <Button
+        {/* Buttons */}
+        <div className="flex gap-3 pt-3">
+          <button
             type="button"
-            variant="outline"
             onClick={handleClose}
             disabled={loading}
-            className="flex-1"
+            className="flex-1 py-3 rounded-full text-sm font-semibold border border-[#EDE8F0] text-[#2A1F2D] hover:bg-[#F5F0F7] transition-colors disabled:opacity-50"
           >
             Annuler
-          </Button>
-          <Button type="submit" disabled={loading} className="flex-1">
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 py-3 rounded-full text-sm font-bold btn-gradient shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_6px_24px_rgba(200,109,215,0.4)] transition-all disabled:opacity-50"
+          >
             {loading ? 'Création...' : 'Créer le service'}
-          </Button>
+          </button>
         </div>
       </form>
     </Modal>
   )
 }
-

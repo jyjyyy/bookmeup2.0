@@ -268,101 +268,160 @@ export default function ClientAppointmentsPage() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-8"
+      className="max-w-3xl mx-auto px-4 py-6 space-y-10"
     >
-      <div>
-        <h2 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
+      {/* Page header */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-sm font-semibold mb-4">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           Mes rendez-vous
+        </div>
+        <h2 className="text-3xl font-extrabold text-[#2A1F2D] mb-2">
+          Vos rendez-vous
         </h2>
-        <p className="text-sm text-[#7A6B80]">
-          Gérez vos rendez-vous à venir et consultez votre historique.
+        <p className="text-base text-[#8a7a92] max-w-md mx-auto">
+          Suivez vos prochains rendez-vous et consultez votre historique.
         </p>
       </div>
 
-      {/* Upcoming Appointments — cards with full details */}
-      <section>
-        <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
-          À venir
-        </h3>
+      {/* ── UPCOMING ─────────────────────────────────────────────── */}
+      <section className="space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[12px] bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center">
+            <span className="text-white text-sm">📅</span>
+          </div>
+          <h3 className="text-lg font-bold text-[#2A1F2D]">À venir</h3>
+          {upcomingBookings.length > 0 && (
+            <span className="ml-auto text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+              {upcomingBookings.length}
+            </span>
+          )}
+        </div>
+
         {upcomingBookings.length === 0 ? (
-          <div className="bg-white rounded-[20px] p-5 text-center text-[#7A6B80] text-sm border border-primary/10">
-            Aucun rendez-vous à venir.
+          <div className="bg-white rounded-[24px] p-8 text-center border border-primary/10 shadow-[0_4px_24px_rgba(20,0,50,0.04)]">
+            <div className="w-14 h-14 rounded-[16px] bg-secondary flex items-center justify-center text-2xl mx-auto mb-4">📭</div>
+            <p className="text-sm text-[#8a7a92] font-medium">Aucun rendez-vous à venir.</p>
+            <p className="text-xs text-[#b5a8bc] mt-1">Réservez chez un professionnel pour voir apparaître vos prochains rendez-vous ici.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {upcomingBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-white rounded-[20px] p-4 border border-primary/10 shadow-[0_4px_16px_rgba(20,0,50,0.04)] flex items-center gap-4"
-              >
-                {/* Date block */}
-                <div className="flex-shrink-0 w-14 h-14 rounded-[14px] bg-secondary flex flex-col items-center justify-center">
-                  <span className="text-xs font-semibold text-primary leading-none">
-                    {new Date(`${booking.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short' })}
-                  </span>
-                  <span className="text-lg font-extrabold text-[#2A1F2D] leading-tight">
-                    {new Date(`${booking.date}T00:00:00`).getDate()}
-                  </span>
-                </div>
+          <div className="space-y-4">
+            {upcomingBookings.map((booking, i) => {
+              const d = new Date(`${booking.date}T00:00:00`)
+              const dayName = d.toLocaleDateString('fr-FR', { weekday: 'long' })
+              const dayNum = d.getDate()
+              const month = d.toLocaleDateString('fr-FR', { month: 'short' })
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h4 className="text-sm font-bold text-[#2A1F2D] truncate">{booking.serviceName}</h4>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
-                    >
-                      {getStatusLabel(booking.status)}
-                    </span>
+              return (
+                <motion.div
+                  suppressHydrationWarning
+                  key={booking.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: i * 0.06 }}
+                  className="bg-white rounded-[24px] p-5 border border-primary/10 shadow-[0_8px_32px_rgba(20,0,50,0.06)] hover:shadow-[0_12px_40px_rgba(20,0,50,0.1)] transition-shadow"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Date block */}
+                    <div className="flex-shrink-0 w-16 h-16 rounded-[16px] bg-gradient-to-br from-primary/10 to-secondary flex flex-col items-center justify-center border border-primary/15">
+                      <span className="text-[10px] font-bold text-primary uppercase leading-none tracking-wide">
+                        {dayName.slice(0, 3)}
+                      </span>
+                      <span className="text-2xl font-extrabold text-[#2A1F2D] leading-tight">
+                        {dayNum}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#8a7a92] uppercase leading-none">
+                        {month}
+                      </span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <h4 className="text-base font-bold text-[#2A1F2D] truncate">{booking.serviceName}</h4>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
+                        >
+                          {getStatusLabel(booking.status)}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                        <span className="inline-flex items-center gap-1.5 text-sm text-[#64576b]">
+                          <span className="text-primary/60 text-xs">👤</span>
+                          {booking.proName}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-[#64576b]">
+                          <span className="text-primary/60 text-xs">🕐</span>
+                          {booking.start_time} — {booking.end_time}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-[#7A6B80] truncate">
-                    {booking.proName} · {booking.start_time}
-                  </p>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </section>
 
-      {/* Past Appointments — compact table-like rows */}
-      <section>
-        <h3 className="text-xs font-bold text-[#7A6B80] uppercase tracking-widest mb-4">
-          Historique
-        </h3>
+      {/* ── PAST / HISTORY ───────────────────────────────────────── */}
+      <section className="space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[12px] bg-[#EDE8F0] flex items-center justify-center">
+            <span className="text-sm">🕘</span>
+          </div>
+          <h3 className="text-lg font-bold text-[#2A1F2D]">Historique</h3>
+          {pastBookings.length > 0 && (
+            <span className="ml-auto text-xs font-bold text-[#8a7a92] bg-[#EDE8F0] px-2.5 py-1 rounded-full">
+              {pastBookings.length}
+            </span>
+          )}
+        </div>
+
         {pastBookings.length === 0 ? (
-          <div className="bg-white rounded-[20px] p-5 text-center text-[#7A6B80] text-sm border border-primary/10">
-            Aucun rendez-vous passé.
+          <div className="bg-white rounded-[24px] p-8 text-center border border-primary/10 shadow-[0_4px_24px_rgba(20,0,50,0.04)]">
+            <div className="w-14 h-14 rounded-[16px] bg-[#EDE8F0] flex items-center justify-center text-2xl mx-auto mb-4">📋</div>
+            <p className="text-sm text-[#8a7a92] font-medium">Aucun rendez-vous passé.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-[20px] border border-primary/10 overflow-hidden divide-y divide-[#EDE8F0]">
-            {pastBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
-              >
-                {/* Date compact */}
-                <span className="text-xs text-[#7A6B80] w-20 flex-shrink-0 font-medium">
-                  {formatDateShort(booking.date)}
-                </span>
+          <div className="space-y-3">
+            {pastBookings.map((booking, i) => {
+              const d = new Date(`${booking.date}T00:00:00`)
+              const dayNum = d.getDate()
+              const month = d.toLocaleDateString('fr-FR', { month: 'short' })
+              const year = d.getFullYear()
 
-                {/* Service + pro */}
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[#2A1F2D] truncate">{booking.serviceName}</span>
-                  <span className="text-xs text-[#7A6B80] truncate hidden sm:inline">· {booking.proName}</span>
-                </div>
-
-                {/* Time */}
-                <span className="text-xs text-[#7A6B80] flex-shrink-0">{booking.start_time}</span>
-
-                {/* Status badge */}
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
+              return (
+                <motion.div
+                  suppressHydrationWarning
+                  key={booking.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  className="bg-white rounded-[20px] px-5 py-4 border border-[#EDE8F0] hover:border-primary/15 shadow-[0_2px_12px_rgba(20,0,50,0.03)] hover:shadow-[0_4px_20px_rgba(20,0,50,0.06)] transition-all flex items-center gap-4"
                 >
-                  {getStatusLabel(booking.status)}
-                </span>
-              </div>
-            ))}
+                  {/* Date circle */}
+                  <div className="flex-shrink-0 w-11 h-11 rounded-full bg-[#F5F0F7] flex flex-col items-center justify-center">
+                    <span className="text-sm font-extrabold text-[#64576b] leading-none">{dayNum}</span>
+                    <span className="text-[9px] font-semibold text-[#b5a8bc] uppercase leading-none">{month}</span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#2A1F2D] truncate">{booking.serviceName}</p>
+                    <p className="text-xs text-[#8a7a92] truncate">{booking.proName} · {booking.start_time}</p>
+                  </div>
+
+                  {/* Status */}
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold flex-shrink-0 ${getStatusBadgeClass(booking.status)}`}
+                  >
+                    {getStatusLabel(booking.status)}
+                  </span>
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </section>

@@ -125,26 +125,30 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
       <div>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Gestion
+        </div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
           Clients bloqués
         </h1>
-        <p className="text-sm text-[#7A6B80]">
+        <p className="text-sm text-[#8a7a92]">
           Gérez les clients ayant annulé ou manqué trop de rendez-vous.
         </p>
       </div>
 
       {/* Liste des clients bloqués ou état vide */}
       {clients.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-[#EDE8F0] p-12 text-center">
+        <div className="bg-white rounded-[28px] border border-primary/10 p-12 text-center shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
           <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-full bg-[#F0FDF4] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-            <h2 className="text-base font-bold text-[#2A1F2D] mb-2">
-              Aucun client bloqué pour le moment
+            <div className="w-16 h-16 rounded-[20px] bg-[#F0FDF4] flex items-center justify-center mx-auto mb-4 text-2xl">✅</div>
+            <h2 className="text-lg font-bold text-[#2A1F2D] mb-2">
+              Aucun client bloqué
             </h2>
-            <p className="text-sm text-[#7A6B80] leading-relaxed">
+            <p className="text-sm text-[#8a7a92] leading-relaxed">
               Les clients ayant annulé ou manqué trop de rendez-vous apparaîtront ici.
             </p>
           </div>
@@ -152,24 +156,28 @@ export default function ClientsPage() {
       ) : (
         <div className="space-y-3">
           {clients.map((client) => (
-            <div key={client.id} className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
+            <div key={client.id} className="bg-white rounded-[22px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] hover:shadow-[0_6px_24px_rgba(20,0,50,0.07)] transition-shadow p-5">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-sm font-bold text-[#2A1F2D]">
-                      {client.name || client.email || 'Client anonyme'}
-                    </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
-                      Bloqué
-                    </span>
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-[12px] bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🚫</span>
                   </div>
-                  {client.name && client.email && (
-                    <p className="text-xs text-[#7A6B80] mb-2">{client.email}</p>
-                  )}
-                  <div className="flex flex-wrap gap-4 text-xs text-[#7A6B80]">
-                    <span>Annulations : <strong className="text-[#2A1F2D]">{client.cancelCount}</strong></span>
-                    <span>Absences : <strong className="text-[#2A1F2D]">{client.noShowCount}</strong></span>
-                    <span>Total : <strong className="text-[#2A1F2D]">{client.cancelCount + client.noShowCount}</strong></span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 mb-1">
+                      <h3 className="text-sm font-bold text-[#2A1F2D]">
+                        {client.name || client.email || 'Client anonyme'}
+                      </h3>
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-bold">
+                        Bloqué
+                      </span>
+                    </div>
+                    {client.name && client.email && (
+                      <p className="text-xs text-[#8a7a92] mb-2">{client.email}</p>
+                    )}
+                    <div className="flex flex-wrap gap-4 text-xs text-[#8a7a92]">
+                      <span>Annulations : <strong className="text-[#2A1F2D]">{client.cancelCount}</strong></span>
+                      <span>Absences : <strong className="text-[#2A1F2D]">{client.noShowCount}</strong></span>
+                    </div>
                   </div>
                 </div>
 
@@ -177,7 +185,7 @@ export default function ClientsPage() {
                   <Button
                     onClick={() => handleUnblock(client.id)}
                     disabled={unblocking === client.id}
-                    className="btn-gradient rounded-[12px] text-sm font-semibold disabled:opacity-50"
+                    className="btn-gradient rounded-full px-5 text-sm font-bold disabled:opacity-50"
                   >
                     {unblocking === client.id ? 'Déblocage…' : 'Débloquer'}
                   </Button>

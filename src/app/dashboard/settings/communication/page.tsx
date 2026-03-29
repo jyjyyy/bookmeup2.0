@@ -94,56 +94,63 @@ export default function CommunicationPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-3xl font-bold text-primary mb-2">Communication</h1>
-        <p className="text-gray-600 text-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Notifications
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Communication</h1>
+        <p className="text-sm text-[#8a7a92]">
           Gérez les notifications envoyées à vous et à vos clients.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
+          <span>⚠️</span> {error}
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[32px] text-sm">
-          {success}
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[20px] text-sm flex items-center gap-3">
+          <span>✅</span> {success}
         </div>
       )}
 
       {/* Notifications Email */}
-      <Card className="rounded-[32px] shadow-bookmeup p-6">
-        <CardHeader>
-          <CardTitle>Notifications par email</CardTitle>
-          <CardDescription>
-            Emails automatiques envoyés à vos clients et à vous-même.
-          </CardDescription>
-        </CardHeader>
-        <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">📧</div>
+          <div>
+            <h2 className="text-base font-bold text-[#2A1F2D]">Notifications par email</h2>
+            <p className="text-xs text-[#8a7a92]">Emails automatiques envoyés à vos clients.</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-800">Confirmation de réservation</p>
-              <p className="text-xs text-gray-500">Email envoyé au client après chaque réservation confirmée</p>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Confirmation de réservation</p>
+              <p className="text-xs text-[#8a7a92]">Email envoyé au client après chaque réservation confirmée</p>
             </div>
             <Switch
               checked={settings.emailBookingConfirmed}
               onChange={toggle('emailBookingConfirmed')}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="border-t border-[#EDE8F0]" />
+          <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-800">Annulation de réservation</p>
-              <p className="text-xs text-gray-500">Email envoyé au client en cas d&apos;annulation</p>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Annulation de réservation</p>
+              <p className="text-xs text-[#8a7a92]">Email envoyé au client en cas d&apos;annulation</p>
             </div>
             <Switch
               checked={settings.emailBookingCancelled}
               onChange={toggle('emailBookingCancelled')}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="border-t border-[#EDE8F0]" />
+          <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-800">Rappel 24h avant</p>
-              <p className="text-xs text-gray-500">Email de rappel envoyé au client la veille du rendez-vous</p>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Rappel 24h avant</p>
+              <p className="text-xs text-[#8a7a92]">Email de rappel envoyé au client la veille du rendez-vous</p>
             </div>
             <Switch
               checked={settings.emailReminder24h}
@@ -151,21 +158,22 @@ export default function CommunicationPage() {
             />
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Notifications SMS */}
-      <Card className="rounded-[32px] shadow-bookmeup p-6">
-        <CardHeader>
-          <CardTitle>Notifications par SMS</CardTitle>
-          <CardDescription>
-            SMS envoyés à vos clients (nécessite une configuration Twilio).
-          </CardDescription>
-        </CardHeader>
-        <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">💬</div>
+          <div>
+            <h2 className="text-base font-bold text-[#2A1F2D]">Notifications par SMS</h2>
+            <p className="text-xs text-[#8a7a92]">SMS envoyés à vos clients.</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-800">Rappel SMS 24h avant</p>
-              <p className="text-xs text-gray-500">SMS de rappel envoyé au client la veille du rendez-vous</p>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Rappel SMS 24h avant</p>
+              <p className="text-xs text-[#8a7a92]">SMS de rappel envoyé au client la veille du rendez-vous</p>
             </div>
             <Switch
               checked={settings.smsReminder24h}
@@ -173,13 +181,13 @@ export default function CommunicationPage() {
             />
           </div>
         </div>
-      </Card>
+      </div>
 
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="rounded-[32px] px-8"
+          className="btn-gradient rounded-full px-8 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)]"
         >
           {saving ? 'Enregistrement…' : 'Enregistrer les préférences'}
         </Button>

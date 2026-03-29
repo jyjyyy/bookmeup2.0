@@ -248,15 +248,20 @@ export default function SubscriptionPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Abonnement</h1>
-        <p className="text-sm text-[#7A6B80] mb-3">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Abonnement
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Mon abonnement</h1>
+        <p className="text-sm text-[#8a7a92] mb-3">
           {hasNoPlan
             ? 'Choisissez un abonnement pour accéder à toutes les fonctionnalités.'
             : 'Gérez votre abonnement et choisissez le plan qui vous convient.'
           }
         </p>
         {hasNoPlan && (
-          <div className="bg-orange-50 border border-orange-200 rounded-[16px] p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-[20px] p-4 flex items-center gap-3">
+            <span className="text-lg">⚠️</span>
             <p className="text-sm text-orange-800 font-medium">
               Vous n&apos;avez pas encore d&apos;abonnement. Choisissez un plan ci-dessous pour commencer.
             </p>

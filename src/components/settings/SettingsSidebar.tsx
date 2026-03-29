@@ -23,8 +23,8 @@ export function SettingsSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-5 h-fit">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#7A6B80] mb-3 px-2">
+    <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-4 h-fit">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-[#b5a8bc] mb-3 px-3">
         Paramètres
       </p>
       <nav className="flex flex-col gap-1">
@@ -36,15 +36,15 @@ export function SettingsSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all',
+                'flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-sm font-medium transition-all',
                 isActive
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'text-[#7A6B80] hover:bg-secondary hover:text-[#2A1F2D]'
+                  ? 'bg-gradient-to-r from-primary/10 to-secondary text-[#2A1F2D] font-bold shadow-[0_2px_8px_rgba(200,109,215,0.08)]'
+                  : 'text-[#7A6B80] hover:bg-[#F5F0F7] hover:text-[#2A1F2D]'
               )}
             >
               <span className={cn(
-                'w-7 h-7 rounded-[8px] flex items-center justify-center text-sm flex-shrink-0',
-                isActive ? 'bg-primary/20' : 'bg-secondary'
+                'w-8 h-8 rounded-[10px] flex items-center justify-center text-sm flex-shrink-0',
+                isActive ? 'bg-white shadow-sm' : 'bg-[#F5F0F7]'
               )}>{item.icon}</span>
               <span className="truncate">{item.label}</span>
             </Link>

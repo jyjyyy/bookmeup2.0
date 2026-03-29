@@ -166,26 +166,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* En-tête */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#2A1F2D] mb-3">
+      <div>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-sm font-semibold mb-4">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           Tableau de bord
+        </div>
+        <h1 className="text-3xl font-extrabold text-[#2A1F2D] mb-2">
+          Vue d&apos;ensemble
         </h1>
-        <p className="text-lg text-[#7A6B80]">
-          Bienvenue sur votre espace professionnel BookMeUp
+        <p className="text-base text-[#8a7a92]">
+          Suivez votre activité et gérez votre espace professionnel.
         </p>
       </div>
 
       {/* Alerte : aucun abonnement */}
       {!loadingStats && plan === null && (
-        <div className="rounded-[20px] border-2 border-orange-300 bg-orange-50 px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="rounded-[24px] border border-orange-200 bg-orange-50 px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-[0_4px_16px_rgba(20,0,50,0.04)]">
+          <div className="w-11 h-11 rounded-[12px] bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-lg">⚠️</span>
+          </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-orange-800 mb-1">
+            <p className="text-sm font-bold text-orange-800 mb-0.5">
               Aucun abonnement actif
             </p>
             <p className="text-sm text-orange-700">
-              Choisissez un abonnement pour débloquer toutes les fonctionnalités de votre espace pro.
+              Choisissez un abonnement pour débloquer toutes les fonctionnalités.
             </p>
           </div>
           <a
@@ -216,18 +223,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistiques avancées */}
-      <Card className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-bookmeup">
+      <Card className="rounded-[28px] border border-primary/8 bg-white p-7 shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-              Statistiques avancées
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-[#2A1F2D]">
-              Analyse de votre activité
-            </h2>
-            <p className="mt-1 text-sm text-[#7A6B80]">
-              Réservations, revenus et performance par service.
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-primary to-[#9C44AF] flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm">📈</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[#2A1F2D]">
+                Statistiques avancées
+              </h2>
+              <p className="text-sm text-[#8a7a92]">
+                Réservations, revenus et performance par service.
+              </p>
+            </div>
           </div>
           <PeriodSelector value={period} onChange={setPeriod} />
         </div>
@@ -340,22 +349,22 @@ export default function DashboardPage() {
       )}
 
       {/* Message de bienvenue */}
-      <Card className="rounded-[32px] border-2 border-primary/20 bg-gradient-to-br from-secondary/40 to-white p-8 shadow-bookmeup">
+      <div className="rounded-[28px] border border-primary/10 bg-gradient-to-br from-primary/5 via-secondary/30 to-white p-7 shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-3xl">✨</span>
+          <div className="w-14 h-14 rounded-[16px] bg-white shadow-sm border border-primary/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-2xl">✨</span>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl md:text-2xl font-bold text-[#2A1F2D] mb-3">
+            <h2 className="text-lg font-bold text-[#2A1F2D] mb-1.5">
               Bienvenue sur votre espace beauté
             </h2>
-            <p className="text-base text-[#7A6B80] leading-relaxed">
+            <p className="text-sm text-[#8a7a92] leading-relaxed">
               Ajoutez vos services, définissez vos horaires et commencez à accepter
               des réservations en ligne en quelques minutes.
             </p>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

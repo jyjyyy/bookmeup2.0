@@ -656,8 +656,12 @@ export default function AccountPage() {
     >
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Compte</h1>
-        <p className="text-[#7A6B80] text-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Mon compte
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Paramètres du compte</h1>
+        <p className="text-[#8a7a92] text-sm">
           Ces informations sont visibles sur votre fiche publique BookMeUp.
         </p>
       </div>
@@ -667,9 +671,9 @@ export default function AccountPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm"
+          className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3"
         >
-          {error}
+          <span>⚠️</span> {error}
         </motion.div>
       )}
 
@@ -678,19 +682,24 @@ export default function AccountPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[16px] text-sm"
+          className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-[20px] text-sm flex items-center gap-3"
         >
-          {success}
+          <span>✅</span> {success}
         </motion.div>
       )}
 
       {/* Card 1: Informations personnelles */}
-      <Card className="rounded-[32px] shadow-bookmeup p-8">
+      <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
-          <CardTitle>Informations personnelles</CardTitle>
-          <CardDescription>
-            Vos informations de connexion et votre nom d'affichage
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">👤</div>
+            <div>
+              <CardTitle>Informations personnelles</CardTitle>
+              <CardDescription>
+                Vos informations de connexion et votre nom d&apos;affichage
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
 
         <div className="space-y-4 mt-6">
@@ -730,7 +739,7 @@ export default function AccountPage() {
       </Card>
 
       {/* Card 2: Fiche professionnelle */}
-      <Card className="rounded-[32px] shadow-bookmeup p-8">
+      <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
           <CardTitle>Fiche professionnelle (publique)</CardTitle>
           <CardDescription>
@@ -850,7 +859,7 @@ export default function AccountPage() {
       </Card>
 
       {/* Card 3: Réseaux sociaux */}
-      <Card className="rounded-[32px] shadow-bookmeup p-8">
+      <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
           <CardTitle>Réseaux sociaux</CardTitle>
           <CardDescription>
@@ -904,7 +913,7 @@ export default function AccountPage() {
       </Card>
 
       {/* Card 4: Galerie photos */}
-      <Card className="rounded-[32px] shadow-bookmeup p-8">
+      <Card className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 p-8">
         <CardHeader>
           <CardTitle>Galerie photos</CardTitle>
           <CardDescription>

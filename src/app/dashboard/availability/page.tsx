@@ -181,22 +181,28 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="space-y-6 max-w-3xl">
       <div>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Planning
+        </div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Disponibilités</h1>
-        <p className="text-sm text-[#7A6B80]">
+        <p className="text-sm text-[#8a7a92]">
           Définissez vos horaires de travail pour chaque jour de la semaine.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
+          <span className="text-base">⚠️</span>
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[16px] text-sm">
+        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[20px] text-sm flex items-center gap-3">
+          <span className="text-base">✅</span>
           {success}
         </div>
       )}
@@ -207,7 +213,7 @@ export default function AvailabilityPage() {
           if (!day) return null
 
           return (
-            <div key={dayOfWeek} className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-bookmeup-sm p-5">
+            <div key={dayOfWeek} className={`bg-white rounded-[22px] border ${day.isEnabled ? 'border-primary/12 shadow-[0_4px_20px_rgba(20,0,50,0.05)]' : 'border-[#EDE8F0]'} p-5 transition-all`}>
               {/* En-tête du jour */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">

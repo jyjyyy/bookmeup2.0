@@ -157,30 +157,39 @@ export default function SecurityPage() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-5 max-w-3xl"
+      className="space-y-6 max-w-3xl"
     >
       <div>
-        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Sécurité</h1>
-        <p className="text-sm text-[#7A6B80]">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Sécurité
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Sécurité du compte</h1>
+        <p className="text-sm text-[#8a7a92]">
           Gérez la sécurité de votre compte et votre accès à BookMeUp.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[16px] text-sm">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
+          <span>⚠️</span> {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[16px] text-sm">
-          {success}
+        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[20px] text-sm flex items-center gap-3">
+          <span>✅</span> {success}
         </div>
       )}
 
-      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
-        <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Mot de passe</h2>
-        <p className="text-sm text-[#7A6B80] mb-4">Recevez un email pour changer votre mot de passe en toute sécurité.</p>
+      <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">🔑</div>
+          <div>
+            <h2 className="text-base font-bold text-[#2A1F2D]">Mot de passe</h2>
+            <p className="text-xs text-[#8a7a92]">Recevez un email pour changer votre mot de passe.</p>
+          </div>
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="text-sm text-[#7A6B80]">
             <p>Email : <span className="font-semibold text-[#2A1F2D]">{email}</span></p>
@@ -197,9 +206,14 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[24px] border border-[#EDE8F0] shadow-bookmeup-sm p-6">
-        <h2 className="text-base font-bold text-[#2A1F2D] mb-1">Déconnexion</h2>
-        <p className="text-sm text-[#7A6B80] mb-4">Terminez votre session sur cet appareil.</p>
+      <div className="bg-white rounded-[24px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">🚪</div>
+          <div>
+            <h2 className="text-base font-bold text-[#2A1F2D]">Déconnexion</h2>
+            <p className="text-xs text-[#8a7a92]">Terminez votre session sur cet appareil.</p>
+          </div>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -211,9 +225,14 @@ export default function SecurityPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-[24px] border border-red-100 shadow-bookmeup-sm p-6">
-        <h2 className="text-base font-bold text-red-700 mb-1">Supprimer mon compte</h2>
-        <p className="text-sm text-[#7A6B80] mb-4">Cette action est définitive. Vous ne pourrez plus accéder à votre compte.</p>
+      <div className="bg-white rounded-[24px] border border-red-200/60 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-[10px] bg-red-50 flex items-center justify-center text-sm">🗑️</div>
+          <div>
+            <h2 className="text-base font-bold text-red-700">Supprimer mon compte</h2>
+            <p className="text-xs text-[#8a7a92]">Cette action est définitive et irréversible.</p>
+          </div>
+        </div>
         <div className="space-y-3">
           {confirmDelete && (
             <p className="text-sm text-red-600 bg-red-50 rounded-[12px] px-4 py-3">

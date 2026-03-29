@@ -223,17 +223,21 @@ export default function ServicesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            Services
+          </div>
           <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
             Mes services
           </h1>
-          <p className="text-sm text-[#7A6B80]">
-            Gérez vos services et tarifs
+          <p className="text-sm text-[#8a7a92]">
+            Gérez vos services et tarifs proposés à vos clientes.
           </p>
         </div>
         {proId && (
           <Button
             onClick={() => setAddModalOpen(true)}
-            className="btn-gradient rounded-[14px] px-5 py-2.5 text-sm font-bold shadow-bookmeup-sm"
+            className="btn-gradient rounded-full px-6 py-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_6px_24px_rgba(200,109,215,0.4)] transition-shadow"
           >
             + Ajouter un service
           </Button>
@@ -258,19 +262,19 @@ export default function ServicesPage() {
       )}
 
       {services.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-[#EDE8F0] p-12 text-center shadow-bookmeup-sm">
+        <div className="bg-white rounded-[28px] border border-primary/10 p-12 text-center shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
           <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-5 text-3xl">✨</div>
-            <h3 className="text-base font-bold text-[#2A1F2D] mb-2">
+            <div className="w-16 h-16 rounded-[20px] bg-secondary flex items-center justify-center mx-auto mb-5 text-3xl">✨</div>
+            <h3 className="text-lg font-bold text-[#2A1F2D] mb-2">
               Aucun service pour le moment
             </h3>
-            <p className="text-sm text-[#7A6B80] mb-6">
+            <p className="text-sm text-[#8a7a92] mb-6">
               Créez votre premier service pour commencer à accepter des réservations.
             </p>
             {proId && (
               <Button
                 onClick={() => setAddModalOpen(true)}
-                className="btn-gradient rounded-[14px] px-5 py-2.5 text-sm font-bold"
+                className="btn-gradient rounded-full px-6 py-2.5 text-sm font-bold"
               >
                 Créer votre premier service
               </Button>
@@ -282,15 +286,18 @@ export default function ServicesPage() {
           {groupedServices.map((group) => {
             const isExpanded = expandedCategories.has(group.category)
             return (
-              <div key={group.category} className="bg-white border border-[#EDE8F0] rounded-[20px] overflow-hidden shadow-bookmeup-sm">
+              <div key={group.category} className="bg-white border border-primary/8 rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgba(20,0,50,0.04)]">
                 <button
                   type="button"
                   onClick={() => toggleCategory(group.category)}
-                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-secondary transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-secondary/30 transition-colors"
                 >
-                  <h2 className="text-sm font-bold text-[#2A1F2D]">
-                    {group.category} <span className="text-[#7A6B80] font-normal">({group.services.length})</span>
-                  </h2>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-sm">✂️</div>
+                    <h2 className="text-sm font-bold text-[#2A1F2D]">
+                      {group.category} <span className="text-[#8a7a92] font-medium ml-1">({group.services.length})</span>
+                    </h2>
+                  </div>
                   <svg
                     className={`w-4 h-4 text-[#7A6B80] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -299,7 +306,7 @@ export default function ServicesPage() {
                   </svg>
                 </button>
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="px-5 pb-5 pt-2 border-t border-[#EDE8F0]">
+                  <div className="px-6 pb-6 pt-3 border-t border-[#EDE8F0]">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <AnimatePresence>
                         {group.services.map((service, index) => (
@@ -311,7 +318,7 @@ export default function ServicesPage() {
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ delay: index * 0.05 }}
                           >
-                            <div className="bg-background rounded-[16px] p-5 h-full flex flex-col border border-[#EDE8F0] hover:border-primary/30 transition-all">
+                            <div className="bg-[#FDFBFE] rounded-[20px] p-5 h-full flex flex-col border border-primary/8 hover:border-primary/20 hover:shadow-[0_4px_16px_rgba(200,109,215,0.08)] transition-all">
                               <div className="mb-3">
                                 <div className="flex items-start justify-between mb-2">
                                   <h3 className="text-sm font-bold text-[#2A1F2D] flex-1 pr-2">

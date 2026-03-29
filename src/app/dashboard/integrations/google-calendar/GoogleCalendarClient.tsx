@@ -212,21 +212,21 @@ export function GoogleCalendarClient() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="rounded-[32px] shadow-bookmeup p-8 max-w-3xl mx-auto">
+      <div className="rounded-[24px] shadow-[0_4px_20px_rgba(20,0,50,0.04)] border border-primary/8 bg-white p-8 max-w-3xl mx-auto">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-[32px] text-sm">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
+            <span>⚠️</span> {error}
           </div>
         )}
 
         {!status?.connected ? (
           // Not connected
           <div className="text-center space-y-6">
-            <div className="text-6xl mb-4">📅</div>
-            <h2 className="text-2xl font-bold text-slate-900">
+            <div className="w-16 h-16 rounded-[20px] bg-[#F5F0F7] flex items-center justify-center text-3xl mx-auto">📅</div>
+            <h2 className="text-2xl font-extrabold text-[#2A1F2D]">
               Connectez Google Calendar
             </h2>
-            <p className="text-gray-600 max-w-md mx-auto">
+            <p className="text-[#8a7a92] max-w-md mx-auto text-sm">
               Synchronisez automatiquement vos rendez-vous BookMeUp avec votre
               calendrier Google.
             </p>
@@ -283,7 +283,7 @@ export function GoogleCalendarClient() {
             </div>
           </div>
         )}
-      </Card>
+      </div>
     </motion.div>
   )
 }

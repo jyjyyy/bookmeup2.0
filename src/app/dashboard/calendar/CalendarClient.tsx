@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { WeeklyCalendar } from '@/components/dashboard/WeeklyCalendar'
 import { MonthlyCalendar } from '@/components/dashboard/MonthlyCalendar'
@@ -27,16 +28,14 @@ interface CalendarClientProps {
 export function CalendarClient({ proId }: CalendarClientProps) {
   const [view, setView] = useState<'week' | 'month'>('week')
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
-    // Commencer par le lundi de la semaine actuelle
     const today = new Date()
     const day = today.getDay()
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1) // Ajuster pour lundi
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1)
     const monday = new Date(today.setDate(diff))
     monday.setHours(0, 0, 0, 0)
     return monday
   })
   const [currentMonth, setCurrentMonth] = useState<Date>(() => {
-    // Commencer par le 1er jour du mois actuel
     const today = new Date()
     return new Date(today.getFullYear(), today.getMonth(), 1)
   })
@@ -44,7 +43,6 @@ export function CalendarClient({ proId }: CalendarClientProps) {
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Fonction utilitaire pour obtenir le lundi d'une semaine
   const getMonday = (date: Date): Date => {
     const d = new Date(date)
     const day = d.getDay()
@@ -54,7 +52,6 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     return monday
   }
 
-  // Fonction utilitaire pour obtenir le dimanche d'une semaine
   const getSunday = (date: Date): Date => {
     const monday = getMonday(date)
     const sunday = new Date(monday)
@@ -63,7 +60,6 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     return sunday
   }
 
-  // Fonction utilitaire pour obtenir la plage de dates d'une semaine
   const getWeekRange = (date: Date): { start: string; end: string } => {
     const monday = getMonday(date)
     const sunday = getSunday(date)
@@ -73,7 +69,6 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     }
   }
 
-  // Fonction utilitaire pour obtenir la plage de dates d'un mois
   const getMonthRange = (date: Date): { start: string; end: string } => {
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0)
@@ -83,19 +78,14 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     }
   }
 
-  // Charger les bookings
   useEffect(() => {
     const loadBookings = async () => {
       setLoading(true)
       try {
-        const range = view === 'week' 
+        const range = view === 'week'
           ? getWeekRange(currentWeekStart)
           : getMonthRange(currentMonth)
 
-        // Charger les bookings depuis Firestore
-        // Note: Firestore ne supporte pas >= et <= sur le même champ dans une requête
-        // On charge tous les bookings du pro et on filtre côté client
-        // Support both schemas: proId and pro_id
         const { collection, query, where, getDocs } = await import('firebase/firestore')
         const { db } = await import('@/lib/firebaseClient')
 
@@ -107,18 +97,16 @@ export function CalendarClient({ proId }: CalendarClientProps) {
         const snapshots = await Promise.allSettled(
           bookingsQueries.map((q) => getDocs(q))
         )
-        
+
         const bookingsById = new Map<string, Booking>()
-        
+
         for (const res of snapshots) {
           if (res.status !== 'fulfilled') continue
           res.value.forEach((doc) => {
             const data = doc.data()
             const bookingDate = data.date
 
-            // Filtrer côté client pour la plage de dates
             if (bookingDate >= range.start && bookingDate <= range.end) {
-              // Éviter les doublons si les deux requêtes retournent le même booking
               if (!bookingsById.has(doc.id)) {
                 bookingsById.set(doc.id, {
                   id: doc.id,
@@ -138,7 +126,6 @@ export function CalendarClient({ proId }: CalendarClientProps) {
         }
 
         const loadedBookings = Array.from(bookingsById.values())
-
         setBookings(loadedBookings)
       } catch (error) {
         console.error('[Calendar] Error loading bookings:', error)
@@ -150,12 +137,10 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     loadBookings()
   }, [proId, view, currentWeekStart, currentMonth, refreshKey])
 
-  // Callback pour rafraîchir les bookings après mise à jour d'attendance
   const handleBookingUpdate = () => {
     setRefreshKey((prev) => prev + 1)
   }
 
-  // Navigation
   const goToToday = () => {
     const today = new Date()
     if (view === 'week') {
@@ -189,12 +174,28 @@ export function CalendarClient({ proId }: CalendarClientProps) {
     }
   }
 
+  // Current period label
+  const getPeriodLabel = () => {
+    if (view === 'week') {
+      const sunday = getSunday(currentWeekStart)
+      const startStr = currentWeekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      const endStr = sunday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+      return `${startStr} — ${endStr}`
+    } else {
+      return currentMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header avec contrôles */}
-      <div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Calendrier
         </div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
@@ -203,17 +204,22 @@ export function CalendarClient({ proId }: CalendarClientProps) {
         <p className="text-sm text-[#8a7a92]">
           Visualisez tous vos rendez-vous de la semaine ou du mois.
         </p>
-      </div>
+      </motion.div>
 
       {/* Controls bar */}
-      <div className="bg-white rounded-[22px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        {/* Toggle Semaine / Mois */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        className="bg-white rounded-[20px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4"
+      >
+        {/* Toggle */}
         <div className="flex bg-[#F5F0F7] rounded-full p-1">
           <button
             onClick={() => setView('week')}
-            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+            className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
               view === 'week'
-                ? 'bg-white text-[#2A1F2D] shadow-sm'
+                ? 'bg-white text-[#2A1F2D] shadow-[0_2px_8px_rgba(20,0,50,0.06)]'
                 : 'text-[#8a7a92] hover:text-[#2A1F2D]'
             }`}
           >
@@ -221,9 +227,9 @@ export function CalendarClient({ proId }: CalendarClientProps) {
           </button>
           <button
             onClick={() => setView('month')}
-            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+            className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
               view === 'month'
-                ? 'bg-white text-[#2A1F2D] shadow-sm'
+                ? 'bg-white text-[#2A1F2D] shadow-[0_2px_8px_rgba(20,0,50,0.06)]'
                 : 'text-[#8a7a92] hover:text-[#2A1F2D]'
             }`}
           >
@@ -231,35 +237,47 @@ export function CalendarClient({ proId }: CalendarClientProps) {
           </button>
         </div>
 
-        {/* Navigation */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goToPrevious}
-            className="w-9 h-9 rounded-[10px] border border-[#EDE8F0] hover:border-primary/20 hover:bg-secondary/30 flex items-center justify-center text-[#7A6B80] transition-all"
-          >
-            ←
-          </button>
-          <button
-            onClick={goToToday}
-            className="px-4 py-2 rounded-full text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all"
-          >
-            Aujourd&apos;hui
-          </button>
-          <button
-            onClick={goToNext}
-            className="w-9 h-9 rounded-[10px] border border-[#EDE8F0] hover:border-primary/20 hover:bg-secondary/30 flex items-center justify-center text-[#7A6B80] transition-all"
-          >
-            →
-          </button>
+        {/* Period label + Navigation */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-[#2A1F2D] capitalize hidden md:block">
+            {getPeriodLabel()}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={goToPrevious}
+              className="w-9 h-9 rounded-full border border-[#EDE8F0] hover:border-primary/20 hover:bg-primary/5 flex items-center justify-center text-[#8a7a92] hover:text-primary transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button
+              onClick={goToToday}
+              className="px-4 py-2 rounded-full text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all"
+            >
+              Aujourd&apos;hui
+            </button>
+            <button
+              onClick={goToNext}
+              className="w-9 h-9 rounded-full border border-[#EDE8F0] hover:border-primary/20 hover:bg-primary/5 flex items-center justify-center text-[#8a7a92] hover:text-primary transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Calendrier */}
-      <div className="bg-white rounded-[22px] overflow-hidden border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)]">
+      {/* Calendar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
+        className="bg-white rounded-[22px] overflow-hidden border border-primary/8 shadow-[0_4px_24px_rgba(20,0,50,0.04)]"
+      >
         {loading ? (
-          <div className="p-12 md:p-16">
+          <div className="p-16">
             <div className="flex flex-col items-center justify-center gap-3">
-              <Loader />
+              <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center">
+                <Loader />
+              </div>
               <span className="text-sm text-[#8a7a92] font-medium">Chargement des rendez-vous…</span>
             </div>
           </div>
@@ -282,8 +300,7 @@ export function CalendarClient({ proId }: CalendarClientProps) {
             />
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }
-

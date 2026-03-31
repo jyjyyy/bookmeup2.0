@@ -1,11 +1,8 @@
 'use client'
 
-// Note: This is a Client Component. Authentication is handled via API routes
-// that read cookies server-side. We use fetch with credentials: 'include' to send cookies.
-// DO NOT import or use cookies() from 'next/headers' here - it's server-only.
-
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ClientsSkeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
@@ -32,9 +29,8 @@ export default function ClientsPage() {
         setError(null)
         setLoading(true)
 
-        // Vérifier l'authentification
         const currentUser = await getCurrentUser()
-        
+
         if (!currentUser.user || !currentUser.profile) {
           router.push('/auth/login')
           return
@@ -45,15 +41,13 @@ export default function ClientsPage() {
           return
         }
 
-        // Vérifier l'abonnement
         const subscriptionStatus = await checkSubscriptionStatus(currentUser.user.uid)
-        
+
         if (!subscriptionStatus.hasActiveSubscription) {
           router.push('/dashboard/settings/subscription')
           return
         }
 
-        // Charger les clients bloqués
         const response = await fetch('/api/clients/blocked', {
           credentials: 'include',
         })
@@ -96,7 +90,6 @@ export default function ClientsPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Retirer le client de la liste
         setClients((prev) => prev.filter((c) => c.id !== clientId))
       } else {
         alert(data.error || 'Erreur lors du déblocage')
@@ -116,9 +109,12 @@ export default function ClientsPage() {
   if (error) {
     return (
       <div className="py-6">
-        <div className="bg-red-50 border border-red-200 rounded-[16px] p-5 text-red-700">
-          <p className="font-semibold text-sm mb-1">Erreur</p>
-          <p className="text-sm">{error}</p>
+        <div className="bg-red-50/80 border border-red-200/60 rounded-[18px] p-5 flex items-center gap-3 backdrop-blur-sm">
+          <div className="w-10 h-10 rounded-[12px] bg-red-100 flex items-center justify-center text-lg shrink-0">⚠️</div>
+          <div>
+            <p className="font-bold text-sm text-red-700 mb-0.5">Erreur</p>
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
         </div>
       </div>
     )
@@ -127,9 +123,13 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Gestion
         </div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">
@@ -138,64 +138,105 @@ export default function ClientsPage() {
         <p className="text-sm text-[#8a7a92]">
           Gérez les clients ayant annulé ou manqué trop de rendez-vous.
         </p>
-      </div>
+      </motion.div>
 
-      {/* Liste des clients bloqués ou état vide */}
+      {/* Count badge */}
+      {clients.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.08 }}
+          className="flex items-center gap-2"
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-white border border-red-200/40 shadow-[0_2px_8px_rgba(20,0,50,0.03)]">
+            <div className="w-2 h-2 rounded-full bg-red-400" />
+            <span className="text-sm font-bold text-[#2A1F2D]">{clients.length}</span>
+            <span className="text-xs text-[#8a7a92]">client{clients.length > 1 ? 's' : ''} bloqué{clients.length > 1 ? 's' : ''}</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Empty state or client list */}
       {clients.length === 0 ? (
-        <div className="bg-white rounded-[28px] border border-primary/10 p-12 text-center shadow-[0_8px_32px_rgba(20,0,50,0.05)]">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-[20px] bg-[#F0FDF4] flex items-center justify-center mx-auto mb-4 text-2xl">✅</div>
-            <h2 className="text-lg font-bold text-[#2A1F2D] mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white rounded-[28px] border border-primary/10 p-16 text-center shadow-[0_8px_40px_rgba(20,0,50,0.05)]"
+        >
+          <div className="max-w-sm mx-auto">
+            <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-emerald-50 to-emerald-100/50 flex items-center justify-center mx-auto mb-6 text-4xl shadow-[0_4px_16px_rgba(16,185,129,0.1)]">
+              ✅
+            </div>
+            <h2 className="text-xl font-extrabold text-[#2A1F2D] mb-2">
               Aucun client bloqué
             </h2>
             <p className="text-sm text-[#8a7a92] leading-relaxed">
-              Les clients ayant annulé ou manqué trop de rendez-vous apparaîtront ici.
+              Les clients ayant annulé ou manqué trop de rendez-vous apparaîtront ici automatiquement.
             </p>
           </div>
-        </div>
+        </motion.div>
       ) : (
         <div className="space-y-3">
-          {clients.map((client) => (
-            <div key={client.id} className="bg-white rounded-[22px] border border-primary/8 shadow-[0_4px_20px_rgba(20,0,50,0.04)] hover:shadow-[0_6px_24px_rgba(20,0,50,0.07)] transition-shadow p-5">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-[12px] bg-red-50 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">🚫</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 mb-1">
-                      <h3 className="text-sm font-bold text-[#2A1F2D]">
-                        {client.name || client.email || 'Client anonyme'}
-                      </h3>
-                      <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-bold">
-                        Bloqué
-                      </span>
+          <AnimatePresence>
+            {clients.map((client, index) => (
+              <motion.div
+                key={client.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="bg-white rounded-[20px] border border-[#EDE8F0] shadow-[0_4px_20px_rgba(20,0,50,0.04)] hover:shadow-[0_6px_28px_rgba(20,0,50,0.07)] hover:border-primary/12 transition-all duration-300 p-5"
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Avatar */}
+                    <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-red-50 to-red-100/50 flex items-center justify-center flex-shrink-0 border border-red-200/40">
+                      <span className="text-lg">🚫</span>
                     </div>
-                    {client.name && client.email && (
-                      <p className="text-xs text-[#8a7a92] mb-2">{client.email}</p>
-                    )}
-                    <div className="flex flex-wrap gap-4 text-xs text-[#8a7a92]">
-                      <span>Annulations : <strong className="text-[#2A1F2D]">{client.cancelCount}</strong></span>
-                      <span>Absences : <strong className="text-[#2A1F2D]">{client.noShowCount}</strong></span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <h3 className="text-sm font-bold text-[#2A1F2D]">
+                          {client.name || client.email || 'Client anonyme'}
+                        </h3>
+                        <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-500 text-[10px] font-bold border border-red-200/40 inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                          Bloqué
+                        </span>
+                      </div>
+                      {client.name && client.email && (
+                        <p className="text-xs text-[#8a7a92] mb-2.5">{client.email}</p>
+                      )}
+                      <div className="flex flex-wrap gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F0F7] text-xs">
+                          <span className="text-[10px]">❌</span>
+                          <span className="text-[#8a7a92]">Annulations :</span>
+                          <span className="font-bold text-[#2A1F2D]">{client.cancelCount}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F0F7] text-xs">
+                          <span className="text-[10px]">👻</span>
+                          <span className="text-[#8a7a92]">Absences :</span>
+                          <span className="font-bold text-[#2A1F2D]">{client.noShowCount}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex-shrink-0">
-                  <Button
-                    onClick={() => handleUnblock(client.id)}
-                    disabled={unblocking === client.id}
-                    className="btn-gradient rounded-full px-5 text-sm font-bold disabled:opacity-50"
-                  >
-                    {unblocking === client.id ? 'Déblocage…' : 'Débloquer'}
-                  </Button>
+                  <div className="flex-shrink-0">
+                    <button
+                      onClick={() => handleUnblock(client.id)}
+                      disabled={unblocking === client.id}
+                      className="btn-gradient rounded-full px-6 py-2.5 text-sm font-bold shadow-[0_4px_16px_rgba(200,109,215,0.3)] hover:shadow-[0_6px_24px_rgba(200,109,215,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    >
+                      {unblocking === client.id ? 'Déblocage…' : 'Débloquer'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
   )
 }
-

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 import { AvailabilitySkeleton } from '@/components/ui/skeleton'
@@ -16,7 +17,9 @@ const DAY_LABELS = [
   'Samedi',
 ]
 
-// Ordre d'affichage : Lundi → Dimanche (convention française)
+const DAY_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+const DAY_ICONS = ['☀️', '🌙', '🔥', '💧', '⚡', '🌟', '🌈']
+
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
 interface DayAvailability {
@@ -166,7 +169,7 @@ export default function AvailabilityPage() {
         throw new Error(data.error || 'Erreur lors de la sauvegarde')
       }
 
-      setSuccess(`${DAY_LABELS[dayOfWeek]} enregistré ✓`)
+      setSuccess(`${DAY_LABELS[dayOfWeek]} enregistré`)
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
       console.error('[Availability] save error:', err)
@@ -180,116 +183,203 @@ export default function AvailabilityPage() {
     return <AvailabilitySkeleton />
   }
 
+  const enabledCount = days.filter(d => d.isEnabled).length
+
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[#9C44AF] text-xs font-semibold mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Planning
         </div>
         <h1 className="text-2xl font-extrabold text-[#2A1F2D] mb-1">Disponibilités</h1>
         <p className="text-sm text-[#8a7a92]">
           Définissez vos horaires de travail pour chaque jour de la semaine.
         </p>
-      </div>
+      </motion.div>
 
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-[20px] text-sm flex items-center gap-3">
-          <span className="text-base">⚠️</span>
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="p-4 bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] rounded-[20px] text-sm flex items-center gap-3">
-          <span className="text-base">✅</span>
-          {success}
-        </div>
-      )}
-
-      <div className="space-y-3">
+      {/* Mini week overview */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        className="flex items-center gap-2 flex-wrap"
+      >
         {DAY_ORDER.map((dayOfWeek) => {
+          const day = days.find((d) => d.dayOfWeek === dayOfWeek)
+          return (
+            <div
+              key={dayOfWeek}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                day?.isEnabled
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                  : 'bg-[#F5F0F7] text-[#B5A8BE] border border-[#EDE8F0]'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${day?.isEnabled ? 'bg-emerald-400' : 'bg-[#D5CCD9]'}`} />
+              {DAY_SHORT[dayOfWeek]}
+            </div>
+          )
+        })}
+        <span className="text-xs text-[#8a7a92] ml-1">{enabledCount}/7 jours actifs</span>
+      </motion.div>
+
+      {/* Alerts */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="p-4 bg-red-50/80 border border-red-200/60 text-red-700 rounded-[16px] text-sm flex items-center gap-3 backdrop-blur-sm"
+          >
+            <div className="w-8 h-8 rounded-[8px] bg-red-100 flex items-center justify-center shrink-0 text-xs">⚠️</div>
+            <p className="text-xs">{error}</p>
+          </motion.div>
+        )}
+
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="p-4 bg-emerald-50/80 border border-emerald-200/60 text-emerald-700 rounded-[16px] text-sm flex items-center gap-3 backdrop-blur-sm"
+          >
+            <div className="w-8 h-8 rounded-[8px] bg-emerald-100 flex items-center justify-center shrink-0 text-xs">✅</div>
+            <p className="text-xs font-medium">{success}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Day cards */}
+      <div className="space-y-3">
+        {DAY_ORDER.map((dayOfWeek, index) => {
           const day = days.find((d) => d.dayOfWeek === dayOfWeek)
           if (!day) return null
 
           return (
-            <div key={dayOfWeek} className={`bg-white rounded-[22px] border ${day.isEnabled ? 'border-primary/12 shadow-[0_4px_20px_rgba(20,0,50,0.05)]' : 'border-[#EDE8F0]'} p-5 transition-all`}>
-              {/* En-tête du jour */}
-              <div className="flex items-center justify-between mb-4">
+            <motion.div
+              key={dayOfWeek}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.04 }}
+              className={`bg-white rounded-[20px] border transition-all duration-300 ${
+                day.isEnabled
+                  ? 'border-primary/12 shadow-[0_4px_20px_rgba(20,0,50,0.05)]'
+                  : 'border-[#EDE8F0] hover:border-[#D5CCD9]'
+              } p-5`}
+            >
+              {/* Day header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center text-base transition-all ${
+                    day.isEnabled
+                      ? 'bg-gradient-to-br from-primary/10 to-secondary'
+                      : 'bg-[#F5F0F7]'
+                  }`}>
+                    {DAY_ICONS[dayOfWeek]}
+                  </div>
+                  <div>
+                    <h2 className={`text-sm font-bold ${day.isEnabled ? 'text-[#2A1F2D]' : 'text-[#8a7a92]'}`}>
+                      {DAY_LABELS[dayOfWeek]}
+                    </h2>
+                    <p className="text-[11px] text-[#B5A8BE]">
+                      {day.isEnabled ? `${day.slots.length} plage${day.slots.length > 1 ? 's' : ''} horaire${day.slots.length > 1 ? 's' : ''}` : 'Fermé'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
+                    onClick={() => saveDay(dayOfWeek)}
+                    disabled={saving === dayOfWeek}
+                    className={`text-xs font-semibold px-4 py-2 rounded-full transition-all disabled:opacity-50 ${
+                      day.isEnabled
+                        ? 'text-primary border border-primary/20 hover:bg-primary/5 hover:border-primary/30'
+                        : 'text-[#8a7a92] border border-[#EDE8F0] hover:border-[#D5CCD9]'
+                    }`}
+                  >
+                    {saving === dayOfWeek ? 'Sauvegarde…' : 'Enregistrer'}
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => toggleDay(dayOfWeek)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
                       day.isEnabled ? 'bg-primary' : 'bg-[#EDE8F0]'
                     }`}
                     aria-label={`${day.isEnabled ? 'Désactiver' : 'Activer'} ${DAY_LABELS[dayOfWeek]}`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                      className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                         day.isEnabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>
-                  <h2 className={`text-sm font-bold ${day.isEnabled ? 'text-[#2A1F2D]' : 'text-[#7A6B80]'}`}>
-                    {DAY_LABELS[dayOfWeek]}
-                  </h2>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => saveDay(dayOfWeek)}
-                  disabled={saving === dayOfWeek}
-                  className="text-xs font-semibold text-primary hover:text-primaryDark border border-primary/30 hover:border-primary rounded-[10px] px-3 py-1.5 transition-all disabled:opacity-50"
-                >
-                  {saving === dayOfWeek ? 'Enregistrement…' : 'Enregistrer'}
-                </button>
               </div>
 
-              {/* Plages horaires */}
-              {day.isEnabled ? (
-                <div className="space-y-2">
-                  {day.slots.map((slot, slotIndex) => (
-                    <div key={slotIndex} className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <input
-                          type="time"
-                          value={slot.start}
-                          onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'start', e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-[12px] border border-[#EDE8F0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                        />
-                        <span className="text-[#C9BBD0] text-sm">→</span>
-                        <input
-                          type="time"
-                          value={slot.end}
-                          onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'end', e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-[12px] border border-[#EDE8F0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                        />
+              {/* Time slots */}
+              {day.isEnabled && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="pt-3 border-t border-[#EDE8F0]/60"
+                >
+                  <div className="space-y-2.5">
+                    {day.slots.map((slot, slotIndex) => (
+                      <div key={slotIndex} className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-1 bg-[#FDFBFE] rounded-[14px] border border-[#EDE8F0] p-2">
+                          <input
+                            type="time"
+                            value={slot.start}
+                            onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'start', e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-[10px] border border-[#EDE8F0] bg-white text-sm text-[#2A1F2D] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                          />
+                          <div className="flex items-center gap-1.5 px-2">
+                            <svg className="w-3.5 h-3.5 text-[#B5A8BE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                          </div>
+                          <input
+                            type="time"
+                            value={slot.end}
+                            onChange={(e) => updateSlot(dayOfWeek, slotIndex, 'end', e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-[10px] border border-[#EDE8F0] bg-white text-sm text-[#2A1F2D] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                          />
+                        </div>
+                        {day.slots.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSlot(dayOfWeek, slotIndex)}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                            aria-label="Supprimer cette plage"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
-                      {day.slots.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeSlot(dayOfWeek, slotIndex)}
-                          className="text-red-400 hover:text-red-600 text-lg leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50"
-                          aria-label="Supprimer cette plage"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                   <button
                     type="button"
                     onClick={() => addSlot(dayOfWeek)}
-                    className="text-xs text-primary hover:underline mt-1 font-semibold"
+                    className="mt-3 text-xs text-primary hover:text-[#9C44AF] font-semibold flex items-center gap-1.5 transition-colors"
                   >
-                    + Ajouter une plage
+                    <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">+</span>
+                    Ajouter une plage horaire
                   </button>
-                </div>
-              ) : (
-                <p className="text-xs text-[#C9BBD0]">Fermé ce jour-là</p>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           )
         })}
       </div>

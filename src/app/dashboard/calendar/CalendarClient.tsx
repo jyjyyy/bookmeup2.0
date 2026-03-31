@@ -251,9 +251,9 @@ export function CalendarClient({ proId }: CalendarClientProps) {
             </button>
             <button
               onClick={goToToday}
-              className="px-4 py-2 rounded-full text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all"
+              className="px-4 py-2 rounded-full text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all min-w-[120px]"
             >
-              Aujourd&apos;hui
+              {getPeriodLabel()}
             </button>
             <button
               onClick={goToNext}

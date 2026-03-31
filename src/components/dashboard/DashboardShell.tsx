@@ -150,10 +150,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
       <div className="flex flex-col flex-1 min-w-0">
 
         {/* Top bar */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-[#EDE8F0] px-6 py-0 h-[72px] flex items-center gap-4 sticky top-0 z-40">
+        <header className="bg-white/80 backdrop-blur-xl border-b border-[#EDE8F0] px-6 py-0 h-[56px] flex items-center gap-4 sticky top-0 z-40 md:hidden">
           {/* Burger mobile */}
           <button
-            className="md:hidden p-2.5 rounded-[12px] hover:bg-secondary transition-colors"
+            className="p-2.5 rounded-[12px] hover:bg-secondary transition-colors"
             onClick={() => setMobileNavOpen((v) => !v)}
             aria-label="Navigation"
           >
@@ -161,13 +161,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
             <span className="block w-5 h-0.5 bg-[#2A1F2D] mb-1.5 rounded-full" />
             <span className="block w-5 h-0.5 bg-[#2A1F2D] rounded-full" />
           </button>
-
-          <div>
-            <h1 className="text-base font-bold text-[#2A1F2D] leading-tight">
-              Bonjour, {displayName} 👋
-            </h1>
-            <p className="text-xs text-[#8a7a92]">Tableau de bord professionnel</p>
-          </div>
 
           <div className="ml-auto flex items-center gap-3">
             <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-secondary text-primary border border-primary/15">

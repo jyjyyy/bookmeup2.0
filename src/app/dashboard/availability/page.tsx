@@ -18,7 +18,6 @@ const DAY_LABELS = [
 ]
 
 const DAY_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-const DAY_ICONS = ['☀️', '🌙', '🔥', '💧', '⚡', '🌟', '🌈']
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
@@ -277,12 +276,12 @@ export default function AvailabilityPage() {
               {/* Day header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center text-base transition-all ${
+                  <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center text-xs font-bold transition-all ${
                     day.isEnabled
-                      ? 'bg-gradient-to-br from-primary/10 to-secondary'
-                      : 'bg-[#F5F0F7]'
+                      ? 'bg-gradient-to-br from-primary/10 to-secondary text-primary'
+                      : 'bg-[#F5F0F7] text-[#B5A8BE]'
                   }`}>
-                    {DAY_ICONS[dayOfWeek]}
+                    {DAY_SHORT[dayOfWeek]}
                   </div>
                   <div>
                     <h2 className={`text-sm font-bold ${day.isEnabled ? 'text-[#2A1F2D]' : 'text-[#8a7a92]'}`}>

@@ -177,10 +177,13 @@ export function generateAccountingPdf(
   if (data.revenueByMonth.length === 0) {
     addNoDataText()
   } else {
-    const body: RowInput[] = data.revenueByMonth.map((item) => [
-      item.month,
-      formatCurrencyEUR(item.revenue),
-    ])
+    const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+    const body: RowInput[] = data.revenueByMonth.map((item) => {
+      const [y, m] = item.month.split('-')
+      const monthIdx = parseInt(m, 10) - 1
+      const monthLabel = monthIdx >= 0 && monthIdx < 12 ? `${MONTHS_FR[monthIdx]} ${y}` : item.month
+      return [monthLabel, formatCurrencyEUR(item.revenue)]
+    })
 
     autoTable(doc, {
       startY: cursorY,

@@ -14,6 +14,7 @@ interface CommunicationSettings {
   emailBookingCancelled: boolean
   emailReminder24h: boolean
   smsReminder24h: boolean
+  reminderDelay: string // '1h' | '2h' | '12h' | '24h' | '48h'
 }
 
 const DEFAULT_SETTINGS: CommunicationSettings = {
@@ -21,7 +22,16 @@ const DEFAULT_SETTINGS: CommunicationSettings = {
   emailBookingCancelled: true,
   emailReminder24h: true,
   smsReminder24h: false,
+  reminderDelay: '24h',
 }
+
+const REMINDER_OPTIONS = [
+  { value: '1h', label: '1 heure avant' },
+  { value: '2h', label: '2 heures avant' },
+  { value: '12h', label: '12 heures avant' },
+  { value: '24h', label: '24 heures avant' },
+  { value: '48h', label: '48 heures avant' },
+]
 
 export default function CommunicationPage() {
   const router = useRouter()
@@ -173,8 +183,8 @@ export default function CommunicationPage() {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-[8px] bg-amber-50 flex items-center justify-center text-xs">🔔</div>
               <div>
-                <p className="text-sm font-semibold text-[#2A1F2D]">Rappel 24h avant</p>
-                <p className="text-[11px] text-[#B5A8BE]">Email de rappel envoyé au client la veille du rendez-vous</p>
+                <p className="text-sm font-semibold text-[#2A1F2D]">Rappel par email</p>
+                <p className="text-[11px] text-[#B5A8BE]">Email de rappel envoyé au client avant le rendez-vous</p>
               </div>
             </div>
             <Switch
@@ -203,14 +213,48 @@ export default function CommunicationPage() {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-[8px] bg-purple-50 flex items-center justify-center text-xs">📱</div>
             <div>
-              <p className="text-sm font-semibold text-[#2A1F2D]">Rappel SMS 24h avant</p>
-              <p className="text-[11px] text-[#B5A8BE]">SMS de rappel envoyé au client la veille du rendez-vous</p>
+              <p className="text-sm font-semibold text-[#2A1F2D]">Rappel par SMS</p>
+              <p className="text-[11px] text-[#B5A8BE]">SMS de rappel envoyé au client avant le rendez-vous</p>
             </div>
           </div>
           <Switch
             checked={settings.smsReminder24h}
             onChange={toggle('smsReminder24h')}
           />
+        </div>
+      </motion.div>
+
+      {/* Reminder delay */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+        className="bg-white rounded-[22px] border border-[#EDE8F0] shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6 hover:shadow-[0_6px_28px_rgba(20,0,50,0.06)] transition-shadow"
+      >
+        <div className="flex items-center gap-3.5 mb-5">
+          <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-amber-100/60 to-amber-50 flex items-center justify-center text-lg">
+            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <h2 className="text-[15px] font-bold text-[#2A1F2D]">Délai de rappel</h2>
+            <p className="text-xs text-[#8a7a92]">Choisissez quand envoyer le rappel avant chaque rendez-vous.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {REMINDER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setSettings((prev) => ({ ...prev, reminderDelay: opt.value }))}
+              className={`px-4 py-2.5 rounded-full text-xs font-semibold transition-all ${
+                settings.reminderDelay === opt.value
+                  ? 'bg-primary text-white shadow-[0_2px_8px_rgba(200,109,215,0.3)]'
+                  : 'bg-[#FDFBFE] border border-[#EDE8F0] text-[#64576b] hover:border-primary/20 hover:text-primary'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </motion.div>
 

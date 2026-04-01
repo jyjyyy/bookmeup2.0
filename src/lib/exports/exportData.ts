@@ -1,4 +1,10 @@
-export type ExportPeriod = '7d' | '30d' | { start: Date; end: Date }
+export type ExportPeriod = '7d' | '30d' | 'month' | 'year' | { start: Date; end: Date }
+
+export interface ExportPeriodWithDate {
+  type: ExportPeriod
+  /** For 'month': the target month (Date with year+month). For 'year': the target year. */
+  target?: Date
+}
 
 export interface RevenueByServiceItem {
   serviceName: string
@@ -54,19 +60,40 @@ function addDaysUTC(date: Date, days: number): Date {
   return d
 }
 
-function getPeriodRange(period: ExportPeriod): { start: string; end: string } {
-  if (typeof period === 'object') {
-    // Custom date range
+function getPeriodRange(period: ExportPeriod, target?: Date): { start: string; end: string; label: string } {
+  if (typeof period === 'object' && period !== null && 'start' in period) {
     return {
       start: toISODateUTC(period.start),
       end: toISODateUTC(period.end),
+      label: `${toISODateUTC(period.start)} — ${toISODateUTC(period.end)}`,
     }
   }
+
+  if (period === 'month' && target) {
+    const year = target.getFullYear()
+    const month = target.getMonth()
+    const firstDay = new Date(Date.UTC(year, month, 1))
+    const lastDay = new Date(Date.UTC(year, month + 1, 0))
+    const monthLabel = firstDay.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    return { start: toISODateUTC(firstDay), end: toISODateUTC(lastDay), label: monthLabel }
+  }
+
+  if (period === 'year' && target) {
+    const year = target.getFullYear()
+    const firstDay = new Date(Date.UTC(year, 0, 1))
+    const lastDay = new Date(Date.UTC(year, 11, 31))
+    return { start: toISODateUTC(firstDay), end: toISODateUTC(lastDay), label: `Année ${year}` }
+  }
+
   // 7d or 30d
   const endDate = new Date()
   const days = period === '7d' ? 7 : 30
   const startDate = addDaysUTC(endDate, -(days - 1))
-  return { start: toISODateUTC(startDate), end: toISODateUTC(endDate) }
+  return {
+    start: toISODateUTC(startDate),
+    end: toISODateUTC(endDate),
+    label: period === '7d' ? '7 derniers jours' : '30 derniers jours',
+  }
 }
 
 function normalizeBookingDate(value: any): string | null {
@@ -134,8 +161,9 @@ function extractMonth(dateStr: string): string {
  */
 export async function getAccountingExportData(
   userId: string,
-  period: ExportPeriod
-): Promise<AccountingExportData> {
+  period: ExportPeriod,
+  target?: Date
+): Promise<{ data: AccountingExportData; periodLabel: string }> {
   const empty: AccountingExportData = {
     totalRevenue: 0,
     revenueByService: [],
@@ -150,13 +178,13 @@ export async function getAccountingExportData(
     },
   }
 
-  if (!userId) return empty
+  if (!userId) return { data: empty, periodLabel: '' }
 
   try {
     const [{ db }, { collection, doc, getDoc, getDocs, query, where }] =
       await Promise.all([import('@/lib/firebaseClient'), import('firebase/firestore')])
 
-    const { start, end } = getPeriodRange(period)
+    const { start, end, label: periodLabel } = getPeriodRange(period, target)
 
     // Fetch bookings for this pro
     const bookingsCol = collection(db, 'bookings')
@@ -183,16 +211,19 @@ export async function getAccountingExportData(
       if (proId !== userId) continue
 
       const status = data?.status
-      if (status !== 'confirmed') continue
-
-      const paid = data?.paid === true
-      if (!paid) continue
+      if (status === 'cancelled') continue
 
       const date = normalizeBookingDate(data?.date)
       if (!date) continue
       if (date < start || date > end) continue
 
-      const price = toNumberOrZero(data?.price)
+      // Price is stored in pricing.price (immutable snapshot from booking creation)
+      // Fallback to price, amount, total for backward compatibility
+      const pricing = data?.pricing
+      const rawPrice = (pricing && typeof pricing === 'object' && typeof pricing.price === 'number')
+        ? pricing.price
+        : (data?.price ?? data?.amount ?? data?.total ?? 0)
+      const price = toNumberOrZero(rawPrice)
       totalRevenue += price
 
       // revenueByService
@@ -280,21 +311,24 @@ export async function getAccountingExportData(
     const revenueExclVat = revenueInclVat - vatAmount
 
     return {
-      totalRevenue,
-      revenueByService,
-      revenueByClient,
-      revenueByMonth,
-      workedHours: totalWorkedHours,
-      vat: {
-        vatRate,
-        vatAmount,
-        revenueExclVat,
-        revenueInclVat,
+      data: {
+        totalRevenue,
+        revenueByService,
+        revenueByClient,
+        revenueByMonth,
+        workedHours: totalWorkedHours,
+        vat: {
+          vatRate,
+          vatAmount,
+          revenueExclVat,
+          revenueInclVat,
+        },
       },
+      periodLabel,
     }
   } catch (error) {
     console.error('[getAccountingExportData] Error computing export data:', error)
-    return empty
+    return { data: empty, periodLabel: '' }
   }
 }
 

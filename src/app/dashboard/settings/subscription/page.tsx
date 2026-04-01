@@ -30,6 +30,7 @@ const PLANS: Plan[] = [
       'Jusqu\'à 15 services',
       'Gestion des réservations',
       'Planning hebdomadaire',
+      'Statistiques de base',
       'Support email',
     ],
   },
@@ -40,9 +41,10 @@ const PLANS: Plan[] = [
     priceMonthly: ' €/mois',
     features: [
       'Services illimités',
-      'Gestion des réservations',
+      'Graphiques de réservations et revenus',
+      'Analyse par service',
+      'Filtre par période',
       'Planning avancé',
-      'Synchronisation Google Calendar',
       'Support prioritaire',
     ],
     popular: true,
@@ -54,9 +56,11 @@ const PLANS: Plan[] = [
     priceMonthly: ' €/mois',
     features: [
       'Tout Pro inclus',
-      'Statistiques avancées',
-      'Marketing automatisé',
-      'API personnalisée',
+      'Comparaison de périodes',
+      'Taux d\'occupation',
+      'Suivi des annulations',
+      'Clients uniques',
+      'Export CSV & PDF',
       'Support dédié 24/7',
     ],
   },
@@ -324,7 +328,7 @@ export default function SubscriptionPage() {
       )}
 
       {/* Plans Grid */}
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3 pt-4">
         {PLANS.map((plan, index) => {
           const isCurrentPlan = currentPlan === plan.id
           const isUpgrade =
@@ -339,8 +343,9 @@ export default function SubscriptionPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
+              style={{ overflow: 'visible' }}
             >
-              <div className={`rounded-[24px] p-6 relative border transition-all ${
+              <div className={`rounded-[24px] p-6 relative overflow-visible border transition-all ${
                 plan.popular
                   ? 'bg-[#2A1F2D] border-transparent shadow-[0_12px_40px_rgba(0,0,0,0.25)]'
                   : isCurrentPlan

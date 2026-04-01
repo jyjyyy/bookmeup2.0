@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,11 +9,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#C86DD7',
-        primaryDark: '#9C44AF',
-        secondary: '#F5E9F8',
-        background: '#FAF7FB',
-        textDark: '#2A1F2D',
+        primary: 'var(--primary)',
+        primaryDark: 'var(--primary-dark)',
+        secondary: 'var(--secondary)',
+        background: 'var(--background)',
+        textDark: 'var(--text-dark)',
+        'card-bg': 'var(--card-bg)',
       },
       borderRadius: {
         '32': '32px',
@@ -30,4 +32,3 @@ module.exports = {
   },
   plugins: [],
 }
-

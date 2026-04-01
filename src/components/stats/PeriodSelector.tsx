@@ -38,5 +38,3 @@ export default function PeriodSelector({ value, onChange }: PeriodSelectorProps)
     </div>
   )
 }
-
-

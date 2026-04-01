@@ -7,6 +7,7 @@ import { WeeklyCalendar } from '@/components/dashboard/WeeklyCalendar'
 import { MonthlyCalendar } from '@/components/dashboard/MonthlyCalendar'
 import { Card } from '@/components/ui/card'
 import { Loader } from '@/components/ui/loader'
+import { exportBookingsCsv, exportBookingsPdf } from '@/lib/exports/exportBookings'
 
 interface Booking {
   id: string
@@ -79,62 +80,74 @@ export function CalendarClient({ proId }: CalendarClientProps) {
   }
 
   useEffect(() => {
-    const loadBookings = async () => {
+    let unsubscribes: (() => void)[] = []
+
+    const setupListeners = async () => {
       setLoading(true)
       try {
         const range = view === 'week'
           ? getWeekRange(currentWeekStart)
           : getMonthRange(currentMonth)
 
-        const { collection, query, where, getDocs } = await import('firebase/firestore')
+        const { collection, query, where, onSnapshot } = await import('firebase/firestore')
         const { db } = await import('@/lib/firebaseClient')
 
-        const bookingsQueries = [
-          query(collection(db, 'bookings'), where('proId', '==', proId)),
-          query(collection(db, 'bookings'), where('pro_id', '==', proId)),
-        ]
-
-        const snapshots = await Promise.allSettled(
-          bookingsQueries.map((q) => getDocs(q))
-        )
-
         const bookingsById = new Map<string, Booking>()
+        let initialLoadCount = 0
 
-        for (const res of snapshots) {
-          if (res.status !== 'fulfilled') continue
-          res.value.forEach((doc) => {
+        const processSnapshot = (querySnapshot: any) => {
+          // Rebuild from both queries
+          querySnapshot.forEach((doc: any) => {
             const data = doc.data()
             const bookingDate = data.date
 
             if (bookingDate >= range.start && bookingDate <= range.end) {
-              if (!bookingsById.has(doc.id)) {
-                bookingsById.set(doc.id, {
-                  id: doc.id,
-                  date: bookingDate,
-                  start_time: data.start_time,
-                  end_time: data.end_time,
-                  duration: data.duration || 60,
-                  serviceName: data.serviceName || 'Service',
-                  client_name: data.client_name || 'Client',
-                  client_email: data.client_email,
-                  status: data.status || 'pending',
-                  attendance: data.attendance,
-                })
-              }
+              bookingsById.set(doc.id, {
+                id: doc.id,
+                date: bookingDate,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                duration: data.duration || 60,
+                serviceName: data.serviceName || 'Service',
+                client_name: data.client_name || 'Client',
+                client_email: data.client_email,
+                status: data.status || 'pending',
+                attendance: data.attendance,
+              })
+            } else {
+              bookingsById.delete(doc.id)
             }
           })
+
+          initialLoadCount++
+          setBookings(Array.from(bookingsById.values()))
+          if (initialLoadCount >= 1) setLoading(false)
         }
 
-        const loadedBookings = Array.from(bookingsById.values())
-        setBookings(loadedBookings)
+        const q1 = query(collection(db, 'bookings'), where('proId', '==', proId))
+        const q2 = query(collection(db, 'bookings'), where('pro_id', '==', proId))
+
+        const unsub1 = onSnapshot(q1, processSnapshot, (err) => {
+          console.error('[Calendar] Snapshot error q1:', err)
+          setLoading(false)
+        })
+        const unsub2 = onSnapshot(q2, processSnapshot, (err) => {
+          console.error('[Calendar] Snapshot error q2:', err)
+          setLoading(false)
+        })
+
+        unsubscribes = [unsub1, unsub2]
       } catch (error) {
-        console.error('[Calendar] Error loading bookings:', error)
-      } finally {
+        console.error('[Calendar] Error setting up listeners:', error)
         setLoading(false)
       }
     }
 
-    loadBookings()
+    setupListeners()
+
+    return () => {
+      unsubscribes.forEach((unsub) => unsub())
+    }
   }, [proId, view, currentWeekStart, currentMonth, refreshKey])
 
   const handleBookingUpdate = () => {
@@ -234,6 +247,26 @@ export function CalendarClient({ proId }: CalendarClientProps) {
             }`}
           >
             Mois
+          </button>
+        </div>
+
+        {/* Export buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportBookingsCsv(bookings, getPeriodLabel())}
+            disabled={loading || bookings.length === 0}
+            className="px-3.5 py-2 rounded-full text-[11px] font-bold border border-[#EDE8F0] text-[#64576b] hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40"
+          >
+            CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => exportBookingsPdf(bookings, getPeriodLabel())}
+            disabled={loading || bookings.length === 0}
+            className="px-3.5 py-2 rounded-full text-[11px] font-bold border border-[#EDE8F0] text-[#64576b] hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40"
+          >
+            PDF
           </button>
         </div>
 

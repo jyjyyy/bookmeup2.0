@@ -6,7 +6,9 @@
  */
 export function downloadCsvFile(filename: string, content: string) {
   try {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+    // Add BOM for Excel to detect UTF-8 encoding correctly
+    const bom = '\uFEFF'
+    const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
 
     const link = document.createElement('a')

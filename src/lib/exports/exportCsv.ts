@@ -125,9 +125,11 @@ export function generateAccountingCsv(data: AccountingExportData): {
   if (data.revenueByMonth.length === 0) {
     // Empty array → CSV with headers only
   } else {
+    const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
     for (const item of data.revenueByMonth) {
-      // Format month as readable label (YYYY-MM → "Mois Année" or keep YYYY-MM)
-      const monthLabel = item.month
+      const [y, m] = item.month.split('-')
+      const monthIdx = parseInt(m, 10) - 1
+      const monthLabel = monthIdx >= 0 && monthIdx < 12 ? `${MONTHS_FR[monthIdx]} ${y}` : item.month
       byMonthRows.push(csvRow([
         monthLabel,
         formatCurrency(item.revenue),

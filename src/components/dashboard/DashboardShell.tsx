@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser, CurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Loader } from '@/components/ui/loader'
+import { NotificationBell } from '@/components/dashboard/NotificationBell'
+import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 
 interface DashboardShellProps {
@@ -17,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/services', icon: '✂️', label: 'Services' },
   { href: '/dashboard/calendar', icon: '📅', label: 'Calendrier' },
   { href: '/dashboard/availability', icon: '⏱️', label: 'Disponibilités' },
+  { href: '/dashboard/client-list', icon: '👥', label: 'Mes clients' },
   { href: '/dashboard/clients', icon: '🚫', label: 'Clients bloqués' },
   { href: '/dashboard/settings', icon: '⚙️', label: 'Paramètres' },
 ]
@@ -28,6 +31,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [loading, setLoading] = useState(true)
   const [plan, setPlan] = useState<string>('Starter')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     const load = async () => {
@@ -91,7 +95,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
       <aside
         className="hidden md:flex w-[260px] flex-col flex-shrink-0 border-r border-[#EDE8F0]"
         style={{
-          background: 'linear-gradient(180deg, #FDFBFE 0%, #F8F4FA 100%)',
+          background: 'linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%)',
           minHeight: '100vh',
           position: 'sticky',
           top: 0,
@@ -109,6 +113,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <p className="text-xs text-[#8a7a92] truncate">Plan {plan}</p>
             </div>
           </div>
+        </div>
+
+        {/* Notification bell */}
+        <div className="px-5 pb-2">
+          <NotificationBell proId={current.user?.uid ?? null} />
         </div>
 
         {/* Nav */}
@@ -138,8 +147,22 @@ export function DashboardShell({ children }: DashboardShellProps) {
           ))}
         </nav>
 
-        {/* Bottom branding */}
-        <div className="px-5 py-4 border-t border-[#EDE8F0]">
+        {/* Dark mode toggle + branding */}
+        <div className="px-5 py-4 border-t border-[#EDE8F0] space-y-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-[12px] text-sm text-[#7A6B80] hover:bg-white hover:text-[#2A1F2D] hover:shadow-[0_2px_8px_rgba(20,0,50,0.04)] transition-all"
+          >
+            <span className="w-8 h-8 rounded-[10px] bg-[#F5F0F7] flex items-center justify-center text-base flex-shrink-0">
+              {theme === 'dark' ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+              )}
+            </span>
+            <span className="text-xs font-medium">{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
+          </button>
           <p className="text-[11px] text-[#b5a8bc] font-medium">
             Propulsé par <span className="gradient-text font-bold">BookMeUp</span>
           </p>
@@ -163,6 +186,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </button>
 
           <div className="ml-auto flex items-center gap-3">
+            <NotificationBell proId={current.user?.uid ?? null} />
             <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-secondary text-primary border border-primary/15">
               Plan {plan}
             </span>

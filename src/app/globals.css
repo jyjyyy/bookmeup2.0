@@ -43,83 +43,8 @@ body {
   border-color: var(--border);
 }
 
-/* ── Dark mode global overrides ──────────────────────────────────────── */
-/* These use attribute selectors on data-theme to override Tailwind's
-   hardcoded color classes.  We place them AFTER @tailwind utilities so
-   they win the cascade, and add !important as safety net. */
-
-@layer utilities {
-  [data-theme="dark"] .bg-white {
-    background-color: var(--card-bg) !important;
-  }
-  [data-theme="dark"] .bg-white\/80 {
-    background-color: rgba(35, 29, 40, 0.80) !important;
-  }
-  [data-theme="dark"] .bg-white\/70 {
-    background-color: rgba(35, 29, 40, 0.70) !important;
-  }
-}
-
-/* All dark mode overrides — outside @layer for highest priority */
-[data-theme="dark"] [class*="bg-white"] {
-  background-color: var(--card-bg);
-}
-[data-theme="dark"] [class*="bg-\[#FDFBFE\]"],
-[data-theme="dark"] [class*="bg-\[#FAF7FB\]"] {
-  background-color: var(--card-bg) !important;
-}
-[data-theme="dark"] [class*="bg-\[#F5F0F7\]"],
-[data-theme="dark"] [class*="bg-\[#F5E9F8\]"] {
-  background-color: var(--subtle-bg) !important;
-}
-
-/* Text color overrides */
-[data-theme="dark"] [class*="text-\[#2A1F2D\]"] {
-  color: var(--text-dark) !important;
-}
-[data-theme="dark"] [class*="text-\[#8a7a92\]"],
-[data-theme="dark"] [class*="text-\[#64576b\]"],
-[data-theme="dark"] [class*="text-\[#7A6B80\]"] {
-  color: var(--text-muted) !important;
-}
-[data-theme="dark"] [class*="text-\[#b5a8bc\]"],
-[data-theme="dark"] [class*="text-\[#B5A8BE\]"] {
-  color: #7A6B80 !important;
-}
-
-/* Border overrides */
-[data-theme="dark"] [class*="border-\[#EDE8F0\]"] {
-  border-color: var(--border) !important;
-}
-
-/* Gradient backgrounds → flat dark card */
-[data-theme="dark"] [class*="from-white"],
-[data-theme="dark"] [class*="via-secondary"],
-[data-theme="dark"] [class*="to-primary\/5"] {
-  --tw-gradient-from: var(--card-bg) !important;
-  --tw-gradient-to: var(--card-bg) !important;
-}
-
-/* Inputs, selects, textareas */
-[data-theme="dark"] input,
-[data-theme="dark"] select,
-[data-theme="dark"] textarea {
-  background-color: var(--input-bg) !important;
-  color: var(--text-dark) !important;
-  border-color: var(--border) !important;
-}
-
-/* Glassmorphism */
-[data-theme="dark"] .glass {
-  background: rgba(26, 21, 32, 0.85) !important;
-}
-
-/* Slot buttons */
-[data-theme="dark"] .slot-btn {
-  background: var(--card-bg);
-  color: var(--text-muted);
-  border-color: var(--border);
-}
+/* ── Dark mode overrides are injected at runtime by ThemeContext.tsx ── */
+/* This avoids PostCSS escaping issues with Tailwind arbitrary classes */
 
 /* ── Transitions on interactive elements ─────────────────────────────── */
 a, button, input, select, textarea {

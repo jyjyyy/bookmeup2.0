@@ -195,7 +195,7 @@ export function GoogleCalendarClient() {
           <p className="text-gray-600 mb-8 text-lg">
             Cette fonctionnalité est réservée aux comptes Premium.
           </p>
-          <Link href="/dashboard/subscription">
+          <Link href="/dashboard/settings/subscription">
             <Button size="lg" className="rounded-[32px] text-lg px-8">
               Passer au Premium
             </Button>

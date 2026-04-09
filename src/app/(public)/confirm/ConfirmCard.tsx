@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { formatDuration } from '@/lib/utils/formatDuration'
 
 interface ConfirmCardProps {
   serviceName: string
@@ -149,7 +150,7 @@ export function ConfirmCard({
                   {duration && (
                     <div className="flex items-center justify-between py-2 border-b border-[#EDE8F0]">
                       <span className="text-[#7A6B80]">Durée</span>
-                      <span className="font-bold text-[#2A1F2D]">{duration} min</span>
+                      <span className="font-bold text-[#2A1F2D]">{formatDuration(Number(duration))}</span>
                     </div>
                   )}
 

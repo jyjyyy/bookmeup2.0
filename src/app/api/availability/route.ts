@@ -125,20 +125,52 @@ export async function GET(req: NextRequest) {
     // Extraire le step (intervalle entre créneaux) depuis la config de disponibilité
     const step = avail?.step ?? 30
 
-    // 5. Charger les réservations existantes
-    const bookingsSnap = await adminDb
-      .collection('bookings')
-      .where('pro_id', '==', proId)
-      .where('date', '==', date)
-      .where('status', 'in', ['pending', 'confirmed'])
-      .get()
+    // 5a. Charger le bufferTime (temps de répit) depuis les settings du pro
+    let bufferTime = 0
+    try {
+      const commSnap = await adminDb
+        .collection('pros')
+        .doc(proId)
+        .collection('settings')
+        .doc('communication')
+        .get()
+      if (commSnap.exists) {
+        const commData = commSnap.data()
+        bufferTime = Number(commData?.bufferTime) || 0
+      }
+    } catch (e) {
+      console.error('[Availability] Error loading bufferTime:', e)
+    }
 
-    // Convertir les bookings en intervalles en minutes
-    const bookingIntervals = bookingsSnap.docs.map((doc) => {
-      const booking = doc.data()
+    // 5b. Charger les réservations existantes (chercher les deux champs proId et pro_id)
+    const [bookingsSnap1, bookingsSnap2] = await Promise.all([
+      adminDb
+        .collection('bookings')
+        .where('pro_id', '==', proId)
+        .where('date', '==', date)
+        .where('status', 'in', ['pending', 'confirmed'])
+        .get(),
+      adminDb
+        .collection('bookings')
+        .where('proId', '==', proId)
+        .where('date', '==', date)
+        .where('status', 'in', ['pending', 'confirmed'])
+        .get(),
+    ])
+
+    // Dédupliquer par id
+    const bookingsMap = new Map<string, any>()
+    for (const doc of bookingsSnap1.docs) bookingsMap.set(doc.id, doc.data())
+    for (const doc of bookingsSnap2.docs) bookingsMap.set(doc.id, doc.data())
+
+    // Convertir les bookings en intervalles en minutes (avec buffer ajouté à la fin)
+    const bookingIntervals = Array.from(bookingsMap.values()).map((booking) => {
+      const bookingEnd = booking.end_time
+        ? timeToMinutes(booking.end_time)
+        : timeToMinutes(booking.start_time) + (booking.duration || 60)
       return {
         start: timeToMinutes(booking.start_time),
-        end: timeToMinutes(booking.end_time),
+        end: bookingEnd + bufferTime,
       }
     })
 

@@ -1,6 +1,7 @@
 'use client'
 
 import type { BookingService } from '../types'
+import { formatDuration } from '@/lib/utils/formatDuration'
 
 interface SelectedServiceCardProps {
   service: BookingService | null
@@ -26,7 +27,7 @@ export function SelectedServiceCard({ service, onChange }: SelectedServiceCardPr
                 {service.price} €
               </span>
               <span className="text-xs text-[#7A6B80]">
-                ⏱ {service.duration} min
+                ⏱ {formatDuration(service.duration)}
               </span>
             </div>
           </div>

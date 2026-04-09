@@ -41,7 +41,8 @@ export function TodayAppointments({ proId }: TodayAppointmentsProps) {
         const processSnapshot = (snapshot: any) => {
           snapshot.forEach((doc: any) => {
             const data = doc.data()
-            if (data.date === today && data.status !== 'cancelled') {
+            const isCancelled = data.status === 'cancelled' || data.status === 'cancelled_by_pro' || data.status === 'cancelled_by_client'
+            if (data.date === today && !isCancelled) {
               byId.set(doc.id, {
                 id: doc.id,
                 start_time: data.start_time || '00:00',

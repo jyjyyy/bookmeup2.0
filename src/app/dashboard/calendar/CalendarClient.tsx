@@ -18,7 +18,7 @@ interface Booking {
   serviceName?: string
   client_name?: string
   client_email?: string
-  status?: 'pending' | 'confirmed' | 'cancelled'
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'cancelled_by_pro' | 'cancelled_by_client'
   attendance?: 'present' | 'absent'
 }
 

@@ -13,7 +13,7 @@ interface Booking {
   serviceName?: string
   client_name?: string
   client_email?: string
-  status?: 'pending' | 'confirmed' | 'cancelled'
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'cancelled_by_pro' | 'cancelled_by_client'
   attendance?: 'present' | 'absent'
 }
 
@@ -33,6 +33,8 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
   const [unblocking, setUnblocking] = useState(false)
   const [unblockSuccess, setUnblockSuccess] = useState(false)
   const [updatingAttendance, setUpdatingAttendance] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelSuccess, setCancelSuccess] = useState(false)
 
   // Obtenir le premier jour du mois et le nombre de jours
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1)
@@ -198,6 +200,35 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
     }
   }
 
+  const handleCancelBooking = async () => {
+    if (!selectedBooking) return
+    if (!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) return
+
+    setCancelling(true)
+    setCancelSuccess(false)
+    try {
+      const response = await fetch('/api/bookings/cancel-by-pro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: selectedBooking.id, proId }),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setCancelSuccess(true)
+        setSelectedBooking({ ...selectedBooking, status: 'cancelled' })
+        if (onBookingUpdate) onBookingUpdate()
+        window.dispatchEvent(new CustomEvent('bookingCancelled'))
+      } else {
+        alert(data.error || "Erreur lors de l'annulation")
+      }
+    } catch (error) {
+      console.error('[MonthlyCalendar] Cancel error:', error)
+      alert("Erreur lors de l'annulation")
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   const monthName = month.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
   const selectedBookings = selectedDate ? getBookingsForDay(parseInt(selectedDate)) : []
@@ -323,14 +354,14 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
                         className={`text-xs px-2 py-1 rounded-full font-medium ${
                           booking.status === 'confirmed'
                             ? 'bg-green-100 text-green-700'
-                            : booking.status === 'cancelled'
+                            : booking.status === 'cancelled' || booking.status === 'cancelled_by_pro' || booking.status === 'cancelled_by_client'
                             ? 'bg-red-100 text-red-700'
                             : 'bg-primary/10 text-primary'
                         }`}
                       >
                         {booking.status === 'confirmed'
                           ? 'Confirmé'
-                          : booking.status === 'cancelled'
+                          : booking.status === 'cancelled' || booking.status === 'cancelled_by_pro' || booking.status === 'cancelled_by_client'
                           ? 'Annulé'
                           : 'En attente'}
                       </span>
@@ -404,7 +435,7 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
                   <div className="flex justify-between">
                     <span className="text-slate-600">Durée</span>
                     <span className="font-semibold text-[#2A1F2D]">
-                      {selectedBooking.duration} minutes
+                      {selectedBooking.duration < 60 ? `${selectedBooking.duration} min` : `${Math.floor(selectedBooking.duration / 60)}h${selectedBooking.duration % 60 ? String(selectedBooking.duration % 60).padStart(2, '0') : ''}`}
                     </span>
                   </div>
                 )}
@@ -415,7 +446,7 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
                       className={`font-semibold ${
                         selectedBooking.status === 'confirmed'
                           ? 'text-green-600'
-                          : selectedBooking.status === 'cancelled'
+                          : selectedBooking.status === 'cancelled' || selectedBooking.status === 'cancelled_by_pro' || selectedBooking.status === 'cancelled_by_client'
                           ? 'text-red-600'
                           : 'text-primary'
                       }`}
@@ -424,6 +455,10 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
                         ? 'Confirmé'
                         : selectedBooking.status === 'cancelled'
                         ? 'Annulé'
+                        : selectedBooking.status === 'cancelled_by_pro'
+                        ? 'Annulé par vous'
+                        : selectedBooking.status === 'cancelled_by_client'
+                        ? 'Annulé par le client'
                         : 'En attente'}
                     </span>
                   </div>
@@ -502,13 +537,34 @@ export function MonthlyCalendar({ month, bookings, proId, onBookingUpdate }: Mon
                   </div>
                 )}
               </div>
-              <div className="mt-6 flex justify-end">
+              {/* Bouton annuler le RDV */}
+              {selectedBooking.status !== 'cancelled' &&
+                selectedBooking.status !== 'cancelled_by_pro' &&
+                selectedBooking.status !== 'cancelled_by_client' && (
+                <div className="mt-4 p-3 bg-red-50/60 border border-red-200/60 rounded-[24px]">
+                  {cancelSuccess ? (
+                    <div className="text-sm text-green-600 font-medium text-center py-1">
+                      Rendez-vous annulé avec succès
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleCancelBooking}
+                      disabled={cancelling}
+                      className="w-full px-4 py-2.5 rounded-[24px] bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+                    >
+                      {cancelling ? 'Annulation en cours…' : 'Annuler ce rendez-vous'}
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="mt-4 flex justify-end">
                 <button
                   onClick={() => {
                     setSelectedBooking(null)
                     setClientId(null)
                     setIsBlocked(false)
                     setUnblockSuccess(false)
+                    setCancelSuccess(false)
                   }}
                   className="px-4 py-2 rounded-[32px] bg-primary text-white hover:bg-primaryDark transition-colors"
                 >

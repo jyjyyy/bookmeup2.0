@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { checkSubscriptionStatus } from '@/lib/subscription'
 import { Button } from '@/components/ui/button'
+import { formatDuration } from '@/lib/utils/formatDuration'
 import { ServicesSkeleton } from '@/components/ui/skeleton'
 import { AddServiceModal } from '@/components/services/AddServiceModal'
 import { EditServiceModal } from '@/components/services/EditServiceModal'
@@ -456,7 +457,7 @@ export default function ServicesPage() {
                                     <svg className="w-3.5 h-3.5 text-[#9C44AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span className="text-xs font-semibold text-[#2A1F2D]">{service.duration} min</span>
+                                    <span className="text-xs font-semibold text-[#2A1F2D]">{formatDuration(service.duration)}</span>
                                   </div>
                                 </div>
 

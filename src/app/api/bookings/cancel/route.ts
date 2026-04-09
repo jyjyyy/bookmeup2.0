@@ -96,6 +96,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Créer une notification pour le pro
+    const proId = bookingData?.proId ?? bookingData?.pro_id
+    if (proId) {
+      try {
+        await adminDb.collection('notifications').add({
+          proId,
+          userId: proId,
+          type: 'cancellation',
+          title: 'Rendez-vous annulé par le client',
+          message: `${bookingData?.client_name || 'Un client'} a annulé son RDV "${bookingData?.serviceName || 'service'}" du ${bookingData?.date || ''} à ${bookingData?.start_time || ''}.`,
+          read: false,
+          bookingId,
+          createdAt: FieldValue.serverTimestamp(),
+        })
+      } catch (notifError) {
+        console.error('[Booking Cancel] Notification error (non-blocking):', notifError)
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       message: 'Réservation annulée avec succès',

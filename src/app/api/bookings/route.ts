@@ -135,6 +135,23 @@ export async function POST(request: NextRequest) {
       created_at: serverTimestamp(),
     })
 
+    // Créer une notification pour le pro
+    try {
+      const { FieldValue } = await import('firebase-admin/firestore')
+      await adminDb.collection('notifications').add({
+        proId: pro_id,
+        userId: pro_id,
+        type: 'booking',
+        title: 'Nouveau rendez-vous',
+        message: `${client_name.trim()} a réservé "${serviceName}" le ${date} à ${start_time}.`,
+        read: false,
+        bookingId: bookingRef.id,
+        createdAt: FieldValue.serverTimestamp(),
+      })
+    } catch (notifError) {
+      console.error('[Booking] Notification error (non-blocking):', notifError)
+    }
+
     return NextResponse.json({
       bookingId: bookingRef.id,
       message: 'Réservation créée avec succès',

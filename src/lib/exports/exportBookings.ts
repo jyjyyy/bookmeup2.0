@@ -24,6 +24,8 @@ function statusLabel(status?: string): string {
     case 'confirmed': return 'Confirmé'
     case 'pending': return 'En attente'
     case 'cancelled': return 'Annulé'
+    case 'cancelled_by_pro': return 'Annulé par le pro'
+    case 'cancelled_by_client': return 'Annulé par le client'
     default: return status || '—'
   }
 }

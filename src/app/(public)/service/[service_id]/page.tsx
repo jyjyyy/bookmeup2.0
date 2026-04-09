@@ -3,6 +3,7 @@ import { db } from '@/lib/firebaseClient'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
+import { formatDuration } from '@/lib/utils/formatDuration'
 import { notFound } from 'next/navigation'
 
 interface ServicePageProps {
@@ -95,7 +96,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
               <div className="flex items-center gap-6 mb-8">
                 <div>
                   <span className="text-sm text-gray-500">Durée</span>
-                  <p className="text-lg font-semibold">{service.duration} minutes</p>
+                  <p className="text-lg font-semibold">{formatDuration(service.duration)}</p>
                 </div>
                 <div>
                   <span className="text-sm text-gray-500">Prix</span>

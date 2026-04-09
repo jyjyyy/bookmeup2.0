@@ -15,6 +15,7 @@ interface CommunicationSettings {
   emailReminder24h: boolean
   smsReminder24h: boolean
   reminderDelay: string // '1h' | '2h' | '12h' | '24h' | '48h'
+  bufferTime: number // minutes entre chaque RDV (0 = désactivé, 15, 30)
 }
 
 const DEFAULT_SETTINGS: CommunicationSettings = {
@@ -23,7 +24,14 @@ const DEFAULT_SETTINGS: CommunicationSettings = {
   emailReminder24h: true,
   smsReminder24h: false,
   reminderDelay: '24h',
+  bufferTime: 0,
 }
+
+const BUFFER_OPTIONS = [
+  { value: 0, label: 'Aucun' },
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+]
 
 const REMINDER_OPTIONS = [
   { value: '1h', label: '1 heure avant' },
@@ -222,6 +230,45 @@ export default function CommunicationPage() {
             onChange={toggle('smsReminder24h')}
           />
         </div>
+      </motion.div>
+
+      {/* Buffer time between appointments */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.17 }}
+        className="bg-white rounded-[22px] border border-[#EDE8F0] shadow-[0_4px_20px_rgba(20,0,50,0.04)] p-6 hover:shadow-[0_6px_28px_rgba(20,0,50,0.06)] transition-shadow"
+      >
+        <div className="flex items-center gap-3.5 mb-5">
+          <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-violet-100/60 to-violet-50 flex items-center justify-center text-lg">
+            <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+          </div>
+          <div>
+            <h2 className="text-[15px] font-bold text-[#2A1F2D]">Temps de répit entre les rendez-vous</h2>
+            <p className="text-xs text-[#8a7a92]">Bloquer un temps de pause après chaque rendez-vous avant qu&apos;un client puisse réserver.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {BUFFER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setSettings((prev) => ({ ...prev, bufferTime: opt.value }))}
+              className={`px-4 py-2.5 rounded-full text-xs font-semibold transition-all ${
+                settings.bufferTime === opt.value
+                  ? 'bg-primary text-white shadow-[0_2px_8px_rgba(200,109,215,0.3)]'
+                  : 'bg-[#FDFBFE] border border-[#EDE8F0] text-[#64576b] hover:border-primary/20 hover:text-primary'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {settings.bufferTime > 0 && (
+          <p className="mt-3 text-[11px] text-[#8a7a92]">
+            Exemple : si un RDV se termine à 9h, le prochain créneau disponible sera à {settings.bufferTime === 15 ? '9h15' : '9h30'}.
+          </p>
+        )}
       </motion.div>
 
       {/* Reminder delay */}

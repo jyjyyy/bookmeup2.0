@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { formatDuration } from '@/lib/utils/formatDuration'
 
 interface Service {
   id: string
@@ -188,7 +189,7 @@ export function ProServicesList({
                           </span>
                         </div>
                         <div className="text-xs uppercase text-slate-500 font-medium tracking-wide">
-                          {service.duration} min
+                          {formatDuration(service.duration)}
                         </div>
                       </div>
 

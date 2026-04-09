@@ -64,7 +64,7 @@ export default function ClientListPage() {
         const clientMap = new Map<string, ClientData>()
 
         for (const data of bookingsById.values()) {
-          if (data.status === 'cancelled') continue
+          if (data.status === 'cancelled' || data.status === 'cancelled_by_pro' || data.status === 'cancelled_by_client') continue
 
           const clientEmail = data.clientEmail ?? data.client_email ?? ''
           const clientName = data.clientName ?? data.client_name ?? ''
@@ -82,7 +82,11 @@ export default function ClientListPage() {
           }
 
           existing.bookingsCount += 1
-          const price = Number(data.price ?? data.amount ?? data.total ?? 0)
+          const pricing = data?.pricing
+          const rawPrice = (pricing && typeof pricing === 'object' && typeof pricing.price === 'number')
+            ? pricing.price
+            : (data?.price ?? data?.amount ?? data?.total ?? 0)
+          const price = Number(rawPrice)
           if (Number.isFinite(price)) existing.totalRevenue += price
 
           const date = typeof data.date === 'string' ? data.date.slice(0, 10) : ''

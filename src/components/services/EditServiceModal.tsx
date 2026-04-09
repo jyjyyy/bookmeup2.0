@@ -171,9 +171,11 @@ export function EditServiceModal({
               <option value="15">15 min</option>
               <option value="30">30 min</option>
               <option value="45">45 min</option>
-              <option value="60">60 min</option>
-              <option value="90">90 min</option>
-              <option value="120">120 min</option>
+              <option value="60">1h</option>
+              <option value="90">1h30</option>
+              <option value="120">2h</option>
+              <option value="150">2h30</option>
+              <option value="180">3h</option>
             </select>
           </div>
         </div>

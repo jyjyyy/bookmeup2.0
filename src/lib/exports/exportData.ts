@@ -211,7 +211,7 @@ export async function getAccountingExportData(
       if (proId !== userId) continue
 
       const status = data?.status
-      if (status === 'cancelled') continue
+      if (status === 'cancelled' || status === 'cancelled_by_pro' || status === 'cancelled_by_client') continue
 
       const date = normalizeBookingDate(data?.date)
       if (!date) continue

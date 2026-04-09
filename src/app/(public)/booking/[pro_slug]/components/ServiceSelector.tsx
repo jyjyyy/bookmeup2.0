@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card'
 import type { BookingService } from '../types'
+import { formatDuration } from '@/lib/utils/formatDuration'
 
 interface ServiceSelectorProps {
   services: BookingService[]
@@ -28,7 +29,7 @@ export function ServiceSelector({
             )}
             <div className="flex items-center gap-4">
               <span className="text-primary font-extrabold text-lg">{service.price} €</span>
-              <span className="text-sm text-[#7A6B80]">⏱ {service.duration} min</span>
+              <span className="text-sm text-[#7A6B80]">⏱ {formatDuration(service.duration)}</span>
             </div>
           </div>
         </div>
@@ -59,7 +60,7 @@ export function ServiceSelector({
                   {service.description && (
                     <p className="text-xs text-[#7A6B80] mb-2 line-clamp-2">{service.description}</p>
                   )}
-                  <span className="text-xs text-[#7A6B80]">⏱ {service.duration} min</span>
+                  <span className="text-xs text-[#7A6B80]">⏱ {formatDuration(service.duration)}</span>
                 </div>
                 <span className={`text-lg font-extrabold flex-shrink-0 ${isSelected ? 'text-primary' : 'text-[#2A1F2D]'}`}>
                   {service.price} €

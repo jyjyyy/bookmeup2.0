@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebaseClient'
 import { adminDb } from '@/lib/firebaseAdmin'
+import { sendConfirmationEmail } from '@/lib/email'
+import { getStoredTokens, createCalendarEvent } from '@/lib/googleCalendar'
 
 export async function POST(request: NextRequest) {
   try {
@@ -150,6 +152,49 @@ export async function POST(request: NextRequest) {
       })
     } catch (notifError) {
       console.error('[Booking] Notification error (non-blocking):', notifError)
+    }
+
+    // Envoyer un email de confirmation au client
+    try {
+      // Récupérer le nom du pro
+      const proDoc = await adminDb.collection('profiles').doc(pro_id).get()
+      const proName = proDoc.exists ? (proDoc.data()?.displayName || proDoc.data()?.name || 'Votre professionnel') : 'Votre professionnel'
+
+      await sendConfirmationEmail({
+        email: client_email.trim(),
+        proName,
+        serviceName,
+        date,
+        time: start_time,
+        duration: bookingDuration,
+        price: pricingSnapshot.price,
+        clientName: client_name.trim(),
+      })
+    } catch (emailError) {
+      console.error('[Booking] Email error (non-blocking):', emailError)
+    }
+
+    // Google Calendar auto-sync (si activé pour ce pro)
+    try {
+      const gcalTokens = await getStoredTokens(pro_id)
+      if (gcalTokens?.connected && gcalTokens?.autoSync) {
+        const eventId = await createCalendarEvent(pro_id, {
+          summary: `${serviceName} — ${client_name.trim()}`,
+          description: `Client : ${client_name.trim()}\nEmail : ${client_email.trim()}\nTéléphone : ${client_phone?.trim() || 'N/A'}`,
+          date,
+          startTime: start_time,
+          endTime: end_time,
+          clientName: client_name.trim(),
+          clientEmail: client_email.trim(),
+        })
+        if (eventId) {
+          // Store the Google event ID on the booking for future deletion
+          await adminDb.collection('bookings').doc(bookingRef.id).update({ googleEventId: eventId })
+          console.log(`[Booking] Google Calendar event created: ${eventId}`)
+        }
+      }
+    } catch (gcalError) {
+      console.error('[Booking] Google Calendar sync error (non-blocking):', gcalError)
     }
 
     return NextResponse.json({

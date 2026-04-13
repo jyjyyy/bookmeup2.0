@@ -1,2 +1,2 @@
 // Feature flags
-export const PHOTOS_ENABLED = false
+export const PHOTOS_ENABLED = true

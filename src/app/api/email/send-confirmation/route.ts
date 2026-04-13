@@ -1,57 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sendConfirmationEmail } from '@/lib/email'
 
-interface SendConfirmationEmailBody {
-  email: string
-  proName: string
-  serviceName: string
-  date: string
-  time: string
-}
-
+/**
+ * POST /api/email/send-confirmation
+ * Envoie un email de confirmation de réservation via Resend (ou mock si pas de clé API).
+ */
 export async function POST(req: NextRequest) {
   try {
-    const body: SendConfirmationEmailBody = await req.json()
+    const body = await req.json()
+    const { email, proName, serviceName, date, time, duration, price, clientName } = body
 
     // Validation des champs requis
-    if (!body.email || !body.proName || !body.serviceName || !body.date || !body.time) {
-      console.error('[EMAIL MOCK] Missing required fields:', body)
+    if (!email || !proName || !serviceName || !date || !time) {
       return NextResponse.json(
-        { error: 'Missing required fields: email, proName, serviceName, date, time' },
+        { error: 'Champs requis manquants : email, proName, serviceName, date, time' },
         { status: 400 }
       )
     }
 
-    // Validation basique de l'email
-    if (!body.email.includes('@')) {
-      console.error('[EMAIL MOCK] Invalid email format:', body.email)
+    if (!email.includes('@')) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Format d\'email invalide' },
         { status: 400 }
       )
     }
 
-    // MOCK: Logger au lieu d'envoyer un vrai email
-    console.log('[EMAIL MOCK] Confirmation email would be sent:', {
-      to: body.email,
-      proName: body.proName,
-      serviceName: body.serviceName,
-      date: body.date,
-      time: body.time,
-      timestamp: new Date().toISOString(),
+    const sent = await sendConfirmationEmail({
+      email,
+      proName,
+      serviceName,
+      date,
+      time,
+      duration,
+      price,
+      clientName,
     })
 
-    // Retourner une réponse de succès mockée
     return NextResponse.json({
-      ok: true,
-      mocked: true,
-      message: 'Email mock sent successfully (no actual email was sent)',
+      ok: sent,
+      message: sent ? 'Email envoyé avec succès' : 'Échec de l\'envoi',
     })
   } catch (error: any) {
-    console.error('[EMAIL MOCK] Error processing email request:', error)
+    console.error('[Email Send Confirmation] Error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', mocked: true },
+      { error: error.message || 'Erreur serveur' },
       { status: 500 }
     )
   }
 }
-

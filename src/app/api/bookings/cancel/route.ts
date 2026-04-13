@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebaseAdmin'
 import { FieldValue } from 'firebase-admin/firestore'
+import { sendCancellationEmail } from '@/lib/email'
+import { deleteCalendarEvent } from '@/lib/googleCalendar'
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +115,35 @@ export async function POST(request: NextRequest) {
       } catch (notifError) {
         console.error('[Booking Cancel] Notification error (non-blocking):', notifError)
       }
+    }
+
+    // Supprimer l'événement Google Calendar si existant
+    const gcalProId = bookingData?.proId ?? bookingData?.pro_id
+    if (bookingData?.googleEventId && gcalProId) {
+      try {
+        await deleteCalendarEvent(gcalProId, bookingData.googleEventId)
+        console.log(`[Booking Cancel] Google Calendar event deleted: ${bookingData.googleEventId}`)
+      } catch (gcalError) {
+        console.error('[Booking Cancel] Google Calendar delete error (non-blocking):', gcalError)
+      }
+    }
+
+    // Envoyer un email d'annulation au client
+    try {
+      const proProfile = await adminDb.collection('profiles').doc(proId || '').get()
+      const proName = proProfile.exists ? (proProfile.data()?.displayName || proProfile.data()?.name || 'Votre professionnel') : 'Votre professionnel'
+
+      await sendCancellationEmail({
+        email: clientEmail,
+        proName,
+        serviceName: bookingData?.serviceName || 'Service',
+        date: bookingData?.date || '',
+        time: bookingData?.start_time || '',
+        clientName: bookingData?.client_name,
+        cancelledBy: 'client',
+      })
+    } catch (emailError) {
+      console.error('[Booking Cancel] Email error (non-blocking):', emailError)
     }
 
     return NextResponse.json({

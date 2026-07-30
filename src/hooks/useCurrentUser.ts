@@ -26,7 +26,19 @@ export function useCurrentUser(): UseCurrentUserResult {
   useEffect(() => {
     mountedRef.current = true
 
+    // Timeout de sécurité : si onAuthStateChanged ne répond pas en 5s, passer en ready
+    const timeout = setTimeout(() => {
+      if (mountedRef.current && status === 'loading') {
+        console.warn('[useCurrentUser] Auth timeout — falling back to guest')
+        cachedUser = { user: null, profile: null }
+        cacheTimestamp = Date.now()
+        setCurrent(cachedUser)
+        setStatus('ready')
+      }
+    }, 5000)
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(timeout)
       if (!mountedRef.current) return
 
       if (!user) {
@@ -76,6 +88,7 @@ export function useCurrentUser(): UseCurrentUserResult {
 
     return () => {
       mountedRef.current = false
+      clearTimeout(timeout)
       unsubscribe()
     }
   }, [])

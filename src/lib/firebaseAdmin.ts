@@ -25,7 +25,7 @@ export const adminApp =
             .FIREBASE_ADMIN_PRIVATE_KEY
             .replace(/\\n/g, "\n"),
         }),
-        storageBucket: "bookmeup-f2696.appspot.com",
+        storageBucket: "bookmeup-f2696.firebasestorage.app",
       })
     : getApps()[0]
 

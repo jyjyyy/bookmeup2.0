@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookMeUp — TikTok Avant/Après</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #1a1a2e;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    background: #FAF7FB;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.5);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    padding: 40px 28px;
+  }
+
+  /* ─── SCENE 1: Hook ───────────────────────────────── */
+  .scene-hook {
+    background: linear-gradient(160deg, #2A1F2D, #3d2a45);
+    text-align: center;
+    animation: sceneHook 14s ease forwards;
+  }
+
+  @keyframes sceneHook {
+    0%   { opacity: 1; }
+    10%  { opacity: 1; }
+    14%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .hook-text {
+    font-size: 32px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.3s forwards;
+  }
+
+  .hook-text em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hook-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 12px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 0.8s forwards;
+  }
+
+  /* ─── SCENE 2: AVANT ──────────────────────────────── */
+  .scene-avant {
+    background: #f2f2f2;
+    animation: sceneAvant 14s ease forwards;
+  }
+
+  @keyframes sceneAvant {
+    0%   { opacity: 0; }
+    14%  { opacity: 0; }
+    18%  { opacity: 1; }
+    46%  { opacity: 1; }
+    50%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .avant-badge {
+    background: #ef4444;
+    color: white;
+    padding: 8px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: scale(0.5);
+    animation: badgeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 2.2s forwards;
+  }
+
+  @keyframes badgeIn {
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .pain-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .pain-item {
+    background: white;
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border-left: 4px solid #ef4444;
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  .pain-item:nth-child(1) { animation: slideRight 0.5s ease 2.6s forwards; }
+  .pain-item:nth-child(2) { animation: slideRight 0.5s ease 3.2s forwards; }
+  .pain-item:nth-child(3) { animation: slideRight 0.5s ease 3.8s forwards; }
+  .pain-item:nth-child(4) { animation: slideRight 0.5s ease 4.4s forwards; }
+
+  @keyframes slideRight {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .pain-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #fef2f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .pain-text {
+    flex: 1;
+  }
+
+  .pain-text h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2A1F2D;
+    margin-bottom: 2px;
+  }
+
+  .pain-text p {
+    font-size: 12px;
+    color: #8a7a92;
+  }
+
+  .pain-x {
+    font-size: 20px;
+    color: #ef4444;
+    font-weight: 800;
+  }
+
+  /* Stress emoji */
+  .stress-emoji {
+    font-size: 60px;
+    margin-top: 28px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 5.0s forwards;
+  }
+
+  /* ─── SCENE 3: Transition ─────────────────────────── */
+  .scene-transition {
+    background: linear-gradient(160deg, #2A1F2D, #3d2a45);
+    text-align: center;
+    animation: sceneTrans 14s ease forwards;
+  }
+
+  @keyframes sceneTrans {
+    0%   { opacity: 0; }
+    50%  { opacity: 0; }
+    52%  { opacity: 1; }
+    58%  { opacity: 1; }
+    60%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .trans-text {
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 7.5s forwards;
+  }
+
+  .trans-text em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .trans-arrow {
+    font-size: 40px;
+    margin-top: 16px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 7.9s forwards, arrowBounce 1s ease 8.3s infinite;
+  }
+
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* ─── SCENE 4: APRÈS ──────────────────────────────── */
+  .scene-apres {
+    background: linear-gradient(160deg, #FAF7FB, #F5E9F8);
+    animation: sceneApres 14s ease forwards;
+  }
+
+  @keyframes sceneApres {
+    0%   { opacity: 0; }
+    60%  { opacity: 0; }
+    64%  { opacity: 1; }
+    92%  { opacity: 1; }
+    96%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .apres-badge {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: scale(0.5);
+    animation: badgeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 9.2s forwards;
+  }
+
+  .win-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .win-item {
+    background: white;
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 4px 20px rgba(200,109,215,0.08);
+    border-left: 4px solid #22c55e;
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  .win-item:nth-child(1) { animation: slideLeft 0.5s ease 9.6s forwards; }
+  .win-item:nth-child(2) { animation: slideLeft 0.5s ease 10.0s forwards; }
+  .win-item:nth-child(3) { animation: slideLeft 0.5s ease 10.4s forwards; }
+  .win-item:nth-child(4) { animation: slideLeft 0.5s ease 10.8s forwards; }
+
+  @keyframes slideLeft {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .win-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .win-check {
+    font-size: 20px;
+    color: #22c55e;
+    font-weight: 800;
+  }
+
+  .happy-emoji {
+    font-size: 60px;
+    margin-top: 28px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 11.2s forwards;
+  }
+
+  /* ─── SCENE 5: CTA Final ──────────────────────────── */
+  .scene-cta {
+    background: linear-gradient(160deg, #2A1F2D, #3d2a45);
+    text-align: center;
+    animation: sceneCta 14s ease forwards;
+  }
+
+  @keyframes sceneCta {
+    0%   { opacity: 0; }
+    96%  { opacity: 0; }
+    98%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  .cta-logo {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 13.5s forwards;
+  }
+
+  .cta-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    margin-top: 16px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 13.7s forwards;
+  }
+
+  .cta-btn-final {
+    margin-top: 24px;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 8px 28px rgba(200,109,215,0.4);
+    opacity: 0;
+    animation: fadeUp 0.4s ease 13.9s forwards;
+  }
+
+  /* ─── SHARED ──────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .progress {
+    position: absolute;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C86DD7, #9C44AF);
+    z-index: 100;
+    animation: progressBar 14s linear forwards;
+  }
+
+  @keyframes progressBar {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  .instructions {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="progress"></div>
+
+  <!-- Scene 1: Hook (0s - 2s) -->
+  <div class="scene scene-hook">
+    <div class="hook-text">Vous appelez encore<br>pour prendre <em>RDV</em> ?</div>
+    <div class="hook-sub">Il y a mieux. Beaucoup mieux.</div>
+  </div>
+
+  <!-- Scene 2: AVANT (2s - 7s) -->
+  <div class="scene scene-avant">
+    <div class="avant-badge">❌ AVANT</div>
+    <div class="pain-list">
+      <div class="pain-item">
+        <div class="pain-icon">📞</div>
+        <div class="pain-text">
+          <h4>Appels sans réponse</h4>
+          <p>3 appels, toujours la messagerie…</p>
+        </div>
+        <div class="pain-x">✕</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">💬</div>
+        <div class="pain-text">
+          <h4>SMS en attente</h4>
+          <p>Réponse dans 2 jours (peut-être)</p>
+        </div>
+        <div class="pain-x">✕</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">⏰</div>
+        <div class="pain-text">
+          <h4>Créneau déjà pris</h4>
+          <p>On recommence depuis le début…</p>
+        </div>
+        <div class="pain-x">✕</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">😤</div>
+        <div class="pain-text">
+          <h4>RDV oublié</h4>
+          <p>Pas de rappel = no-show</p>
+        </div>
+        <div class="pain-x">✕</div>
+      </div>
+    </div>
+    <div class="stress-emoji">😩</div>
+  </div>
+
+  <!-- Scene 3: Transition (7s - 8.5s) -->
+  <div class="scene scene-transition">
+    <div class="trans-text">Et si c'était<br><em>plus simple</em> ?</div>
+    <div class="trans-arrow">⬇️</div>
+  </div>
+
+  <!-- Scene 4: APRÈS (8.5s - 13s) -->
+  <div class="scene scene-apres">
+    <div class="apres-badge">✅ AVEC BOOKMEUP</div>
+    <div class="win-list">
+      <div class="win-item">
+        <div class="win-icon">⚡</div>
+        <div class="pain-text">
+          <h4>Réservation en 30 secondes</h4>
+          <p>Disponibilités en temps réel</p>
+        </div>
+        <div class="win-check">✓</div>
+      </div>
+      <div class="win-item">
+        <div class="win-icon">✅</div>
+        <div class="pain-text">
+          <h4>Confirmation instantanée</h4>
+          <p>Pas d'attente, c'est validé direct</p>
+        </div>
+        <div class="win-check">✓</div>
+      </div>
+      <div class="win-item">
+        <div class="win-icon">🔔</div>
+        <div class="pain-text">
+          <h4>Rappel automatique</h4>
+          <p>Email + SMS 24h avant</p>
+        </div>
+        <div class="win-check">✓</div>
+      </div>
+      <div class="win-item">
+        <div class="win-icon">⭐</div>
+        <div class="pain-text">
+          <h4>Pros vérifiées & notées</h4>
+          <p>500+ esthéticiennes de confiance</p>
+        </div>
+        <div class="win-check">✓</div>
+      </div>
+    </div>
+    <div class="happy-emoji">😍</div>
+  </div>
+
+  <!-- Scene 5: CTA (13s - 14s) -->
+  <div class="scene scene-cta">
+    <div class="cta-logo">BookMeUp</div>
+    <div class="cta-text">Réservez votre beauté.<br>Simplement.</div>
+    <div class="cta-btn-final">Essayer gratuitement →</div>
+  </div>
+</div>
+
+<div class="instructions">Enregistrez votre écran pour capturer la vidéo (14 secondes)</div>
+
+</body>
+</html>

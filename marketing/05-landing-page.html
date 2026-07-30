@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookMeUp — Réservez votre esthéticienne en 30 secondes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #C86DD7;
+    --primary-dark: #9C44AF;
+    --secondary: #F5E9F8;
+    --bg: #FAF7FB;
+    --text: #2A1F2D;
+    --muted: #64576b;
+    --light-muted: #8a7a92;
+    --r: 32px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+  /* ─── UTILITIES ────────────────────────────────────── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
+  .gradient-text { background: linear-gradient(135deg, #C86DD7, #9C44AF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #C86DD7, #9C44AF); color: white; border: none; padding: 16px 36px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 8px 28px rgba(200,109,215,0.35); transition: all .25s; text-decoration: none; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(200,109,215,0.45); }
+  .btn-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1.5px solid rgba(200,109,215,0.35); color: var(--primary-dark); padding: 14px 32px; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all .2s; text-decoration: none; }
+  .btn-outline:hover { background: var(--secondary); border-color: var(--primary); }
+
+  /* ─── HEADER ───────────────────────────────────────── */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(250,247,251,0.88);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(200,109,215,0.1);
+  }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+  .logo { font-size: 1.4rem; font-weight: 800; }
+  .logo a { text-decoration: none; }
+  nav { display: flex; align-items: center; gap: 32px; }
+  nav a { font-size: 0.875rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: color .2s; }
+  nav a:hover { color: var(--primary); }
+  .nav-cta { padding: 10px 24px !important; font-size: 0.875rem !important; }
+
+  /* ─── HERO ─────────────────────────────────────────── */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 100px 0 120px;
+    background: linear-gradient(160deg, #FAF7FB 0%, #F5E9F8 45%, #FAF7FB 100%);
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -150px; right: -100px;
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.15) 0%, transparent 70%);
+  }
+  .hero::after {
+    content: ''; position: absolute; bottom: -120px; left: -80px;
+    width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(156,68,175,0.1) 0%, transparent 70%);
+  }
+  .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 60px; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(200,109,215,0.1); border: 1px solid rgba(200,109,215,0.2); color: var(--primary-dark); padding: 8px 18px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; margin-bottom: 24px; }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .hero h1 { font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+  .hero-sub { font-size: 1.1rem; color: var(--muted); line-height: 1.7; max-width: 480px; margin-bottom: 36px; }
+  .hero-actions { display: flex; gap: 14px; align-items: center; margin-bottom: 40px; }
+  .trust-row { display: flex; align-items: center; gap: 24px; }
+  .trust-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--light-muted); font-weight: 500; }
+  .trust-icon { font-size: 1rem; }
+
+  /* Hero card */
+  .hero-card {
+    background: white;
+    border-radius: var(--r);
+    padding: 36px;
+    box-shadow: 0 24px 72px rgba(20,0,50,0.1);
+    border: 1px solid rgba(200,109,215,0.08);
+    position: relative;
+  }
+  .hc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .hc-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #C86DD7, #9C44AF); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; }
+  .hc-name { font-weight: 700; font-size: 1rem; }
+  .hc-role { font-size: 0.8rem; color: var(--light-muted); }
+  .hc-stars { font-size: 0.8rem; color: #f59e0b; }
+  .hc-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chip { padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; background: var(--secondary); color: var(--primary-dark); border: 1px solid rgba(200,109,215,0.1); }
+  .hc-slots-label { font-size: 0.75rem; color: var(--light-muted); font-weight: 600; margin-bottom: 10px; }
+  .hc-slots { display: flex; gap: 8px; flex-wrap: wrap; }
+  .slot { padding: 10px 18px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: var(--bg); color: var(--muted); border: 1px solid rgba(200,109,215,0.08); cursor: pointer; transition: all .2s; }
+  .slot:hover { border-color: var(--primary); color: var(--primary-dark); }
+  .slot.active { background: linear-gradient(135deg, #C86DD7, #9C44AF); color: white; border-color: transparent; }
+
+  .float-badge {
+    position: absolute; top: -16px; right: -16px;
+    background: white; border-radius: 16px; padding: 12px 18px;
+    box-shadow: 0 12px 36px rgba(20,0,50,0.1);
+    border: 1px solid rgba(200,109,215,0.1);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .float-badge .fb-icon { width: 36px; height: 36px; border-radius: 10px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .float-badge .fb-label { font-size: 0.7rem; color: var(--light-muted); }
+  .float-badge .fb-value { font-size: 0.85rem; font-weight: 700; }
+
+  /* ─── LOGOS SECTION ────────────────────────────────── */
+  .logos-section { padding: 50px 0; border-bottom: 1px solid rgba(200,109,215,0.08); text-align: center; }
+  .logos-section p { font-size: 0.85rem; color: var(--light-muted); font-weight: 500; margin-bottom: 24px; }
+  .logos-row { display: flex; justify-content: center; align-items: center; gap: 48px; opacity: 0.5; }
+  .logos-row span { font-size: 1.2rem; font-weight: 700; color: var(--muted); }
+
+  /* ─── FEATURES ─────────────────────────────────────── */
+  .features { padding: 100px 0; }
+  .section-header { text-align: center; margin-bottom: 60px; }
+  .section-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(200,109,215,0.1); color: var(--primary-dark); padding: 6px 16px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; margin-bottom: 16px; }
+  .section-header h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .section-header p { font-size: 1rem; color: var(--muted); max-width: 550px; margin: 0 auto; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature-card {
+    background: white;
+    border-radius: 24px;
+    padding: 36px;
+    border: 1px solid rgba(200,109,215,0.06);
+    box-shadow: 0 4px 16px rgba(20,0,50,0.03);
+    transition: all .3s;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(20,0,50,0.08); }
+  .fc-icon { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, rgba(200,109,215,0.12), rgba(156,68,175,0.08)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; }
+  .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+  /* ─── HOW IT WORKS ─────────────────────────────────── */
+  .how-it-works { padding: 100px 0; background: white; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 60px; }
+  .step { text-align: center; }
+  .step-num { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #C86DD7, #9C44AF); color: white; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .step p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; max-width: 280px; margin: 0 auto; }
+
+  /* ─── PRO SECTION ──────────────────────────────────── */
+  .pro-section {
+    padding: 100px 0;
+    background: linear-gradient(160deg, #2A1F2D 0%, #3d2a45 60%, #2A1F2D 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .pro-section::before {
+    content: ''; position: absolute; top: -200px; right: -200px;
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.1) 0%, transparent 60%);
+  }
+  .pro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; z-index: 1; }
+  .pro-section .section-badge { background: rgba(200,109,215,0.15); border: 1px solid rgba(200,109,215,0.25); color: #C86DD7; }
+  .pro-section h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 16px; color: white; }
+  .pro-section .sub { font-size: 1.05rem; color: rgba(255,255,255,0.55); line-height: 1.7; margin-bottom: 36px; }
+  .pro-benefits { display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px; }
+  .pro-benefit { display: flex; align-items: center; gap: 14px; }
+  .pb-check { width: 28px; height: 28px; border-radius: 8px; background: rgba(200,109,215,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .pro-benefit span { font-size: 0.95rem; color: rgba(255,255,255,0.8); }
+  .pro-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(200,109,215,0.15);
+    border-radius: 28px;
+    padding: 36px;
+  }
+  .pc-title { font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 24px; }
+  .pc-stat-row { display: flex; justify-content: space-between; margin-bottom: 24px; }
+  .pc-stat { text-align: center; }
+  .pc-stat-val { font-size: 2rem; font-weight: 900; color: white; }
+  .pc-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+  .pc-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pc-bar-label { font-size: 0.8rem; color: rgba(255,255,255,0.4); width: 50px; }
+  .pc-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+  .pc-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #C86DD7, #9C44AF); }
+
+  /* ─── PRICING ──────────────────────────────────────── */
+  .pricing { padding: 100px 0; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px; }
+  .price-card {
+    background: white;
+    border-radius: 28px;
+    padding: 40px 32px;
+    border: 1px solid rgba(200,109,215,0.08);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    transition: all .3s;
+  }
+  .price-card:hover { transform: translateY(-4px); }
+  .price-card.featured {
+    background: linear-gradient(160deg, #2A1F2D, #3d2a45);
+    border: 2px solid #C86DD7;
+    transform: scale(1.04);
+    box-shadow: 0 24px 72px rgba(200,109,215,0.2);
+    color: white;
+  }
+  .price-card.featured:hover { transform: scale(1.04) translateY(-4px); }
+  .popular-tag { background: linear-gradient(135deg, #C86DD7, #9C44AF); color: white; padding: 5px 16px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; margin-bottom: 12px; display: inline-block; }
+  .plan-name { font-size: 0.85rem; font-weight: 700; color: var(--light-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .price-card.featured .plan-name { color: #C86DD7; }
+  .price { font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+  .price-card.featured .price { color: white; }
+  .period { font-size: 0.85rem; color: var(--light-muted); margin-bottom: 24px; }
+  .price-card.featured .period { color: rgba(255,255,255,0.4); }
+  .price-divider { height: 1px; background: rgba(200,109,215,0.1); margin-bottom: 24px; }
+  .price-card.featured .price-divider { background: rgba(200,109,215,0.25); }
+  .price-features { list-style: none; text-align: left; margin-bottom: 32px; flex: 1; }
+  .price-features li { padding: 8px 0; font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .price-card.featured .price-features li { color: rgba(255,255,255,0.7); }
+  .price-features li::before { content: '✓'; color: var(--primary); font-weight: 700; }
+  .price-card .btn-primary { width: 100%; justify-content: center; }
+  .price-card .btn-outline { width: 100%; justify-content: center; }
+
+  /* ─── TESTIMONIALS ─────────────────────────────────── */
+  .testimonials { padding: 100px 0; background: white; }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px; }
+  .testimonial-card {
+    background: var(--bg);
+    border-radius: 24px;
+    padding: 32px;
+    border: 1px solid rgba(200,109,215,0.06);
+  }
+  .tc-stars { color: #f59e0b; font-size: 0.9rem; margin-bottom: 16px; }
+  .tc-text { font-size: 0.95rem; color: var(--muted); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+  .tc-author { display: flex; align-items: center; gap: 12px; }
+  .tc-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #C86DD7, #9C44AF); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .tc-name { font-weight: 700; font-size: 0.85rem; }
+  .tc-role { font-size: 0.75rem; color: var(--light-muted); }
+
+  /* ─── FINAL CTA ────────────────────────────────────── */
+  .final-cta {
+    padding: 100px 0;
+    text-align: center;
+    background: linear-gradient(160deg, #FAF7FB 0%, #F5E9F8 50%, #FAF7FB 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .final-cta::before {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 800px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.1) 0%, transparent 60%);
+  }
+  .final-cta h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 16px; position: relative; z-index: 1; }
+  .final-cta p { font-size: 1.1rem; color: var(--muted); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; position: relative; z-index: 1; }
+  .final-cta .btn-primary { font-size: 1.1rem; padding: 18px 44px; position: relative; z-index: 1; }
+
+  /* ─── FOOTER ───────────────────────────────────────── */
+  footer { padding: 50px 0; border-top: 1px solid rgba(200,109,215,0.08); }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; }
+  .footer-logo { font-size: 1.2rem; font-weight: 800; }
+  .footer-links { display: flex; gap: 28px; }
+  .footer-links a { font-size: 0.85rem; color: var(--muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--primary); }
+  .footer-copy { font-size: 0.8rem; color: var(--light-muted); }
+
+  /* ─── RESPONSIVE ───────────────────────────────────── */
+  @media (max-width: 768px) {
+    .hero-grid, .pro-grid, .features-grid, .steps, .pricing-grid, .testimonials-grid { grid-template-columns: 1fr; }
+    .hero-card { display: none; }
+    .price-card.featured { transform: scale(1); }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════ -->
+<header>
+  <div class="container header-inner">
+    <div class="logo"><a href="#"><span class="gradient-text">BookMeUp</span></a></div>
+    <nav>
+      <a href="#features">Fonctionnalités</a>
+      <a href="#how">Comment ça marche</a>
+      <a href="#pro">Espace pro</a>
+      <a href="#pricing">Tarifs</a>
+      <a href="#" class="btn-primary nav-cta">Réserver</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══ HERO ═════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="hero-badge"><span class="dot"></span> La réservation beauté nouvelle génération</div>
+      <h1>Réservez votre <span class="gradient-text">esthéticienne</span> en 30 secondes</h1>
+      <p class="hero-sub">Trouvez les meilleures professionnelles de la beauté près de chez vous. Disponibilités en temps réel, confirmation instantanée.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn-primary">Trouver une esthéticienne →</a>
+        <a href="#pro" class="btn-outline">Vous êtes pro ?</a>
+      </div>
+      <div class="trust-row">
+        <div class="trust-item"><span class="trust-icon">⭐</span> 4.9/5 note moyenne</div>
+        <div class="trust-item"><span class="trust-icon">👩‍💼</span> 500+ professionnelles</div>
+        <div class="trust-item"><span class="trust-icon">🔒</span> Paiement sécurisé</div>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="float-badge">
+        <div class="fb-icon">✅</div>
+        <div><div class="fb-label">Rendez-vous</div><div class="fb-value">Confirmé</div></div>
+      </div>
+      <div class="hc-header">
+        <div class="hc-avatar">S</div>
+        <div>
+          <div class="hc-name">Sophie Martin</div>
+          <div class="hc-role">Esthéticienne · Paris 11e</div>
+          <div class="hc-stars">⭐⭐⭐⭐⭐ <span style="color:var(--light-muted);font-size:0.7rem">48 avis</span></div>
+        </div>
+      </div>
+      <div class="hc-chips">
+        <span class="chip">💆 Soins visage</span>
+        <span class="chip">💅 Manucure</span>
+        <span class="chip">✨ Épilation</span>
+      </div>
+      <div class="hc-slots-label">Prochaines disponibilités · Vendredi 28 mars</div>
+      <div class="hc-slots">
+        <span class="slot">09:00</span>
+        <span class="slot">10:30</span>
+        <span class="slot active">14:00</span>
+        <span class="slot">15:30</span>
+        <span class="slot">17:00</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TRUST BAR ═══════════════════════════════════════ -->
+<section class="logos-section">
+  <div class="container">
+    <p>Ils nous font confiance</p>
+    <div class="logos-row">
+      <span>Google Calendar</span>
+      <span>Stripe</span>
+      <span>Firebase</span>
+      <span>SSL Secure</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ════════════════════════════════════════ -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Fonctionnalités</div>
+      <h2>Tout pour simplifier votre <span class="gradient-text">beauté</span></h2>
+      <p>Une plateforme pensée pour rendre la réservation de soins aussi simple qu'elle devrait l'être.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="fc-icon">⚡</div>
+        <h3>Réservation instantanée</h3>
+        <p>Consultez les disponibilités en temps réel et obtenez une confirmation immédiate. Fini les appels sans réponse.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🔔</div>
+        <h3>Rappels automatiques</h3>
+        <p>Recevez un rappel par email et SMS 24h avant votre rendez-vous. Zéro oubli, zéro no-show.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">⭐</div>
+        <h3>Pros vérifiées</h3>
+        <p>Chaque professionnelle est vérifiée et notée par notre communauté de clientes exigeantes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🔒</div>
+        <h3>Paiement sécurisé</h3>
+        <p>Vos données sont protégées par un chiffrement SSL de niveau bancaire via Stripe.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📱</div>
+        <h3>100% mobile</h3>
+        <p>Réservez depuis votre téléphone où que vous soyez, à tout moment de la journée.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🗓️</div>
+        <h3>Historique complet</h3>
+        <p>Retrouvez tous vos rendez-vous passés et re-réservez en un clic vos prestataires favorites.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══════════════════════════════════ -->
+<section class="how-it-works" id="how">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Comment ça marche</div>
+      <h2>Réservez en <span class="gradient-text">3 étapes</span></h2>
+      <p>Simple, rapide, efficace. Votre prochain soin beauté est à quelques clics.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Recherchez</h3>
+        <p>Trouvez une esthéticienne près de chez vous par spécialité, localisation et disponibilité.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Réservez</h3>
+        <p>Choisissez le créneau qui vous convient et recevez une confirmation instantanée.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Profitez</h3>
+        <p>Rendez-vous à votre soin l'esprit tranquille. Un rappel vous sera envoyé la veille.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRO SECTION ════════════════════════════════════ -->
+<section class="pro-section" id="pro">
+  <div class="container pro-grid">
+    <div>
+      <div class="section-badge">Espace professionnel</div>
+      <h2>Développez votre activité avec <span class="gradient-text">BookMeUp</span></h2>
+      <p class="sub">Automatisez vos réservations, fidélisez vos clientes et concentrez-vous sur votre art. BookMeUp gère le reste.</p>
+      <div class="pro-benefits">
+        <div class="pro-benefit"><div class="pb-check">✓</div><span>Agenda en ligne synchronisé avec Google Calendar</span></div>
+        <div class="pro-benefit"><div class="pb-check">✓</div><span>Réservations 24h/24 même quand vous dormez</span></div>
+        <div class="pro-benefit"><div class="pb-check">✓</div><span>Rappels SMS & email automatiques pour vos clientes</span></div>
+        <div class="pro-benefit"><div class="pb-check">✓</div><span>Statistiques avancées et suivi de performance</span></div>
+        <div class="pro-benefit"><div class="pb-check">✓</div><span>Paiement en ligne intégré via Stripe</span></div>
+      </div>
+      <a href="#pricing" class="btn-primary">Voir les tarifs pro →</a>
+    </div>
+    <div class="pro-card">
+      <div class="pc-title">Tableau de bord — Mars 2026</div>
+      <div class="pc-stat-row">
+        <div class="pc-stat"><div class="pc-stat-val">127</div><div class="pc-stat-label">Réservations</div></div>
+        <div class="pc-stat"><div class="pc-stat-val">+34%</div><div class="pc-stat-label">vs. mois dernier</div></div>
+        <div class="pc-stat"><div class="pc-stat-val">2 840€</div><div class="pc-stat-label">Revenus</div></div>
+      </div>
+      <div class="pc-bar-row"><div class="pc-bar-label">Lun</div><div class="pc-bar"><div class="pc-bar-fill" style="width:85%"></div></div></div>
+      <div class="pc-bar-row"><div class="pc-bar-label">Mar</div><div class="pc-bar"><div class="pc-bar-fill" style="width:92%"></div></div></div>
+      <div class="pc-bar-row"><div class="pc-bar-label">Mer</div><div class="pc-bar"><div class="pc-bar-fill" style="width:78%"></div></div></div>
+      <div class="pc-bar-row"><div class="pc-bar-label">Jeu</div><div class="pc-bar"><div class="pc-bar-fill" style="width:96%"></div></div></div>
+      <div class="pc-bar-row"><div class="pc-bar-label">Ven</div><div class="pc-bar"><div class="pc-bar-fill" style="width:88%"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ════════════════════════════════════════ -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Tarifs professionnels</div>
+      <h2>Un forfait adapté à votre <span class="gradient-text">activité</span></h2>
+      <p>Sans engagement. Changez de plan ou annulez à tout moment.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="plan-name">Starter</div>
+        <div class="price">9,99€</div>
+        <div class="period">par mois</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Jusqu'à 15 services</li>
+          <li>Calendrier hebdomadaire</li>
+          <li>Réservation en ligne</li>
+          <li>Rappels automatiques</li>
+          <li>Support par email</li>
+        </ul>
+        <a href="#" class="btn-outline">Commencer</a>
+      </div>
+      <div class="price-card featured">
+        <div class="popular-tag">Le plus populaire</div>
+        <div class="plan-name">Pro</div>
+        <div class="price">24,99€</div>
+        <div class="period">par mois</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Services illimités</li>
+          <li>Statistiques avancées</li>
+          <li>Filtres par période</li>
+          <li>Calendrier mensuel</li>
+          <li>Support prioritaire</li>
+        </ul>
+        <a href="#" class="btn-primary">Choisir Pro →</a>
+      </div>
+      <div class="price-card">
+        <div class="plan-name">Premium</div>
+        <div class="price">49,99€</div>
+        <div class="period">par mois</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Tout le plan Pro inclus</li>
+          <li>Taux d'occupation détaillé</li>
+          <li>Suivi des annulations</li>
+          <li>Exports CSV & PDF</li>
+          <li>Support 24/7 dédié</li>
+        </ul>
+        <a href="#" class="btn-outline">Choisir Premium</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══════════════════════════════════ -->
+<section class="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Témoignages</div>
+      <h2>Ce qu'elles disent de <span class="gradient-text">BookMeUp</span></h2>
+      <p>Clientes et professionnelles nous font confiance au quotidien.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="tc-stars">⭐⭐⭐⭐⭐</div>
+        <p class="tc-text">"J'ai trouvé mon esthéticienne en 2 minutes. Plus besoin d'appeler, tout se fait en ligne. Je ne reviens plus en arrière."</p>
+        <div class="tc-author">
+          <div class="tc-avatar">C</div>
+          <div><div class="tc-name">Camille D.</div><div class="tc-role">Cliente — Paris</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="tc-stars">⭐⭐⭐⭐⭐</div>
+        <p class="tc-text">"Depuis que je suis sur BookMeUp, mon agenda est toujours plein. Les rappels automatiques ont divisé mes no-shows par 4."</p>
+        <div class="tc-author">
+          <div class="tc-avatar">L</div>
+          <div><div class="tc-name">Léa M.</div><div class="tc-role">Esthéticienne — Lyon</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="tc-stars">⭐⭐⭐⭐⭐</div>
+        <p class="tc-text">"Interface magnifique, réservation ultra simple. J'ai recommandé BookMeUp à toutes mes amies. On adore."</p>
+        <div class="tc-author">
+          <div class="tc-avatar">S</div>
+          <div><div class="tc-name">Sarah K.</div><div class="tc-role">Cliente — Marseille</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL CTA ══════════════════════════════════════ -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Prête à simplifier votre <span class="gradient-text">beauté</span> ?</h2>
+    <p>Rejoignez les milliers de clientes et professionnelles qui ont adopté BookMeUp.</p>
+    <a href="#" class="btn-primary">Commencer gratuitement →</a>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═════════════════════════════════════════ -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-logo"><span class="gradient-text">BookMeUp</span></div>
+    <div class="footer-links">
+      <a href="#">Fonctionnalités</a>
+      <a href="#">Tarifs</a>
+      <a href="#">Contact</a>
+      <a href="#">CGU</a>
+    </div>
+    <div class="footer-copy">© 2026 BookMeUp. Tous droits réservés.</div>
+  </div>
+</footer>
+
+</body>
+</html>

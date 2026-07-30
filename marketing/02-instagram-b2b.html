@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookMeUp — Post Instagram B2B (Pros)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    padding: 40px;
+    background: #f0eaf2;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .label {
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: #8a7a92;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: -20px;
+  }
+
+  .post {
+    width: 1080px;
+    height: 1080px;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ── POST 1 : Accroche Pro ────────────────────────────── */
+  .post-pro-hero {
+    background: linear-gradient(160deg, #2A1F2D 0%, #3d2a45 50%, #2A1F2D 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 100px;
+    position: relative;
+  }
+
+  .post-pro-hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.12) 0%, transparent 70%);
+  }
+
+  .post-pro-hero .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,109,215,0.15);
+    border: 1px solid rgba(200,109,215,0.3);
+    color: #C86DD7;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    width: fit-content;
+    position: relative;
+    z-index: 1;
+  }
+
+  .post-pro-hero .badge .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #C86DD7;
+  }
+
+  .post-pro-hero h2 {
+    font-size: 68px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .post-pro-hero h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .post-pro-hero p {
+    font-size: 26px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    max-width: 700px;
+    margin-bottom: 50px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .post-pro-hero .cta-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    border: none;
+    padding: 22px 48px;
+    border-radius: 60px;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 12px 40px rgba(200,109,215,0.35);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid rgba(200,109,215,0.4);
+    color: #C86DD7;
+    padding: 20px 40px;
+    border-radius: 60px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .post-pro-hero .bottom-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(200,109,215,0.06);
+    border-top: 1px solid rgba(200,109,215,0.15);
+    padding: 28px 100px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bottom-bar .logo {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bottom-bar .price-tag {
+    font-size: 20px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+  }
+
+  .bottom-bar .price-tag strong {
+    color: #C86DD7;
+    font-weight: 800;
+  }
+
+  /* ── POST 2 : Avantages Pros ──────────────────────────── */
+  .post-pro-benefits {
+    background: #FFFFFF;
+    padding: 80px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post-pro-benefits .header {
+    margin-bottom: 50px;
+  }
+
+  .post-pro-benefits .logo {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 24px;
+  }
+
+  .post-pro-benefits h2 {
+    font-size: 48px;
+    font-weight: 900;
+    color: #2A1F2D;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .post-pro-benefits h2 em {
+    font-style: normal;
+    color: #C86DD7;
+  }
+
+  .benefits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .benefit-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: #FAF7FB;
+    border: 1px solid rgba(200,109,215,0.08);
+    border-radius: 20px;
+    padding: 28px 32px;
+  }
+
+  .benefit-icon {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    color: white;
+    font-weight: 700;
+  }
+
+  .benefit-text h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2A1F2D;
+    margin-bottom: 4px;
+  }
+
+  .benefit-text p {
+    font-size: 17px;
+    color: #8a7a92;
+    line-height: 1.4;
+  }
+
+  /* ── POST 3 : Tarifs ──────────────────────────────────── */
+  .post-pricing {
+    background: linear-gradient(160deg, #FAF7FB 0%, #F5E9F8 50%, #FAF7FB 100%);
+    padding: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .post-pricing .logo {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+
+  .post-pricing h2 {
+    font-size: 48px;
+    font-weight: 900;
+    color: #2A1F2D;
+    text-align: center;
+    margin-bottom: 50px;
+    letter-spacing: -0.02em;
+  }
+
+  .post-pricing h2 em {
+    font-style: normal;
+    color: #C86DD7;
+  }
+
+  .pricing-cards {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+  }
+
+  .price-card {
+    flex: 1;
+    background: white;
+    border-radius: 28px;
+    padding: 36px 28px;
+    border: 1px solid rgba(200,109,215,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .price-card.featured {
+    background: linear-gradient(160deg, #2A1F2D, #3d2a45);
+    border: 2px solid #C86DD7;
+    transform: scale(1.04);
+    box-shadow: 0 20px 60px rgba(200,109,215,0.2);
+  }
+
+  .price-card .plan-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #8a7a92;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .price-card.featured .plan-name {
+    color: #C86DD7;
+  }
+
+  .price-card .price {
+    font-size: 52px;
+    font-weight: 900;
+    color: #2A1F2D;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .price-card.featured .price {
+    color: white;
+  }
+
+  .price-card .period {
+    font-size: 16px;
+    color: #8a7a92;
+    margin-bottom: 24px;
+  }
+
+  .price-card.featured .period {
+    color: rgba(255,255,255,0.4);
+  }
+
+  .price-card .divider {
+    width: 40px;
+    height: 2px;
+    background: rgba(200,109,215,0.2);
+    margin-bottom: 24px;
+  }
+
+  .price-card.featured .divider {
+    background: rgba(200,109,215,0.4);
+  }
+
+  .price-card ul {
+    list-style: none;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 28px;
+    flex: 1;
+  }
+
+  .price-card ul li {
+    font-size: 16px;
+    color: #64576b;
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .price-card.featured ul li {
+    color: rgba(255,255,255,0.7);
+  }
+
+  .price-card ul li::before {
+    content: '✓';
+    color: #C86DD7;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .price-card .card-btn {
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    border: 1.5px solid rgba(200,109,215,0.3);
+    background: transparent;
+    color: #9C44AF;
+    width: 100%;
+  }
+
+  .price-card.featured .card-btn {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    border: none;
+    color: white;
+    box-shadow: 0 8px 24px rgba(200,109,215,0.35);
+  }
+
+  .popular-badge {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 6px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label">Post Instagram 1 — Accroche Pros (B2B)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="post post-pro-hero">
+  <div class="badge"><span class="dot"></span> Espace professionnel</div>
+  <h2>Développez votre<br>clientèle avec<br><em>BookMeUp</em></h2>
+  <p>Votre agenda en ligne, vos réservations automatisées, vos clientes fidélisées. Concentrez-vous sur votre art.</p>
+  <div class="cta-row">
+    <div class="btn-gradient">S'inscrire gratuitement</div>
+    <div class="btn-ghost">En savoir plus</div>
+  </div>
+  <div class="bottom-bar">
+    <div class="logo">BookMeUp</div>
+    <div class="price-tag">À partir de <strong>9,99€/mois</strong></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label">Post Instagram 2 — Avantages Pros (B2B)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="post post-pro-benefits">
+  <div class="header">
+    <div class="logo">BookMeUp</div>
+    <h2>Pourquoi les pros<br>choisissent <em>BookMeUp</em></h2>
+  </div>
+  <div class="benefits-list">
+    <div class="benefit-row">
+      <div class="benefit-icon">📅</div>
+      <div class="benefit-text">
+        <h3>Agenda intelligent</h3>
+        <p>Synchronisé avec Google Calendar. Vos créneaux sont toujours à jour.</p>
+      </div>
+    </div>
+    <div class="benefit-row">
+      <div class="benefit-icon">📊</div>
+      <div class="benefit-text">
+        <h3>Statistiques avancées</h3>
+        <p>Suivez vos revenus, taux de remplissage et performance en temps réel.</p>
+      </div>
+    </div>
+    <div class="benefit-row">
+      <div class="benefit-icon">🚫</div>
+      <div class="benefit-text">
+        <h3>Zéro no-show</h3>
+        <p>Rappels automatiques par email et SMS. Fini les rendez-vous oubliés.</p>
+      </div>
+    </div>
+    <div class="benefit-row">
+      <div class="benefit-icon">💰</div>
+      <div class="benefit-text">
+        <h3>Paiement intégré</h3>
+        <p>Encaissez en ligne. Stripe sécurisé et virements automatiques.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label">Post Instagram 3 — Tarifs Pros (B2B)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="post post-pricing">
+  <div class="logo">BookMeUp</div>
+  <h2>Un forfait adapté à<br>votre <em>activité</em></h2>
+  <div class="pricing-cards">
+    <div class="price-card">
+      <div class="plan-name">Starter</div>
+      <div class="price">9,99€</div>
+      <div class="period">par mois</div>
+      <div class="divider"></div>
+      <ul>
+        <li>15 services max</li>
+        <li>Calendrier hebdo</li>
+        <li>Réservation en ligne</li>
+        <li>Support email</li>
+      </ul>
+      <div class="card-btn">Commencer</div>
+    </div>
+    <div class="price-card featured">
+      <div class="popular-badge">Le plus populaire</div>
+      <div class="plan-name">Pro</div>
+      <div class="price">24,99€</div>
+      <div class="period">par mois</div>
+      <div class="divider"></div>
+      <ul>
+        <li>Services illimités</li>
+        <li>Analytics avancées</li>
+        <li>Filtres par période</li>
+        <li>Support prioritaire</li>
+      </ul>
+      <div class="card-btn">Choisir Pro</div>
+    </div>
+    <div class="price-card">
+      <div class="plan-name">Premium</div>
+      <div class="price">49,99€</div>
+      <div class="period">par mois</div>
+      <div class="divider"></div>
+      <ul>
+        <li>Tout le plan Pro</li>
+        <li>Taux d'occupation</li>
+        <li>Exports CSV/PDF</li>
+        <li>Support 24/7</li>
+      </ul>
+      <div class="card-btn">Choisir Premium</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

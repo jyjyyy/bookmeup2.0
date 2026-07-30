@@ -59,7 +59,7 @@ export function Header() {
           {/* Actions */}
           <div className="hidden sm:flex items-center gap-2 ml-auto">
             {status === 'loading' ? (
-              <div className="h-9 w-24 rounded-[20px] bg-primary/10 animate-pulse" />
+              <div className="h-9 w-24 rounded-[20px] animate-pulse" style={{ background: 'rgba(200,109,215,0.15)' }} />
             ) : isLoggedIn ? (
               <>
                 {isClient && (

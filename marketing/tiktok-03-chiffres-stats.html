@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookMeUp — TikTok Chiffres & Stats</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #1a1a2e;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.5);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    padding: 40px 28px;
+  }
+
+  /* ─── BG: Dark gradient throughout ────────────────── */
+  .bg-dark {
+    background: linear-gradient(160deg, #2A1F2D 0%, #3d2a45 50%, #2A1F2D 100%);
+  }
+
+  .bg-dark::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.08) 0%, transparent 60%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* ─── SCENE 1: Hook question ──────────────────────── */
+  .scene-1 {
+    animation: s1 13s ease forwards;
+  }
+  @keyframes s1 {
+    0% { opacity: 1; } 10% { opacity: 1; } 14% { opacity: 0; } 100% { opacity: 0; }
+  }
+
+  .s1-question {
+    font-size: 30px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.3s forwards;
+    position: relative;
+    z-index: 1;
+  }
+
+  .s1-question em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .s1-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 12px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 0.8s forwards;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── SCENE 2: Stat 1 — 30 secondes ──────────────── */
+  .scene-2 {
+    animation: s2 13s ease forwards;
+  }
+  @keyframes s2 {
+    0% { opacity: 0; } 14% { opacity: 0; } 18% { opacity: 1; } 30% { opacity: 1; } 34% { opacity: 0; } 100% { opacity: 0; }
+  }
+
+  .big-number {
+    position: relative;
+    z-index: 1;
+  }
+
+  .big-number .number {
+    font-size: 120px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.3);
+    filter: blur(10px);
+  }
+
+  .scene-2 .number { animation: numberIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.0s forwards; }
+  .scene-3 .number { animation: numberIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 4.6s forwards; }
+  .scene-4 .number { animation: numberIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 7.0s forwards; }
+  .scene-5 .number { animation: numberIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 9.4s forwards; }
+
+  @keyframes numberIn {
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+
+  .big-number .unit {
+    font-size: 36px;
+    font-weight: 800;
+    color: white;
+    opacity: 0;
+  }
+
+  .scene-2 .unit { animation: fadeUp 0.4s ease 2.5s forwards; }
+  .scene-3 .unit { animation: fadeUp 0.4s ease 5.1s forwards; }
+  .scene-4 .unit { animation: fadeUp 0.4s ease 7.5s forwards; }
+  .scene-5 .unit { animation: fadeUp 0.4s ease 9.9s forwards; }
+
+  .stat-desc {
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 8px;
+    line-height: 1.5;
+    max-width: 280px;
+    opacity: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .scene-2 .stat-desc { animation: fadeUp 0.4s ease 2.7s forwards; }
+  .scene-3 .stat-desc { animation: fadeUp 0.4s ease 5.3s forwards; }
+  .scene-4 .stat-desc { animation: fadeUp 0.4s ease 7.7s forwards; }
+  .scene-5 .stat-desc { animation: fadeUp 0.4s ease 10.1s forwards; }
+
+  /* Decorative ring behind number */
+  .stat-ring {
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 2px solid rgba(200,109,215,0.15);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 0;
+  }
+
+  .scene-2 .stat-ring { animation: ringIn 0.8s ease 1.8s forwards; }
+  .scene-3 .stat-ring { animation: ringIn 0.8s ease 4.4s forwards; }
+  .scene-4 .stat-ring { animation: ringIn 0.8s ease 6.8s forwards; }
+  .scene-5 .stat-ring { animation: ringIn 0.8s ease 9.2s forwards; }
+
+  @keyframes ringIn {
+    to { transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .stat-ring::after {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,109,215,0.06);
+  }
+
+  /* ─── SCENE 3: Stat 2 — 500+ pros ────────────────── */
+  .scene-3 {
+    animation: s3 13s ease forwards;
+  }
+  @keyframes s3 {
+    0% { opacity: 0; } 34% { opacity: 0; } 38% { opacity: 1; } 50% { opacity: 1; } 54% { opacity: 0; } 100% { opacity: 0; }
+  }
+
+  /* ─── SCENE 4: Stat 3 — 4.9/5 ────────────────────── */
+  .scene-4 {
+    animation: s4 13s ease forwards;
+  }
+  @keyframes s4 {
+    0% { opacity: 0; } 54% { opacity: 0; } 58% { opacity: 1; } 72% { opacity: 1; } 76% { opacity: 0; } 100% { opacity: 0; }
+  }
+
+  .scene-4 .stars-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .star {
+    font-size: 32px;
+    opacity: 0;
+    transform: scale(0) rotate(-180deg);
+  }
+
+  .star:nth-child(1) { animation: starIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 7.8s forwards; }
+  .star:nth-child(2) { animation: starIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 7.95s forwards; }
+  .star:nth-child(3) { animation: starIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 8.1s forwards; }
+  .star:nth-child(4) { animation: starIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 8.25s forwards; }
+  .star:nth-child(5) { animation: starIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 8.4s forwards; }
+
+  @keyframes starIn {
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  /* ─── SCENE 5: Stat 4 — 0 no-show ────────────────── */
+  .scene-5 {
+    animation: s5 13s ease forwards;
+  }
+  @keyframes s5 {
+    0% { opacity: 0; } 76% { opacity: 0; } 80% { opacity: 1; } 92% { opacity: 1; } 94% { opacity: 0; } 100% { opacity: 0; }
+  }
+
+  /* ─── SCENE 6: CTA ────────────────────────────────── */
+  .scene-6 {
+    animation: s6 13s ease forwards;
+  }
+  @keyframes s6 {
+    0% { opacity: 0; } 94% { opacity: 0; } 96% { opacity: 1; } 100% { opacity: 1; }
+  }
+
+  .final-logo {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 12.5s forwards;
+  }
+
+  .final-tagline {
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 12.7s forwards;
+  }
+
+  .final-btn {
+    margin-top: 28px;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 8px 28px rgba(200,109,215,0.4);
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 12.9s forwards;
+  }
+
+  /* Recap mini-stats */
+  .recap-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 36px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .recap-item {
+    text-align: center;
+    opacity: 0;
+  }
+
+  .recap-item:nth-child(1) { animation: fadeUp 0.3s ease 12.3s forwards; }
+  .recap-item:nth-child(2) { animation: fadeUp 0.3s ease 12.4s forwards; }
+  .recap-item:nth-child(3) { animation: fadeUp 0.3s ease 12.5s forwards; }
+  .recap-item:nth-child(4) { animation: fadeUp 0.3s ease 12.6s forwards; }
+
+  .recap-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #C86DD7;
+  }
+
+  .recap-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
+  }
+
+  /* ─── SHARED ──────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .progress {
+    position: absolute;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C86DD7, #9C44AF);
+    z-index: 100;
+    animation: progressBar 13s linear forwards;
+  }
+
+  @keyframes progressBar {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  .instructions {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="progress"></div>
+
+  <!-- Scene 1: Hook (0s - 1.8s) -->
+  <div class="scene scene-1 bg-dark">
+    <div class="s1-question">BookMeUp<br>en <em>chiffres</em></div>
+    <div class="s1-sub">Les stats qui parlent d'elles-mêmes</div>
+  </div>
+
+  <!-- Scene 2: 30 secondes (1.8s - 4.4s) -->
+  <div class="scene scene-2 bg-dark">
+    <div class="big-number">
+      <div class="stat-ring"></div>
+      <div class="number">30s</div>
+      <div class="unit">pour réserver</div>
+    </div>
+    <div class="stat-desc">Trouvez, choisissez, confirmez. En 30 secondes chrono.</div>
+  </div>
+
+  <!-- Scene 3: 500+ pros (4.4s - 7s) -->
+  <div class="scene scene-3 bg-dark">
+    <div class="big-number">
+      <div class="stat-ring"></div>
+      <div class="number">500+</div>
+      <div class="unit">professionnelles</div>
+    </div>
+    <div class="stat-desc">Esthéticiennes, coiffeuses, masseuses — toutes vérifiées.</div>
+  </div>
+
+  <!-- Scene 4: 4.9/5 (7s - 9.8s) -->
+  <div class="scene scene-4 bg-dark">
+    <div class="big-number">
+      <div class="stat-ring"></div>
+      <div class="number">4.9</div>
+      <div class="unit">note moyenne /5</div>
+    </div>
+    <div class="stars-row">
+      <span class="star">⭐</span>
+      <span class="star">⭐</span>
+      <span class="star">⭐</span>
+      <span class="star">⭐</span>
+      <span class="star">⭐</span>
+    </div>
+    <div class="stat-desc">La qualité, notée par de vraies clientes.</div>
+  </div>
+
+  <!-- Scene 5: 0 no-show (9.8s - 12.2s) -->
+  <div class="scene scene-5 bg-dark">
+    <div class="big-number">
+      <div class="stat-ring"></div>
+      <div class="number">0</div>
+      <div class="unit">no-show</div>
+    </div>
+    <div class="stat-desc">Rappels automatiques email & SMS. Vos clientes viennent.</div>
+  </div>
+
+  <!-- Scene 6: CTA Final (12.2s - 13s) -->
+  <div class="scene scene-6 bg-dark">
+    <div class="final-logo">BookMeUp</div>
+    <div class="final-tagline">La beauté, simplifiée.</div>
+    <div class="final-btn">Rejoindre BookMeUp →</div>
+    <div class="recap-row">
+      <div class="recap-item">
+        <div class="recap-val">30s</div>
+        <div class="recap-label">Réservation</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-val">500+</div>
+        <div class="recap-label">Pros</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-val">4.9★</div>
+        <div class="recap-label">Note</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-val">0</div>
+        <div class="recap-label">No-show</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="instructions">Enregistrez votre écran pour capturer la vidéo (13 secondes)</div>
+
+</body>
+</html>

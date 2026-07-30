@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser } from '@/lib/auth'
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } from 'firebase/storage'
+import { ref, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from '@/lib/firebaseClient'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,8 +18,7 @@ import { PHOTOS_ENABLED } from '@/lib/features'
 export default function AccountPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const uploadTaskRef = useRef<UploadTask | null>(null)
-  const stuckTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -276,63 +275,26 @@ export default function AccountPage() {
   const handleFileUpload = async (files: FileList | File[] | null) => {
     if (!files) return
     if (!PHOTOS_ENABLED) return
-
     const fileArray = Array.isArray(files) ? files : Array.from(files)
     if (fileArray.length === 0) return
-
-    // Empêcher la sélection d'un nouveau fichier pendant l'upload
-    if (uploadState === "uploading") {
-      const confirmCancel = window.confirm("Un upload est en cours. Voulez-vous vraiment annuler ?")
-      if (!confirmCancel) {
-        return
-      }
-      // Annuler l'upload en cours si l'utilisateur confirme
-      if (uploadTaskRef.current) {
-        uploadTaskRef.current.cancel()
-        uploadTaskRef.current = null
-        console.log("[PHOTO] user canceled")
-      }
-      setUploading(false)
-      setUploadProgress(0)
-      setUploadState("idle")
-      setUploadStatus(null)
-      setPendingPreviews([])
-      return
-    }
-
-    // Logs systématiques - fichier sélectionné
-    fileArray.forEach((file) => {
-      console.log("[PHOTO] file selected", { name: file.name, size: file.size, type: file.type })
-    })
-    setDebug({ step: "file_selected", info: { files: fileArray.map(f => ({ name: f.name, size: f.size, type: f.type })) } })
-
-    // Logs systématiques - avant upload
-    const currentUid = auth.currentUser?.uid ?? null
-    const bucket = storage.app.options.storageBucket
-    console.log("[PHOTO] uid", currentUid)
-    console.log("[PHOTO] bucket", bucket)
-    setDebug({ step: "uid_check", info: { uid: currentUid, bucket } })
-
-    if (!currentUid) {
+    if (uploadState === "uploading") return
+    const currentUser = auth.currentUser
+    if (!currentUser) {
       setError("Veuillez vous reconnecter puis réessayer.")
       setUploadState("error")
-      setDebug({ step: "error", error: { code: "NO_UID", message: "Veuillez vous reconnecter puis réessayer." } })
       return
     }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    const MAX_BYTES = 2 * 1024 * 1024
+    const ALLOWED_SET = new Set(['image/jpeg', 'image/png'])
     try {
       setUploading(true)
       setError(null)
       setUploadProgress(0)
-      setUploadState("idle")
+      setUploadState("uploading")
       setUploadStatus(null)
-
       const uploadItems = fileArray.map((file) => {
-        const tempId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+        const tempId = Date.now() + "-" + Math.random().toString(36).slice(2)
         const previewUrl = URL.createObjectURL(file)
         return { tempId, file, previewUrl }
       })
@@ -340,257 +302,69 @@ export default function AccountPage() {
         ...prev,
         ...uploadItems.map(({ tempId, previewUrl }) => ({ tempId, url: previewUrl })),
       ])
-
-      const baseImages = galleryImages
-      const newImageUrls: string[] = []
-      const failed: Array<{ name: string; message: string; code?: string; tempId: string }> = []
-      const MAX_BYTES = 2 * 1024 * 1024
-      const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png'])
-
-      for (const item of uploadItems) {
+      const newImageUrls = []
+      const failed = []
+      for (let i = 0; i < uploadItems.length; i++) {
+        const item = uploadItems[i]
         const file = item.file
-
-        let path = ''
         try {
-          if (!ALLOWED_TYPES.has(file.type)) {
-            throw new Error('Formats acceptés : JPG, PNG')
-          }
-          if (file.size > MAX_BYTES) {
-            throw new Error(`L'image ${file.name} est trop volumineuse (max 2MB)`)
-          }
-
-          // Path stable avec sanitizer simple
-          const filenameSafe = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-          path = `pros/${currentUid}/photos/${filenameSafe}`
-          console.log("[PHOTO] path", path)
-          setDebug({ step: "upload_clicked", info: { uid: currentUid, bucket, path, filename: file.name } })
-
-          const storageRef = ref(storage, path)
-
-          // uploadBytesResumable + state_changed obligatoire
-          const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type })
-          
-          // Stocker le task dans la ref au démarrage
-          uploadTaskRef.current = uploadTask
-          console.log("[PHOTO] upload start")
-          setDebug({ step: "task_created", info: { uid: currentUid, bucket, path } })
-          
-          // Timer pour détecter si progress reste à 0 après 15s
-          // Clear any existing timer
-          if (stuckTimerRef.current) {
-            clearTimeout(stuckTimerRef.current)
-          }
-          stuckTimerRef.current = setTimeout(() => {
-            // Vérifier si le progress est toujours à 0
-            setUploadProgress((currentProgress) => {
-              if (currentProgress === 0) {
-                console.log("[PHOTO] stuck_0_percent - No progress events received")
-                setDebug({ step: "stuck_0_percent", error: { code: "STUCK_0_PERCENT", message: "No progress events received after 15s" } })
-              }
-              return currentProgress
-            })
-          }, 15000)
-
-          const uploadPromise = new Promise<string>((resolve, reject) => {
-            uploadTask.on(
-              "state_changed",
-              (snap) => {
-                const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
-                const bytesTransferred = snap.bytesTransferred
-                const totalBytes = snap.totalBytes
-                console.log("[PHOTO] progress", pct, bytesTransferred, totalBytes)
-                setUploadProgress(pct)
-                setUploadState("uploading" as const)
-                setDebug({ 
-                  step: "state_changed", 
-                  info: { 
-                    uid: currentUid, 
-                    bucket, 
-                    path: path, 
-                    progress: pct, 
-                    bytesTransferred, 
-                    totalBytes 
-                  } 
-                })
-                // Clear stuck timer if progress > 0
-                if (pct > 0 && stuckTimerRef.current) {
-                  clearTimeout(stuckTimerRef.current)
-                  stuckTimerRef.current = null
-                }
-              },
-              (error) => {
-                // Log obligatoire dans la callback error
-                console.log("[PHOTO] error", error.code, error.message)
-                setError(`${error.code}: ${error.message}`)
-                setUploading(false)
-                setUploadState("error")
-                uploadTaskRef.current = null
-                if (stuckTimerRef.current) {
-                  clearTimeout(stuckTimerRef.current)
-                  stuckTimerRef.current = null
-                }
-                setDebug({ 
-                  step: "error", 
-                  error: { 
-                    code: error.code, 
-                    message: error.message 
-                  },
-                  info: { 
-                    uid: currentUid, 
-                    bucket, 
-                    path: path, 
-                    progress: uploadProgress 
-                  } 
-                })
-                // NE PAS effacer la preview ici
-                reject(error)
-              },
-              async () => {
-                try {
-                  if (stuckTimerRef.current) {
-                    clearTimeout(stuckTimerRef.current)
-                    stuckTimerRef.current = null
-                  }
-                  const url = await getDownloadURL(uploadTask.snapshot.ref)
-                  console.log("[PHOTO] success", url)
-                  uploadTaskRef.current = null
-                  setUploadState("success")
-                  setDebug({ 
-                    step: "success", 
-                    info: { 
-                      uid: currentUid, 
-                      bucket, 
-                      path: path, 
-                      progress: 100, 
-                      url 
-                    } 
-                  })
-                  resolve(url)
-                } catch (e: any) {
-                  if (stuckTimerRef.current) {
-                    clearTimeout(stuckTimerRef.current)
-                    stuckTimerRef.current = null
-                  }
-                  uploadTaskRef.current = null
-                  setUploadState("error")
-                  setDebug({ 
-                    step: "error", 
-                    error: { 
-                      code: e?.code || "GET_URL_ERROR", 
-                      message: e?.message || "Failed to get download URL" 
-                    },
-                    info: { 
-                      uid: currentUid, 
-                      bucket, 
-                      path: path, 
-                      progress: uploadProgress 
-                    } 
-                  })
-                  reject(e)
-                }
-              }
-            )
+          if (!ALLOWED_SET.has(file.type)) throw new Error('Formats acceptés : JPG, PNG')
+          if (file.size > MAX_BYTES) throw new Error("L'image " + file.name + " est trop volumineuse (max 2MB)")
+          console.log("[PHOTO] uploading via API", file.name, file.size)
+          const idToken = await currentUser.getIdToken()
+          const formData = new FormData()
+          formData.append("file", file)
+          const controller = new AbortController()
+          abortControllerRef.current = controller
+          const res = await fetch("/api/photos/upload", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + idToken },
+            body: formData,
+            signal: controller.signal,
           })
-
-          const downloadURL = await uploadPromise
-          newImageUrls.push(downloadURL)
-          
-          // Retirer la preview uniquement après succès confirmé
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({ error: "Erreur serveur" }))
+            throw new Error(data.error || "Erreur " + res.status)
+          }
+          const data = await res.json()
+          console.log("[PHOTO] success via API", data.url)
+          newImageUrls.push(data.url)
+          setUploadProgress(Math.round(((i + 1) / uploadItems.length) * 100))
           setPendingPreviews((prev) => prev.filter((p) => p.tempId !== item.tempId))
-          try {
-            URL.revokeObjectURL(item.previewUrl)
-          } catch {
-            // ignore
-          }
-          
-          // Ajouter l'image à la galerie
-          setGalleryImages((prev) => [...prev, downloadURL])
-        } catch (err: any) {
-          console.log("[PHOTO] error", err?.code || "unknown", err?.message || "Unknown error")
-          failed.push({
-            name: file.name,
-            message: err?.message || "Erreur lors de l'upload",
-            code: err?.code,
-            tempId: item.tempId,
-          })
-          setUploadState("error")
-          setDebug({ 
-            step: "error", 
-            error: { 
-              code: err?.code || "unknown", 
-              message: err?.message || "Unknown error" 
-            },
-            info: { 
-              uid: currentUid, 
-              bucket, 
-              path: path, 
-              progress: uploadProgress 
-            } 
-          })
-          // En cas d'erreur, on garde la preview pour que l'utilisateur voie ce qui a échoué
+          try { URL.revokeObjectURL(item.previewUrl) } catch {}
+          setGalleryImages(data.images)
+        } catch (err) {
+          console.log("[PHOTO] error", err?.message || "Unknown error")
+          failed.push({ name: file.name, message: err?.message || "Erreur lors de l'upload", tempId: item.tempId })
         }
       }
-
       if (newImageUrls.length > 0) {
-        const updatedImages = [...baseImages, ...newImageUrls]
-        try {
-          await updateDoc(doc(db, 'pros', currentUid), {
-            'gallery.images': updatedImages,
-            updated_at: serverTimestamp(),
-          })
-          setGalleryImages(updatedImages)
-          setSuccess(`${newImageUrls.length} photo${newImageUrls.length > 1 ? 's' : ''} ajoutée${newImageUrls.length > 1 ? 's' : ''} ✓`)
-          setTimeout(() => setSuccess(null), 3000)
-        } catch (firestoreErr: any) {
-          setGalleryImages(updatedImages)
-          setError('Photos envoyées mais erreur d\'enregistrement. Réessayez plus tard.')
-          console.error('[PHOTO] Firestore updateDoc failed', firestoreErr?.message)
-        }
+        setUploadState("success")
+        setSuccess(newImageUrls.length + " photo" + (newImageUrls.length > 1 ? "s" : "") + " ajoutée" + (newImageUrls.length > 1 ? "s" : "") + " ✓")
+        setTimeout(() => setSuccess(null), 3000)
       }
-
-      // Retirer les previews des fichiers qui ont échoué (après un délai)
       if (failed.length > 0) {
-        const first = failed[0]
-        const extra = failed.length > 1 ? ` (+${failed.length - 1} autre${failed.length - 1 > 1 ? 's' : ''})` : ''
-        setError(`${first.message}${extra}`)
-        
+        setError(failed[0].message + (failed.length > 1 ? " (+" + (failed.length - 1) + " autre" + (failed.length - 1 > 1 ? "s" : "") + ")" : ""))
+        setUploadState("error")
         setTimeout(() => {
           setPendingPreviews((prev) => prev.filter((p) => !failed.some((f) => f.tempId === p.tempId)))
-          failed.forEach((f) => {
-            const item = uploadItems.find((i) => i.tempId === f.tempId)
-            if (item) {
-              try {
-                URL.revokeObjectURL(item.previewUrl)
-              } catch {
-                // ignore
-              }
-            }
-          })
         }, 5000)
       }
-    } catch (err: any) {
-      console.log("[PHOTO] error", err?.code || "unknown", err?.message || "Unknown error")
-      setError(err?.message || 'Erreur lors de l\'upload')
+    } catch (err) {
+      console.log("[PHOTO] error", err?.message || "Unknown error")
+      setError(err?.message || "Erreur lors de l'upload")
       setUploadState("error")
-      // Ne pas reset le state (preview/file) tant que l'upload est en cours
-      // On garde les previews pour que l'utilisateur voie ce qui a échoué
     } finally {
-      // Ne reset que si l'upload est vraiment terminé (uploadTaskRef est null = pas d'upload actif)
-      if (!uploadTaskRef.current) {
-        setUploading(false)
-        if (uploadState !== "error") {
-          setUploadProgress(0)
-          setUploadState("idle")
-        }
-        setUploadStatus(null)
-      }
+      setUploading(false)
+      setUploadProgress(0)
+      setUploadStatus(null)
     }
   }
 
   const handleCancelUpload = () => {
-    if (uploadTaskRef.current && uploadState === "uploading") {
-      uploadTaskRef.current.cancel()
-      uploadTaskRef.current = null
+    if (abortControllerRef.current && uploadState === "uploading") {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
       console.log("[PHOTO] user canceled")
       setUploadState("idle")
       setUploadProgress(0)

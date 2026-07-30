@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   BookMeUp18 — Design Tokens
+   Palette douce, féminine, premium
+   ───────────────────────────────────────────── */
+
+@theme {
+  /* ── Couleurs principales ── */
+  --color-cream: #FAF7F2;
+  --color-cream-dark: #F3EDE4;
+  --color-rose: #F5E6E0;
+  --color-rose-deep: #E8C4B8;
+  --color-terracotta: #E8A088;
+  --color-terracotta-deep: #D4836A;
+  --color-prune: #5B2C4A;
+  --color-prune-light: #7A4266;
+  --color-prune-dark: #3D1B32;
+  --color-sage: #8FA68E;
+  --color-sage-light: #B5C9B4;
+  --color-sage-dark: #6B8569;
+  --color-ardoise: #3D3A3A;
+  --color-ardoise-light: #5C5858;
+  --color-perle: #E5E1DC;
+  --color-perle-dark: #C9C3BB;
+
+  /* ── Semantic ── */
+  --color-success: #6B9E6B;
+  --color-warning: #D4A558;
+  --color-error: #C46B6B;
+  --color-info: #6B8EC4;
+
+  /* ── Border radius ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-soft: 0 2px 8px rgba(93, 44, 74, 0.06);
+  --shadow-card: 0 4px 16px rgba(93, 44, 74, 0.08);
+  --shadow-elevated: 0 8px 32px rgba(93, 44, 74, 0.12);
+  --shadow-inner-soft: inset 0 1px 3px rgba(93, 44, 74, 0.05);
+}
+
+/* ─────────────────────────────────────────────
+   CSS Variables — Light & Dark mode
+   ───────────────────────────────────────────── */
+
+:root {
+  /* Backgrounds */
+  --bg-primary: var(--color-cream);
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: var(--color-rose);
+  --bg-accent: var(--color-prune);
+  --bg-muted: var(--color-perle);
+
+  /* Text */
+  --text-primary: var(--color-ardoise);
+  --text-secondary: var(--color-ardoise-light);
+  --text-muted: #8A8585;
+  --text-on-accent: #FFFFFF;
+  --text-accent: var(--color-prune);
+
+  /* Borders */
+  --border-default: var(--color-perle);
+  --border-subtle: var(--color-perle-dark);
+  --border-accent: var(--color-terracotta);
+
+  /* Interactive */
+  --btn-primary-bg: var(--color-prune);
+  --btn-primary-hover: var(--color-prune-light);
+  --btn-primary-text: #FFFFFF;
+  --btn-secondary-bg: var(--color-rose);
+  --btn-secondary-hover: var(--color-rose-deep);
+  --btn-secondary-text: var(--color-prune);
+
+  /* Focus ring */
+  --ring-color: var(--color-terracotta);
+
+  color-scheme: light;
+}
+
+.dark {
+  --bg-primary: #1C1418;
+  --bg-secondary: #261C22;
+  --bg-tertiary: #2E222A;
+  --bg-accent: var(--color-terracotta);
+  --bg-muted: #352A30;
+
+  --text-primary: #F0E8E4;
+  --text-secondary: #C4B8B2;
+  --text-muted: #8A7E7A;
+  --text-on-accent: #1C1418;
+  --text-accent: var(--color-terracotta);
+
+  --border-default: #3E3238;
+  --border-subtle: #4E4248;
+  --border-accent: var(--color-terracotta-deep);
+
+  --btn-primary-bg: var(--color-terracotta);
+  --btn-primary-hover: var(--color-terracotta-deep);
+  --btn-primary-text: #1C1418;
+  --btn-secondary-bg: #2E222A;
+  --btn-secondary-hover: #3E3238;
+  --btn-secondary-text: var(--color-terracotta);
+
+  --ring-color: var(--color-terracotta);
+
+  color-scheme: dark;
+}
+
+/* ─────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────── */
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Heading font — Fraunces loaded via next/font in layout */
+.font-heading {
+  font-family: var(--font-heading, "Georgia", serif);
+}
+
+/* ── Focus ── */
+*:focus-visible {
+  outline: 2px solid var(--ring-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: var(--color-rose-deep);
+  color: var(--color-prune-dark);
+}
+
+/* ── Transitions ── */
+.transition-theme {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+}

@@ -26,6 +26,8 @@ export function GoogleCalendarClient() {
   const [connecting, setConnecting] = useState(false)
   const [toggling, setToggling] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -133,6 +135,37 @@ export function GoogleCalendarClient() {
       setError(err.message || 'Erreur lors de la modification')
     } finally {
       setToggling(false)
+    }
+  }
+
+  const handleSyncAll = async () => {
+    try {
+      setSyncing(true)
+      setError(null)
+      setSyncResult(null)
+
+      const response = await fetch('/api/google-calendar/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la synchronisation')
+      }
+
+      const data = await response.json()
+      setSyncResult(
+        data.synced > 0
+          ? `${data.synced} rendez-vous synchronisé${data.synced > 1 ? 's' : ''} avec succès !`
+          : 'Tous vos rendez-vous sont déjà synchronisés.'
+      )
+    } catch (err: any) {
+      console.error('Error syncing:', err)
+      setError(err.message || 'Erreur lors de la synchronisation')
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -271,6 +304,31 @@ export function GoogleCalendarClient() {
                   disabled={toggling}
                 />
               </div>
+
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">
+                    Synchroniser les anciens rendez-vous
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Ajoutez vos rendez-vous existants à Google Calendar en un clic.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleSyncAll}
+                  disabled={syncing}
+                  variant="outline"
+                  className="rounded-[32px] flex-shrink-0"
+                >
+                  {syncing ? 'Synchronisation...' : 'Synchroniser'}
+                </Button>
+              </div>
+
+              {syncResult && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-[20px] text-sm flex items-center gap-3">
+                  <span>✓</span> {syncResult}
+                </div>
+              )}
 
               <Button
                 onClick={handleDisconnect}

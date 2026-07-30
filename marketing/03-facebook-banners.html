@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookMeUp — Bannières Facebook Ads</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 40px;
+    background: #f0eaf2;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .label {
+    font-size: 14px;
+    color: #8a7a92;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── FORMAT FACEBOOK FEED (1200x628) ──────────────────── */
+  .banner-feed {
+    width: 1200px;
+    height: 628px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  /* B2C Feed Banner */
+  .b2c-feed {
+    background: linear-gradient(135deg, #FAF7FB 0%, #F5E9F8 50%, #eedaf4 100%);
+  }
+
+  .b2c-feed .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 50px 60px 70px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .b2c-feed .logo {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 24px;
+  }
+
+  .b2c-feed h2 {
+    font-size: 44px;
+    font-weight: 900;
+    color: #2A1F2D;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+
+  .b2c-feed h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .b2c-feed p {
+    font-size: 18px;
+    color: #64576b;
+    line-height: 1.6;
+    max-width: 420px;
+    margin-bottom: 28px;
+  }
+
+  .b2c-feed .cta {
+    display: inline-flex;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 16px 36px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(200,109,215,0.35);
+    width: fit-content;
+  }
+
+  .b2c-feed .right {
+    width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .b2c-feed .right::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.15) 0%, transparent 60%);
+  }
+
+  .mock-card {
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(20,0,50,0.12);
+    border: 1px solid rgba(200,109,215,0.1);
+    width: 300px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mock-card .mc-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mock-card .mc-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .mock-card .mc-name {
+    font-weight: 700;
+    color: #2A1F2D;
+    font-size: 15px;
+  }
+
+  .mock-card .mc-role {
+    font-size: 12px;
+    color: #8a7a92;
+  }
+
+  .mock-card .mc-stars {
+    font-size: 13px;
+    color: #f59e0b;
+  }
+
+  .mock-card .mc-slots {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mock-card .slot {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #FAF7FB;
+    color: #64576b;
+    border: 1px solid rgba(200,109,215,0.1);
+  }
+
+  .mock-card .slot.active {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    border-color: transparent;
+  }
+
+  /* B2B Feed Banner */
+  .b2b-feed {
+    background: linear-gradient(135deg, #2A1F2D 0%, #3d2a45 60%, #2A1F2D 100%);
+  }
+
+  .b2b-feed .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 40px 60px 70px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .b2b-feed .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,109,215,0.12);
+    border: 1px solid rgba(200,109,215,0.25);
+    color: #C86DD7;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    width: fit-content;
+  }
+
+  .b2b-feed .badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #C86DD7;
+  }
+
+  .b2b-feed h2 {
+    font-size: 42px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+
+  .b2b-feed h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #e0a0ec);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .b2b-feed p {
+    font-size: 18px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    max-width: 440px;
+    margin-bottom: 28px;
+  }
+
+  .b2b-feed .cta-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .b2b-feed .cta-primary {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 17px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(200,109,215,0.3);
+  }
+
+  .b2b-feed .cta-secondary {
+    border: 1.5px solid rgba(200,109,215,0.3);
+    color: #C86DD7;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .b2b-feed .right {
+    width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .b2b-feed .right::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.08) 0%, transparent 60%);
+  }
+
+  .dash-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(200,109,215,0.15);
+    border-radius: 24px;
+    padding: 32px;
+    width: 320px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dash-card .dc-title {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .dash-card .dc-stat {
+    margin-bottom: 20px;
+  }
+
+  .dash-card .dc-stat-value {
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+  }
+
+  .dash-card .dc-stat-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .dash-card .dc-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .dash-card .dc-bar-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    width: 60px;
+    flex-shrink: 0;
+  }
+
+  .dash-card .dc-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .dash-card .dc-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #C86DD7, #9C44AF);
+  }
+
+  .dash-card .dc-bar-pct {
+    font-size: 13px;
+    color: #C86DD7;
+    font-weight: 700;
+    width: 40px;
+    text-align: right;
+  }
+
+  /* ── STORIES FORMAT (1080x1920) ───────────────────────── */
+  .story {
+    width: 1080px;
+    height: 1920px;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .story-b2c {
+    background: linear-gradient(180deg, #FAF7FB 0%, #F5E9F8 40%, #eedaf4 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 100px 80px;
+  }
+
+  .story-b2c::before {
+    content: '';
+    position: absolute;
+    top: 200px;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,109,215,0.15) 0%, transparent 60%);
+  }
+
+  .story-b2c .logo {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .story-b2c h2 {
+    font-size: 80px;
+    font-weight: 900;
+    color: #2A1F2D;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .story-b2c h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .story-b2c p {
+    font-size: 32px;
+    color: #64576b;
+    line-height: 1.5;
+    max-width: 700px;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .story-b2c .cta {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    padding: 28px 64px;
+    border-radius: 60px;
+    font-size: 28px;
+    font-weight: 700;
+    box-shadow: 0 16px 48px rgba(200,109,215,0.4);
+    position: relative;
+    z-index: 1;
+    margin-bottom: 80px;
+  }
+
+  .story-b2c .story-mock-card {
+    background: white;
+    border-radius: 32px;
+    padding: 40px;
+    box-shadow: 0 24px 72px rgba(20,0,50,0.12);
+    border: 1px solid rgba(200,109,215,0.1);
+    width: 85%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .story-b2c .smc-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .story-b2c .smc-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  .story-b2c .smc-name {
+    font-weight: 700;
+    font-size: 20px;
+    color: #2A1F2D;
+  }
+
+  .story-b2c .smc-role {
+    font-size: 16px;
+    color: #8a7a92;
+  }
+
+  .story-b2c .smc-stars {
+    font-size: 16px;
+    color: #f59e0b;
+  }
+
+  .story-b2c .smc-slots {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .story-b2c .smc-slot {
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 600;
+    background: #FAF7FB;
+    color: #64576b;
+    border: 1px solid rgba(200,109,215,0.1);
+  }
+
+  .story-b2c .smc-slot.active {
+    background: linear-gradient(135deg, #C86DD7, #9C44AF);
+    color: white;
+    border-color: transparent;
+  }
+
+  .story-b2c .swipe-hint {
+    position: absolute;
+    bottom: 80px;
+    font-size: 20px;
+    color: #9C44AF;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swipe-arrow {
+    display: inline-block;
+    animation: bounce 1.5s ease infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label">Bannière Facebook Feed — B2C (1200x628)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="banner-feed b2c-feed">
+  <div class="left">
+    <div class="logo">BookMeUp</div>
+    <h2>Votre prochain<br>soin beauté est à<br><em>30 secondes</em></h2>
+    <p>Trouvez et réservez les meilleures esthéticiennes près de chez vous, en temps réel.</p>
+    <div class="cta">Réserver maintenant →</div>
+  </div>
+  <div class="right">
+    <div class="mock-card">
+      <div class="mc-header">
+        <div class="mc-avatar">S</div>
+        <div>
+          <div class="mc-name">Sophie Martin</div>
+          <div class="mc-role">Esthéticienne · Paris 11e</div>
+          <div class="mc-stars">⭐⭐⭐⭐⭐ <span style="color:#8a7a92;font-size:11px">48 avis</span></div>
+        </div>
+      </div>
+      <div class="mc-slots">
+        <div class="slot">09:00</div>
+        <div class="slot active">10:30</div>
+        <div class="slot">14:00</div>
+        <div class="slot">15:30</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label" style="margin-top:20px">Bannière Facebook Feed — B2B Pros (1200x628)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="banner-feed b2b-feed">
+  <div class="left">
+    <div class="badge"><span class="dot"></span> Pour les professionnelles</div>
+    <h2>Remplissez votre<br>agenda sans effort<br>avec <em>BookMeUp</em></h2>
+    <p>Réservations automatiques, rappels clients, statistiques. Tout pour développer votre activité beauté.</p>
+    <div class="cta-row">
+      <div class="cta-primary">Essai gratuit →</div>
+      <div class="cta-secondary">Voir les tarifs</div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="dash-card">
+      <div class="dc-title">Tableau de bord</div>
+      <div class="dc-stat">
+        <div class="dc-stat-value">+34%</div>
+        <div class="dc-stat-label">de réservations ce mois</div>
+      </div>
+      <div class="dc-bar-row">
+        <div class="dc-bar-label">Lun</div>
+        <div class="dc-bar"><div class="dc-bar-fill" style="width:85%"></div></div>
+        <div class="dc-bar-pct">85%</div>
+      </div>
+      <div class="dc-bar-row">
+        <div class="dc-bar-label">Mar</div>
+        <div class="dc-bar"><div class="dc-bar-fill" style="width:92%"></div></div>
+        <div class="dc-bar-pct">92%</div>
+      </div>
+      <div class="dc-bar-row">
+        <div class="dc-bar-label">Mer</div>
+        <div class="dc-bar"><div class="dc-bar-fill" style="width:78%"></div></div>
+        <div class="dc-bar-pct">78%</div>
+      </div>
+      <div class="dc-bar-row">
+        <div class="dc-bar-label">Jeu</div>
+        <div class="dc-bar"><div class="dc-bar-fill" style="width:96%"></div></div>
+        <div class="dc-bar-pct">96%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="label" style="margin-top:20px">Story Instagram/Facebook — B2C (1080x1920)</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="story story-b2c">
+  <div class="logo">BookMeUp</div>
+  <h2>Trouvez votre<br><em>esthéticienne</em><br>idéale</h2>
+  <p>Disponibilités en temps réel.<br>Confirmation instantanée.</p>
+  <div class="cta">Réserver →</div>
+  <div class="story-mock-card">
+    <div class="smc-header">
+      <div class="smc-avatar">L</div>
+      <div>
+        <div class="smc-name">Léa Dubois</div>
+        <div class="smc-role">Esthéticienne · Lyon 3e</div>
+        <div class="smc-stars">⭐⭐⭐⭐⭐</div>
+      </div>
+    </div>
+    <div class="smc-slots">
+      <div class="smc-slot">09:00</div>
+      <div class="smc-slot">11:00</div>
+      <div class="smc-slot active">14:30</div>
+      <div class="smc-slot">16:00</div>
+    </div>
+  </div>
+  <div class="swipe-hint"><span class="swipe-arrow">↑</span> Swipe up pour réserver</div>
+</div>
+
+</body>
+</html>

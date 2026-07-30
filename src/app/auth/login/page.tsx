@@ -9,29 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 
-// Vérifie si identitytoolkit.googleapis.com est joignable (5s max).
-// Une réponse HTTP (même 400) prouve que le réseau fonctionne.
-// Un AbortError ou TypeError indique un bloc réseau / AdBlock / pare-feu.
-async function checkFirebaseReachable(apiKey: string): Promise<boolean> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 5000)
-  try {
-    await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-        signal: controller.signal,
-      }
-    )
-    return true // n'importe quelle réponse = réseau OK
-  } catch {
-    return false // abort (timeout 5s) ou TypeError (bloqué)
-  } finally {
-    clearTimeout(timer)
-  }
-}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -61,21 +38,6 @@ export default function LoginPage() {
     console.log('[AUTH] submit', { email })
 
     try {
-      // Pré-test réseau (5s) : détecte AdBlock / firewall avant de tenter la connexion
-      const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-      if (apiKey) {
-        const reachable = await checkFirebaseReachable(apiKey)
-        if (!reachable) {
-          setError(
-            'Firebase est inaccessible depuis votre navigateur.\n' +
-            '→ Désactivez votre AdBlocker (uBlock, Brave, etc.)\n' +
-            '→ Ou ouvrez un onglet en navigation privée\n' +
-            '→ Ou testez depuis un autre réseau / 4G'
-          )
-          return
-        }
-      }
-
       console.time('[PERF] signIn')
       const cred = await signInWithEmailAndPassword(auth, email, password)
       console.timeEnd('[PERF] signIn')

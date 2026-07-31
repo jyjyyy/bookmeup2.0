@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { getCurrentUser, signOut, sendResetEmail } from '@/lib/auth'
@@ -9,7 +9,7 @@ import { deleteUser } from 'firebase/auth'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 
-export default function ClientSettingsPage() {
+function ClientSettingsForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -242,5 +242,11 @@ export default function ClientSettingsPage() {
     </div>
   )
 }
-
+export default function ClientSettingsPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <ClientSettingsForm />
+    </Suspense>
+  )
+}
 

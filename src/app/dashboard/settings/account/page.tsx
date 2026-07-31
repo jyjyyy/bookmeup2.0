@@ -303,7 +303,7 @@ export default function AccountPage() {
         ...uploadItems.map(({ tempId, previewUrl }) => ({ tempId, url: previewUrl })),
       ])
       const newImageUrls = []
-      const failed = []
+      const failed: { name: string; message: string; tempId: string }[] = []
       for (let i = 0; i < uploadItems.length; i++) {
         const item = uploadItems[i]
         const file = item.file
@@ -334,9 +334,10 @@ export default function AccountPage() {
           try { URL.revokeObjectURL(item.previewUrl) } catch {}
           setGalleryImages(data.images)
         } catch (err) {
-          console.log("[PHOTO] error", err?.message || "Unknown error")
-          failed.push({ name: file.name, message: err?.message || "Erreur lors de l'upload", tempId: item.tempId })
-        }
+  const message = err instanceof Error ? err.message : "Erreur lors de l'upload"
+  console.log("[PHOTO] error", message)
+  failed.push({ name: file.name, message, tempId: item.tempId })
+}
       }
       if (newImageUrls.length > 0) {
         setUploadState("success")
@@ -351,10 +352,11 @@ export default function AccountPage() {
         }, 5000)
       }
     } catch (err) {
-      console.log("[PHOTO] error", err?.message || "Unknown error")
-      setError(err?.message || "Erreur lors de l'upload")
-      setUploadState("error")
-    } finally {
+  const message = err instanceof Error ? err.message : "Erreur lors de l'upload"
+  console.log("[PHOTO] error", message)
+  setError(message)
+  setUploadState("error")
+} finally {
       setUploading(false)
       setUploadProgress(0)
       setUploadStatus(null)

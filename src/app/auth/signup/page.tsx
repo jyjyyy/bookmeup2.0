@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signUp, UserRole } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [name, setName] = useState('')
@@ -227,4 +227,10 @@ export default function SignupPage() {
     </div>
   )
 }
-
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <SignupForm />
+    </Suspense>
+  )
+}

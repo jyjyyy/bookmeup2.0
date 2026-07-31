@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
-import { invalidateUserCache, useCurrentUser } from '@/hooks/useCurrentUser'
+import { invalidateUserCache, useCurrentUser } from '@/lib/hooks/useCurrentUser'
 
 export function Header() {
   const { current, status } = useCurrentUser()

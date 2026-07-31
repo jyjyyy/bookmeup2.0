@@ -23,7 +23,7 @@ import { downloadCsvFile } from '@/lib/exports/downloadCsvClient'
 import { generateAccountingPdf } from '@/lib/exports/exportPdf'
 import ExportPeriodSelector, { type ExportPeriodSelection } from '@/components/stats/ExportPeriodSelector'
 import { TodayAppointments } from '@/components/dashboard/TodayAppointments'
-import { useStatsRefresh } from '@/hooks/useStatsRefresh'
+import { useStatsRefresh } from '@/lib/hooks/useStatsRefresh'
 
 function StatsSkeleton() {
   return (

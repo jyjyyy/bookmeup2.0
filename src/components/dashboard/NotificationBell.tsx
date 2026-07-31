@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useNotifications, type AppNotification } from '@/hooks/useNotifications'
+import { useNotifications, type AppNotification } from '@/lib/hooks/useNotifications'
 
 interface NotificationBellProps {
   proId: string | null

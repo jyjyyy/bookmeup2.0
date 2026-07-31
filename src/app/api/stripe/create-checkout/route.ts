@@ -124,6 +124,9 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
+      subscription_data: {
+        trial_period_days: 7,
+      },
       success_url: successUrl,
       cancel_url: cancelUrl,
       client_reference_id: user.uid, // Store user ID for webhook
